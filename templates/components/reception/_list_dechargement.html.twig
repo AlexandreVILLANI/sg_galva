@@ -1,0 +1,65 @@
+<section id="list-dechargement" class="content-section">
+    <div class="section-header">
+        <h2 class="section-title">Historique des déchargements</h2>
+    </div>
+    
+    <div class="table-container">
+        <div class="table-grid header">
+            <span>Date</span>
+            <span>Cariste</span>
+            <span>Client</span>
+            <span>Statut</span>
+        </div>
+
+        <div class="table-grid row">
+            <span class="date-cell">29/01/2026</span>
+            <span class="user-cell">Alex</span>
+            <span class="client-cell">ArcelorMittal</span>
+            <span><span class="badge badge-success">Validé</span></span>
+        </div>
+
+        <div class="table-grid row">
+            <span class="date-cell">28/01/2026</span>
+            <span class="user-cell">Jean Cariste</span>
+            <span class="client-cell">Bouygues</span>
+            <span><span class="badge badge-success">Validé</span></span>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Styles spécifiques aux tableaux de la réception */
+    .table-container { 
+        background: white; 
+        border: 1px solid #f3f4f6; 
+        border-radius: 8px; 
+        overflow: hidden;
+    }
+    .table-grid {
+        display: grid;
+        grid-template-columns: 120px 150px 1fr 100px;
+        padding: 12px 20px;
+        align-items: center;
+        font-size: 13px;
+    }
+    .table-grid.header {
+        background: #f9fafb;
+        color: #6b7280;
+        font-weight: 600;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .table-grid.row {
+        border-bottom: 1px solid #f9fafb;
+        color: #374151;
+    }
+    .table-grid.row:hover { background: #fcfcfc; }
+    
+    .badge-success {
+        background: #ecfdf5;
+        color: #10b981;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+</style>

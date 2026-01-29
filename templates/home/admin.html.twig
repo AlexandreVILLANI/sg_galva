@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Accueil Admin{% endblock %}
+
+{% block body %}
+<style>
+    .example-wrapper { 
+        margin: 2em auto; 
+        max-width: 800px; 
+        width: 95%; 
+        font: 18px/1.5 sans-serif; 
+        background: #fff; 
+        padding: 20px; 
+        border-radius: 8px; 
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+    }
+    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
+    
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .btn-logout {
+        background-color: #e74c3c;
+        color: white;
+        text-decoration: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-weight: bold;
+        font-size: 0.9rem;
+        transition: background 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-logout:hover {
+        background-color: #c0392b;
+    }
+</style>
+
+<div class="example-wrapper">
+    <div class="header-actions">
+        <h1>Hello {{ app.user.prenom|default('Admin') }}! ✅</h1>        
+        <a href="{{ path('app_logout') }}" class="btn-logout">
+            <i class="fas fa-sign-out-alt"></i> Déconnexion
+        </a>
+    </div>
+
+    <p>Vous êtes connecté sur l'espace <strong>{{ controller_name }}</strong>.</p>
+    
+    <div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-left: 5px solid #2e46a6;">
+        <p>This friendly message is coming from:</p>
+        <ul>
+            <li>Your controller at <code>src/Controller/HomeController.php</code></li>
+            <li>Your template at <code>templates/home/index.html.twig</code></li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
