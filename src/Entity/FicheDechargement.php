@@ -36,7 +36,7 @@ class FicheDechargement
     #[ORM\OneToMany(mappedBy: 'fiche', targetEntity: LigneDechargement::class, orphanRemoval: true, cascade: ['persist'])]
     private Collection $lignes;
 
-    #[ORM\OneToMany(mappedBy: 'fiche', targetEntity: PhotoDechargement::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'fiche', targetEntity: PhotoDechargement::class, orphanRemoval: true, cascade: ['persist'])]
     private Collection $photos;
 
     public function __construct()
@@ -46,7 +46,6 @@ class FicheDechargement
         $this->photos = new ArrayCollection();
     }
 
-    // Getters et Setters... (Je les omets pour la clarté, mais ils sont générés par Symfony)
     public function getId(): ?int { return $this->id; }
     public function getDate(): ?\DateTimeImmutable { return $this->date; }
     public function setDate(\DateTimeImmutable $date): self { $this->date = $date; return $this; }
@@ -58,6 +57,44 @@ class FicheDechargement
     public function setCariste(?User $cariste): self { $this->cariste = $cariste; return $this; }
     public function getClient(): ?Client { return $this->client; }
     public function setClient(?Client $client): self { $this->client = $client; return $this; }
+
+    /** @return Collection<int, LigneDechargement> */
     public function getLignes(): Collection { return $this->lignes; }
-    public function addLigne(LigneDechargement $ligne): self { if (!$this->lignes->contains($ligne)) { $this->lignes->add($ligne); $ligne->setFiche($this); } return $this; }
+    public function addLigne(LigneDechargement $ligne): self { 
+        if (!$this->lignes->contains($ligne)) { 
+            $this->lignes->add($ligne); 
+            $ligne->setFiche($this); 
+        } 
+        return $this; 
+    }
+
+    /** @return Collection<int, PhotoDechargement> */
+    public function getPhotos(): Collection { return $this->photos; }
+    public function addPhoto(PhotoDechargement $photo): self {
+        if (!$this->photos->contains($photo)) {
+            $this->photos->add($photo);
+            $photo->setFiche($this);
+        }
+        return $this;
+    }
+
+    public function removeLigne(LigneDechargement $ligne): self
+    {
+        if ($this->lignes->removeElement($ligne)) {
+            if ($ligne->getFiche() === $this) {
+                $ligne->setFiche(null);
+            }
+        }
+        return $this;
+    }
+
+    public function removePhoto(PhotoDechargement $photo): self
+    {
+        if ($this->photos->removeElement($photo)) {
+            if ($photo->getFiche() === $this) {
+                $photo->setFiche(null);
+            }
+        }
+        return $this;
+    }
 }

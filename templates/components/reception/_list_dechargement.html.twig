@@ -8,51 +8,72 @@
             <span>Date</span>
             <span>Cariste</span>
             <span>Client</span>
+            <span>Paquets</span>
             <span>Statut</span>
         </div>
 
-        <div class="table-grid row">
-            <span class="date-cell">29/01/2026</span>
-            <span class="user-cell">Alex</span>
-            <span class="client-cell">ArcelorMittal</span>
-            <span><span class="badge badge-success">Validé</span></span>
-        </div>
+        {% for fiche in fiches %}
+           <div class="table-grid row clickable-row" onclick="window.location='{{ path('app_dechargement_show', {'id': fiche.id}) }}'">
+                <span class="date-cell">{{ fiche.date|date('d/m/Y H:i') }}</span>
+                <span class="user-cell">{{ fiche.cariste.prenom }}</span>
+                <span class="client-cell">{{ fiche.client.nom }}</span>
+                <span class="total-cell"><strong>{{ fiche.totalPaquets }}</strong></span>
+                <span><span class="badge badge-success">Validé</span></span>
+            </div>
 
-        <div class="table-grid row">
-            <span class="date-cell">28/01/2026</span>
-            <span class="user-cell">Jean Cariste</span>
-            <span class="client-cell">Bouygues</span>
-            <span><span class="badge badge-success">Validé</span></span>
-        </div>
+            <style>
+                .clickable-row { cursor: pointer; }
+                .clickable-row:hover { background-color: #f0f4ff !important; }
+            </style>
+        {% else %}
+            <div class="table-grid row no-data">
+                <span>Aucun déchargement enregistré.</span>
+            </div>
+        {% endfor %}
     </div>
 </section>
 
 <style>
-    /* Styles spécifiques aux tableaux de la réception */
+    /* Ta grille corrigée pour 5 colonnes */
+    .table-grid {
+        display: grid;
+        grid-template-columns: 140px 150px 1fr 80px 100px;
+        padding: 12px 20px;
+        align-items: center;
+        font-size: 13px;
+    }
+
     .table-container { 
         background: white; 
         border: 1px solid #f3f4f6; 
         border-radius: 8px; 
         overflow: hidden;
     }
-    .table-grid {
-        display: grid;
-        grid-template-columns: 120px 150px 1fr 100px;
-        padding: 12px 20px;
-        align-items: center;
-        font-size: 13px;
-    }
+
     .table-grid.header {
         background: #f9fafb;
         color: #6b7280;
         font-weight: 600;
         border-bottom: 1px solid #f3f4f6;
+        text-transform: uppercase;
+        font-size: 11px;
     }
+
     .table-grid.row {
         border-bottom: 1px solid #f9fafb;
         color: #374151;
+        transition: background 0.2s;
     }
-    .table-grid.row:hover { background: #fcfcfc; }
+
+    .table-grid.row:hover { background: #f8fafc; }
+
+    .no-data {
+        grid-template-columns: 1fr !important;
+        text-align: center;
+        padding: 40px !important;
+        color: #9ca3af;
+        font-style: italic;
+    }
     
     .badge-success {
         background: #ecfdf5;
@@ -61,5 +82,9 @@
         border-radius: 4px;
         font-size: 11px;
         font-weight: 600;
+    }
+
+    .total-cell strong {
+        color: var(--primary-blue);
     }
 </style>

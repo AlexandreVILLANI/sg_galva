@@ -1,0 +1,94 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Détail Déchargement #{{ fiche.id }}{% endblock %}
+
+{% block body %}
+<div class="form-container">
+    <div class="form-header">
+        <img src="{{ asset('images/sg-galva-logo.png') }}" alt="Logo" class="logo">
+        <div>
+            <h1>Fiche de déchargement #{{ fiche.id }}</h1>
+            <p class="subtitle">Enregistré le {{ fiche.date|date('d/m/Y à H:i') }}</p>
+        </div>
+        <div class="header-right">
+            {# On pointe vers le contrôleur de la réception #}
+            <a href="{{ path('app_reception_home') }}#list-dechargement" class="btn-link">
+                <i class="fas fa-arrow-left"></i> Retour à l'historique
+            </a>
+        </div>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-box">
+            <label>Cariste</label>
+            <p>{{ fiche.cariste.prenom }} {{ fiche.cariste.nom|default('') }}</p>
+        </div>
+        <div class="info-box">
+            <label>Client</label>
+            <p><strong>{{ fiche.client.nom }}</strong></p>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>NOMBRE DE PAQUETS</th>
+                    <th>EMPLACEMENT</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ligne in fiche.lignes %}
+                    <tr>
+                        <td style="text-align: center; padding: 15px;">{{ ligne.nbPaquets }}</td>
+                        <td style="padding: 15px;">{{ ligne.emplacement.nom }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td class="sum-value">Total : {{ fiche.totalPaquets }} paquets</td>
+                    <td class="sum-empty"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    {% if fiche.observations %}
+        <div class="info-box mt-4">
+            <label>Observations</label>
+            <p>{{ fiche.observations|nl2br }}</p>
+        </div>
+    {% endif %}
+
+    <div class="photo-section mt-4">
+        <label>Photos du déchargement</label>
+        <div class="photo-grid">
+            {% for photo in fiche.photos %}
+                <div class="photo-item">
+                    <img src="{{ asset('uploads/fiches/' ~ photo.nomFichier) }}" 
+                         alt="Photo déchargement" 
+                         onclick="window.open(this.src)">
+                </div>
+            {% else %}
+                <p class="no-data">Aucune photo jointe.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    /* On réutilise tes variables */
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+    .info-box { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #eee; }
+    .info-box label { display: block; font-size: 0.8rem; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+    .info-box p { margin: 0; font-size: 1.1rem; color: #333; }
+    
+    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 10px; }
+    .photo-item img { 
+        width: 100%; height: 150px; object-fit: cover; border-radius: 6px; 
+        cursor: pointer; border: 2px solid #eee; transition: 0.2s;
+    }
+    .photo-item img:hover { border-color: var(--primary-blue); transform: scale(1.02); }
+</style>
+{% endblock %}

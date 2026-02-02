@@ -1,0 +1,9 @@
+<td class="row-actions">
+    <button type="button" class="btn-remove-row" title="Supprimer"><i class="fas fa-trash"></i></button>
+</td>
+<td>
+    {{ form_widget(item.nbPaquets, {'attr': {'class': 'table-input input-paquets', 'placeholder': '0', 'min': '0'}}) }}
+</td>
+<td>
+    {{ form_widget(item.emplacement, {'attr': {'class': 'table-input'}}) }}
+</td>

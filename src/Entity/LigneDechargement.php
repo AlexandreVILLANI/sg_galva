@@ -16,8 +16,9 @@ class LigneDechargement
     #[ORM\Column]
     private ?int $nbPaquets = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $emplacement = null;
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Emplacement $emplacement = null;
 
     #[ORM\ManyToOne(inversedBy: 'lignes')]
     #[ORM\JoinColumn(nullable: false)]
@@ -26,8 +27,10 @@ class LigneDechargement
     public function getId(): ?int { return $this->id; }
     public function getNbPaquets(): ?int { return $this->nbPaquets; }
     public function setNbPaquets(int $nbPaquets): self { $this->nbPaquets = $nbPaquets; return $this; }
-    public function getEmplacement(): ?string { return $this->emplacement; }
-    public function setEmplacement(string $emplacement): self { $this->emplacement = $emplacement; return $this; }
+
+    public function getEmplacement(): ?Emplacement { return $this->emplacement; }
+    public function setEmplacement(?Emplacement $emplacement): self { $this->emplacement = $emplacement; return $this; }
+
     public function getFiche(): ?FicheDechargement { return $this->fiche; }
     public function setFiche(?FicheDechargement $fiche): self { $this->fiche = $fiche; return $this; }
 }

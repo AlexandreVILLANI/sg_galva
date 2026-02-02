@@ -8,6 +8,7 @@ use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use App\Entity\Client;
+use App\Entity\Emplacement;
 
 class AppFixtures extends Fixture
 {
@@ -67,6 +68,13 @@ class AppFixtures extends Fixture
         $cariste->setToken('cariste123');
         $cariste->setPassword($this->hasher->hashPassword($cariste, 'cariste'));
         $manager->persist($cariste);
+
+        $zones = ['Zone A1', 'Zone A2', 'Quai Nord', 'Quai Sud', 'Stockage Extérieur'];
+        foreach ($zones as $nomZone) {
+            $emplacement = new Emplacement();
+            $emplacement->setNom($nomZone);
+            $manager->persist($emplacement);
+        }
 
         // 5. Clients (inchangé)
         $nomsClients = ['ArcelorMittal', 'Eiffage', 'Bouygues Construction', 'Vinci'];

@@ -6,6 +6,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Repository\FicheDechargementRepository;
 
 class HomeController extends AbstractController
 {
@@ -61,10 +62,13 @@ class HomeController extends AbstractController
      */
     #[Route('/reception', name: 'app_reception_home')]
     #[IsGranted('ROLE_RECEPTION')]
-    public function receptionIndex(): Response
+    public function receptionIndex(FicheDechargementRepository $ficheRepository): Response
     {
+        $fiches = $ficheRepository->findBy([], ['date' => 'DESC']);
+
         return $this->render('home/reception.html.twig', [
             'controller_name' => 'Tableau de bord Réception',
+            'fiches' => $fiches, 
         ]);
     }
 
