@@ -3,11 +3,14 @@
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Repository\FicheDechargementRepository;
 use Symfony\Component\HttpFoundation\Request;
+
+use App\Repository\FicheDechargementRepository;
+use App\Repository\BonDeCommandeRepository; 
 
 class HomeController extends AbstractController
 {
@@ -63,21 +66,27 @@ class HomeController extends AbstractController
      */
     #[Route('/reception', name: 'app_reception_home')]
     #[IsGranted('ROLE_RECEPTION')]
-    public function receptionIndex(Request $request, FicheDechargementRepository $ficheRepository): Response
-    {
+    public function receptionIndex(
+        Request $request, 
+        FicheDechargementRepository $ficheRepository,
+        BonDeCommandeRepository $bcRepository 
+    ): Response {
         $client = $request->query->get('client');
         $cariste = $request->query->get('cariste');
         $date = $request->query->get('date');
-        $section = $request->query->get('section'); // NOUVEAU : récupère le paramètre section
+        $section = $request->query->get('section');
 
         $fiches = $ficheRepository->findWithFilters($client, $cariste, $date);
 
+        $bons = $bcRepository->findBy([], ['date' => 'DESC'], 10);
+
         return $this->render('home/reception.html.twig', [
             'fiches' => $fiches,
+            'bons' => $bons,
             'search_client' => $client,
             'search_cariste' => $cariste,
             'search_date' => $date,
-            'active_section' => $section, // NOUVEAU : passe la section active à la vue
+            'active_section' => $section, 
         ]);
     }
 

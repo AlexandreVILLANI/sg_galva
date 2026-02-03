@@ -5,41 +5,78 @@
 
     <div class="table-container">
         <div class="table-grid-scans header">
-            <span>Référence BC</span>
+            <span>REFI (Interne)</span>
             <span>Date Scan</span>
-            <span>Destination</span>
+            <span>Client</span>
+            <span>Forfait / Dest.</span>
         </div>
 
-        <div class="table-grid-scans row">
-            <span class="ref-cell">BC-2026-001</span>
-            <span class="date-cell">29/01 14:05</span>
-            <span class="dest-cell">Atelier A</span>
-        </div>
-
-        <div class="table-grid-scans row">
-            <span class="ref-cell">BC-2026-002</span>
-            <span class="date-cell">29/01 11:20</span>
-            <span class="dest-cell">Stockage Nord</span>
-        </div>
+        {% for bon in bons %}
+            <div class="table-grid-scans row clickable-row" onclick="window.location='{{ path('app_bon_commande_show', {'id': bon.id}) }}'">
+                <span class="ref-cell">{{ bon.refi }}</span>
+                <span class="date-cell">{{ bon.date|date('d/m H:i') }}</span>
+                <span class="client-cell" style="font-weight: 500;">{{ bon.client.nom }}</span>
+                <span class="dest-cell">
+                    <span class="badge-forfait">{{ bon.forfait|default('Standard') }}</span>
+                </span>
+            </div>
+        {% else %}
+            <div class="table-grid-scans row no-data">
+                <span style="grid-column: span 4; text-align: center; padding: 20px; color: #9ca3af;">
+                    Aucun bon de commande scanné pour le moment.
+                </span>
+            </div>
+        {% endfor %}
     </div>
 </section>
 
 <style>
+    /* On ajuste la grille pour 4 colonnes maintenant */
     .table-grid-scans {
         display: grid;
-        grid-template-columns: 150px 150px 1fr;
+        grid-template-columns: 140px 120px 1fr 150px;
         padding: 12px 20px;
+        align-items: center;
         font-size: 13px;
     }
+
     .table-grid-scans.header {
         background: #f9fafb;
         color: #6b7280;
         font-weight: 600;
         border-bottom: 1px solid #f3f4f6;
+        text-transform: uppercase;
+        font-size: 11px;
     }
+
     .table-grid-scans.row {
         border-bottom: 1px solid #f9fafb;
         color: #374151;
+        transition: background 0.2s;
+        cursor: pointer;
     }
-    .ref-cell { font-family: monospace; font-weight: 600; color: #2e46a6; }
-</style> 
+
+    .table-grid-scans.row:hover {
+        background-color: #f8fafc;
+    }
+
+    .ref-cell { 
+        font-family: 'Monaco', 'Consolas', monospace; 
+        font-weight: 600; 
+        color: #2e46a6; 
+        background: #f0f4ff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        width: fit-content;
+    }
+
+    .badge-forfait {
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        border: 1px solid #e5e7eb;
+    }
+</style>

@@ -81,8 +81,16 @@ class AppFixtures extends Fixture
         foreach ($nomsClients as $nom) {
             $client = new Client();
             $client->setNom($nom);
+            $client->setAdresseFacturation('12 Rue de l\'Acier');
+            $client->setAdresseLivraison('12 Rue de l\'Acier');
+            $client->setCodePostal('57000');
+            $client->setVille('Metz');
+            $client->setTelephone('03 87 00 00 00');
+            $client->setFax('418 643-3210');
             $manager->persist($client);
         }
+
+        
 
         $manager->flush();
     }

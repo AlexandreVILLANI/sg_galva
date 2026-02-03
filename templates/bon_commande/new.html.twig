@@ -1,0 +1,177 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Commande Provisoire - {{ fiche.client.nom }}{% endblock %}
+
+{% block body %}
+<div class="bc-wrapper">
+    {{ form_start(form, {'attr': {'class': 'bc-paper'}}) }}
+        
+        {# --- ENTÊTE --- #}
+        <div class="bc-header">
+            <div class="bc-logo-container">
+                <img src="{{ asset('images/sg-galva-logo.png') }}" alt="Logo" class="bc-logo">
+            </div>
+            <div class="bc-title-container">
+                <h1>(COMMANDE PROVISOIRE)</h1>
+            </div>
+            <div class="bc-refi-container">
+                <label>REFI -</label>
+                {{ form_widget(form.refi, {'attr': {'class': 'refi-input-ghost'}}) }}
+            </div>
+        </div>
+
+        {# --- GRILLE HAUTE : TRAITEMENT & FORFAIT --- #}
+        <div class="bc-top-grid">
+            <div class="bc-box treatment-box">
+                <p class="box-label">TRAITEMENT :</p>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="galva"> (Galvanisation)</label>
+                    <label><input type="checkbox" name="cata" checked> (Cataphorèse)</label>
+                </div>
+            </div>
+            <div class="bc-box summary-box">
+                <div class="summary-line">
+                    <span>Forfait :</span> 
+                    <strong>{{ form_widget(form.forfait) }}</strong>
+                </div>
+                <div class="summary-line">
+                    <span>Nb PAQ :</span> 
+                    <strong>{{ fiche.totalPaquets }}</strong> 
+                </div>
+                <div class="summary-line"><span>Stockage :</span> <strong>(AV)</strong></div>
+                <div class="summary-line"><span>GALVA :</span> <strong>(GB)</strong></div>
+            </div>
+        </div>
+
+        {# --- GRILLE MILIEU : CLIENT & CHAUFFEUR --- #}
+        <div class="bc-middle-grid">
+            <div class="bc-box client-box">
+                <div class="field">
+                    <span class="label">SOCIETE :</span> 
+                    <span class="val">{{ fiche.client.nom }}</span>
+                </div>
+                <div class="field">
+                    <span class="label">Adresse :</span> 
+                    <span class="val">{{ fiche.client.adresseFacturation|default(fiche.client.adresseLivraison) }}</span>
+                </div>
+                <div class="field">
+                    <span class="label">Date :</span> 
+                    <span class="val">{{ "now"|date('d/m/Y') }}</span> 
+                </div>
+            </div>
+            <div class="bc-box driver-box">
+                <div class="field">
+                    <span class="label">Nom du chauffeur :</span> 
+                    <input type="text" placeholder="(DOMEZEL LEO)" class="ghost-input">
+                </div>
+                <div class="field">
+                    <span class="label">Tél :</span> 
+                    <span class="val">{{ fiche.client.telephone|default('(Non renseigné)') }}</span>
+                </div>
+                <div class="field">
+                    <span class="label">Fax :</span> 
+                    <span class="val">{{ fiche.client.fax|default('(Non renseigné)') }}</span>
+                </div>
+            </div>
+        </div>
+
+        {# --- ZONE DESCRIPTION --- #}
+        <div class="bc-box description-box">
+            <div class="desc-main">
+                <p><strong>DÉTAILS DU DÉCHARGEMENT</strong></p>
+                
+                <ul class="bc-tech-list">
+                    {% for ligne in fiche.lignes %}
+                        <li>
+                            <strong>{{ ligne.nbPaquets }}</strong> Paquet{{ ligne.nbPaquets > 1 ? 's' : '' }} 
+                            — Situé en : <strong>{{ ligne.emplacement.nom }}</strong>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <div class="mt-4">
+                    <p>TOTAL : {{ fiche.totalPaquets }}</p>
+                </div>
+            </div>
+
+            <div class="desc-stamp">
+                <p class="stamp-name">(SOPRANZI GALVANISATION)</p>
+                <p class="stamp-sub">(Marchandise en Transit)</p>
+                <p class="stamp-date">{{ "now"|date('d M Y')|upper }}</p>
+                <p class="stamp-extra">(Acceptée sous Réserve)<br>(Pour le Compte de :)</p>
+                <p class="stamp-code">(/CAT)</p>
+            </div>
+        </div>
+
+        {# --- EMPLACEMENT --- #}
+        <div class="bc-box emplacement-box">
+            <span class="label">Emplacement :</span>
+            <strong>
+                {% for ligne in fiche.lignes %}
+                    {{ ligne.emplacement.nom }}{% if not loop.last %} // {% endif %}
+                {% endfor %}
+            </strong>
+        </div>
+
+        {# --- ACTIONS --- #}
+        <div class="bc-actions no-print">
+            <a href="{{ path('app_dechargement_show', {'id': fiche.id}) }}" class="btn-cancel">Annuler</a>
+            <button type="submit" class="btn-confirm">VALIDER LE BON DE COMMANDE</button>
+        </div>
+
+    {{ form_end(form) }}
+</div>
+
+<style>
+    .bc-tech-list {
+        list-style: none;
+        padding: 0;
+        margin: 10px 0;
+        font-family: monospace; /* Pour un look plus "technique/logistique" */
+        font-size: 13px;
+    }
+    .bc-tech-list li {
+        padding: 5px 0;
+        border-bottom: 1px dashed #eee;
+    }
+    .mt-3 { margin-top: 15px; }
+    .bc-wrapper { background: #f0f0f0; min-height: 100vh; padding: 40px 20px; }
+    .bc-paper { 
+        max-width: 900px; margin: 0 auto; background: white; padding: 40px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1); font-family: Arial, sans-serif;
+        color: #1a1a1a;
+    }
+
+    /* Header */
+    .bc-header { display: grid; grid-template-columns: 1fr 2fr 1.5fr; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+    .bc-logo { max-width: 120px; }
+    .bc-title-container h1 { font-size: 22px; font-weight: 800; text-align: center; margin: 0; }
+    .bc-refi-container { text-align: right; font-size: 20px; font-weight: bold; }
+    .bc-refi-container input { border: none; font-weight: bold; font-size: 20px; width: 140px; text-align: right; }
+
+    /* Grilles */
+    .bc-top-grid, .bc-middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 20px; }
+    .bc-box { border: 1px solid #ddd; padding: 15px; }
+
+    /* Traitement / Forfait */
+    .checkbox-group { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+    .summary-line { display: flex; justify-content: space-between; border-bottom: 1px solid #f0f0f0; padding: 3px 0; font-size: 13px; }
+
+    /* Description Area */
+    .description-box { min-height: 250px; display: flex; justify-content: space-between; }
+    .desc-stamp { text-align: right; align-self: flex-end; font-size: 12px; }
+    .stamp-name { font-weight: bold; margin-bottom: 2px; }
+    .stamp-date { font-weight: bold; font-size: 14px; margin: 10px 0; }
+
+    /* Inputs & Labels */
+    .label { font-weight: bold; font-size: 12px; text-transform: uppercase; margin-right: 5px; }
+    .field { margin-bottom: 15px; }
+    .ghost-input { border: none; border-bottom: 1px dashed #ccc; outline: none; width: 150px; }
+
+    /* Buttons */
+    .bc-actions { display: flex; gap: 20px; margin-top: 30px; }
+    .btn-cancel { flex: 1; background: #e06e54; color: white; padding: 15px; text-align: center; border-radius: 5px; text-decoration: none; font-weight: bold; }
+    .btn-confirm { flex: 2; background: #2e46a6; color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; }
+
+    @media print { .no-print { display: none; } .bc-wrapper { padding: 0; background: white; } .bc-paper { box-shadow: none; border: none; } }
+</style>
+{% endblock %}
