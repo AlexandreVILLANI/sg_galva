@@ -2,6 +2,29 @@
     <div class="section-header">
         <h2 class="section-title">Historique des déchargements</h2>
     </div>
+
+    <div class="filter-bar">
+        <form action="{{ path('app_reception_home') }}" method="get" class="filter-form">
+            <input type="hidden" name="section" value="list-dechargement">
+
+            <div class="filter-group">
+                <i class="fas fa-search"></i>
+                <input type="text" name="client" placeholder="Client..." value="{{ search_client|default('') }}">
+            </div>
+            <div class="filter-group">
+                <i class="fas fa-user"></i>
+                <input type="text" name="cariste" placeholder="Cariste..." value="{{ search_cariste|default('') }}">
+            </div>
+            <div class="filter-group">
+                <i class="fas fa-calendar-alt"></i>
+                <input type="date" name="date" value="{{ search_date|default('') }}">
+            </div>
+            <button type="submit" class="btn-filter">Filtrer</button>
+            <a href="{{ path('app_reception_home', {'section': 'list-dechargement'}) }}" class="btn-reset" title="Réinitialiser tous les filtres">
+                <i class="fas fa-undo-alt"></i>
+            </a>
+        </form>
+    </div>
     
     <div class="table-container">
         <div class="table-grid header">
@@ -15,19 +38,22 @@
         {% for fiche in fiches %}
            <div class="table-grid row clickable-row" onclick="window.location='{{ path('app_dechargement_show', {'id': fiche.id}) }}'">
                 <span class="date-cell">{{ fiche.date|date('d/m/Y H:i') }}</span>
-                <span class="user-cell">{{ fiche.cariste.prenom }}</span>
-                <span class="client-cell">{{ fiche.client.nom }}</span>
+                <span class="user-cell">{{ fiche.cariste.prenom|default('Inconnu') }}</span>
+                <span class="client-cell">
+                    {% if fiche.client.nom == 'À définir' %}
+                        <span class="badge badge-at-definir">
+                            <i class="fas fa-exclamation-circle"></i> À définir
+                        </span>
+                    {% else %}
+                        {{ fiche.client.nom }}
+                    {% endif %}
+                </span>
                 <span class="total-cell"><strong>{{ fiche.totalPaquets }}</strong></span>
                 <span><span class="badge badge-success">Validé</span></span>
             </div>
-
-            <style>
-                .clickable-row { cursor: pointer; }
-                .clickable-row:hover { background-color: #f0f4ff !important; }
-            </style>
         {% else %}
             <div class="table-grid row no-data">
-                <span>Aucun déchargement enregistré.</span>
+                <span>Aucun déchargement trouvé.</span>
             </div>
         {% endfor %}
     </div>
@@ -42,6 +68,9 @@
         align-items: center;
         font-size: 13px;
     }
+
+    .clickable-row { cursor: pointer; transition: background 0.2s; }
+    .clickable-row:hover { background-color: #f0f4ff !important; }
 
     .table-container { 
         background: white; 
@@ -62,10 +91,7 @@
     .table-grid.row {
         border-bottom: 1px solid #f9fafb;
         color: #374151;
-        transition: background 0.2s;
     }
-
-    .table-grid.row:hover { background: #f8fafc; }
 
     .no-data {
         grid-template-columns: 1fr !important;
@@ -84,7 +110,87 @@
         font-weight: 600;
     }
 
-    .total-cell strong {
-        color: var(--primary-blue);
+    .total-cell strong { color: #2e46a6; }
+
+    /* Filter Bar Styles */
+    .filter-bar {
+        background: white;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+    }
+    .filter-form {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+    .filter-group {
+        display: flex;
+        align-items: center;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        padding: 8px 12px;
+        border-radius: 6px;
+        flex: 1;
+    }
+    .filter-group i { color: #9ca3af; margin-right: 8px; }
+    .filter-group input {
+        border: none;
+        background: transparent;
+        font-size: 13px;
+        outline: none;
+        width: 100%;
+    }
+    .btn-filter {
+        background: #2e46a6;
+        color: white;
+        border: none;
+        padding: 9px 18px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .btn-reset {
+        color: #6b7280;
+        background: #f3f4f6; /* Fond gris clair */
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid #e5e7eb;
+    }
+
+    .btn-reset:hover {
+        background: #e5e7eb;
+        color: #2e46a6; /* Devient bleu SG au survol */
+        border-color: #2e46a6;
+        transform: rotate(180px); /* Petit effet de rotation sympa */
+    }
+
+    .btn-reset i {
+        font-size: 14px;
+    }
+
+    .badge-at-definir {
+        background: #fff7ed; /* Orange très clair */
+        color: #c2410c; /* Orange foncé */
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        border: 1px solid #ffedd5;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* Optionnel : petite animation pour attirer l'oeil sur les dossiers incomplets */
+    .badge-at-definir i {
+        color: #ea580c;
     }
 </style>

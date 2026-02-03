@@ -13,7 +13,8 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\All;
 use Symfony\Component\Validator\Constraints\File;
-use Symfony\Component\Validator\Constraints\Count; // <-- Ajouté pour la limite de photos
+use Symfony\Component\Validator\Constraints\Count; 
+use Doctrine\ORM\EntityRepository;
 
 class FicheDechargementType extends AbstractType
 {
@@ -23,7 +24,13 @@ class FicheDechargementType extends AbstractType
             ->add('client', EntityType::class, [
                 'class' => Client::class,
                 'choice_label' => 'nom',
-                'placeholder' => 'Choisir un client',
+                'placeholder' => '--- Choisir un client ---',
+                'query_builder' => function (EntityRepository $er) {
+                    return $er->createQueryBuilder('c')
+                        ->addSelect("(CASE WHEN c.nom = 'À définir' THEN 0 ELSE 1 END) AS HIDDEN sort_order")
+                        ->orderBy('sort_order', 'ASC')
+                        ->addOrderBy('c.nom', 'ASC');
+                },
                 'attr' => ['class' => 'form-select']
             ])
             ->add('observations', TextareaType::class, [
@@ -32,10 +39,10 @@ class FicheDechargementType extends AbstractType
             ])
             /* C'est ici qu'on gère le tableau dynamique de paquets */
             ->add('lignes', CollectionType::class, [
-                'entry_type' => LigneDechargementType::class, // <-- Vérifie bien que cet import est là haut !
+                'entry_type' => LigneDechargementType::class, 
                 'allow_add' => true,
                 'allow_delete' => true,
-                'by_reference' => false, // Indispensable pour que addLigne() soit appelé
+                'by_reference' => false, 
                 'prototype' => true,
             ])
             /* Gestion des photos (multiples) */

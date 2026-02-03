@@ -77,7 +77,7 @@ class AppFixtures extends Fixture
         }
 
         // 5. Clients (inchangé)
-        $nomsClients = ['ArcelorMittal', 'Eiffage', 'Bouygues Construction', 'Vinci'];
+        $nomsClients = ['ArcelorMittal', 'Eiffage', 'Bouygues Construction', 'Vinci','À définir'];
         foreach ($nomsClients as $nom) {
             $client = new Client();
             $client->setNom($nom);

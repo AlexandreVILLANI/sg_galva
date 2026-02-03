@@ -45,6 +45,53 @@
     </main>
 </div>
 
+<script>
+    function initReceptionDashboard() {
+        const navItems = document.querySelectorAll('.nav-item');
+        const emptyState = document.getElementById('empty-state');
+        const sections = document.querySelectorAll('.content-section');
+
+        function showSection(id) {            
+            const target = document.getElementById(id);
+            const nav = document.querySelector(`[data-target="${id}"]`);
+
+            if (target && nav) {
+                if (emptyState) emptyState.style.display = 'none';
+                sections.forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
+                navItems.forEach(i => i.classList.remove('active'));
+
+                target.style.display = 'block';
+                target.classList.add('active');
+                nav.classList.add('active');
+            }
+        }
+
+        navItems.forEach(item => {
+            item.onclick = function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('data-target');
+                showSection(targetId);
+            };
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const sectionParam = urlParams.get('section');
+        const hasFilters = urlParams.has('client') || urlParams.has('cariste') || urlParams.has('date');
+        const hash = window.location.hash.replace('#', '');
+
+        if (sectionParam) {
+            showSection(sectionParam);
+        } else if (hasFilters) {
+            showSection('list-dechargement');
+        } else if (hash) {
+            showSection(hash);
+        }
+    }
+
+    document.addEventListener('turbo:load', initReceptionDashboard);
+</script>
+
+
 <style>
     :root {
         --sidebar-width: 260px;
@@ -138,45 +185,4 @@
     .content-section { display: none; padding: 20px; }
     .content-section.active { display: block; }
 </style>
-
-<script>
-    function initReceptionDashboard() {
-        const navItems = document.querySelectorAll('.nav-item');
-        const emptyState = document.getElementById('empty-state');
-        const sections = document.querySelectorAll('.content-section');
-
-        console.log("Initialisation du dashboard :", navItems.length, "éléments trouvés");
-
-        navItems.forEach(item => {
-            const newItem = item.cloneNode(true);
-            item.parentNode.replaceChild(newItem, item);
-
-            newItem.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                navItems.forEach(i => i.classList.remove('active')); 
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-
-                if(emptyState) emptyState.style.display = 'none';
-
-                document.querySelectorAll('.content-section').forEach(s => {
-                    s.classList.remove('active');
-                    s.style.display = 'none';
-                });
-
-                const targetId = this.getAttribute('data-target');
-                const targetSection = document.getElementById(targetId);
-                
-                if (targetSection) {
-                    targetSection.classList.add('active');
-                    targetSection.style.display = 'block';
-                }
-            });
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', initReceptionDashboard);
-    document.addEventListener('turbo:load', initReceptionDashboard);
-</script>
 {% endblock %}
