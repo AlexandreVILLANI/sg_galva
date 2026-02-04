@@ -20,13 +20,13 @@
             </div>
         {% endfor %}
     {% endfor %}
+
     <div class="form-header">
         <img src="{{ asset('images/sg-galva-logo.png') }}" alt="Logo" class="logo">
         <h1>Fiche de déchargement</h1>
         <div class="header-right">
             <div class="date-input">
                 <label>Date</label>
-                {# On affiche la date de l'entité (DateTimeImmutable par défaut) #}
                 <input type="text" value="{{ form.vars.value.date|date('d/m/Y') }}" readonly class="form-control-static">
             </div>
         </div>
@@ -39,7 +39,6 @@
             <div class="form-group">
                 <label>Nom du cariste</label>
                 <input type="text" class="form-control" value="{{ app.user.prenom|default('Utilisateur') }}" readonly>
-                {# Champ caché pour l'envoi (si nécessaire, mais déjà géré par le Controller) #}
             </div>
             
             <div class="form-group">
@@ -63,14 +62,14 @@
                 <thead>
                     <tr>
                         <th style="width: 50px;">Action</th>
-                        <th>NOMBRE DE PAQUETS</th>
+                        <th style="width: 150px;">NOMBRE DE PAQUETS</th>
+                        <th>PRODUIT / DESCRIPTION</th> {# --- Nouvelle colonne --- #}
                         <th>EMPLACEMENT</th>
                     </tr>
                 </thead>
-                {# L'ID table-body servira au JavaScript pour injecter les lignes #}
-                {# On injecte le prototype Symfony dans data-prototype #}
                 <tbody id="table-body" 
-                    data-prototype="{% apply escape('html_attr') %}{% include 'formulaire/_row_prototype.html.twig' with {'item': form.lignes.vars.prototype} %}{% endapply %}"                       data-index="{{ form.lignes|length }}">
+                    data-prototype="{% apply escape('html_attr') %}{% include 'formulaire/_row_prototype.html.twig' with {'item': form.lignes.vars.prototype} %}{% endapply %}"                       
+                    data-index="{{ form.lignes|length }}">
                     
                     {% for ligne in form.lignes %}
                         {% include 'formulaire/_row_prototype.html.twig' with {'item': ligne} %}
@@ -84,7 +83,8 @@
                         <td class="sum-value">
                             Total : <span id="total-paquets">0</span>
                         </td>
-                        <td class="sum-empty"></td>
+                        <td class="sum-empty"></td> {# Pour la colonne description #}
+                        <td class="sum-empty"></td> {# Pour la colonne emplacement #}
                     </tr>
                 </tfoot>
             </table>
@@ -98,7 +98,6 @@
         <div class="form-group">
             <label>Joindre photos</label>
             <div class="upload-zone" id="drop-zone" onclick="document.getElementById('{{ form.imageFiles.vars.id }}').click()">
-                {# On rend le widget invisible mais fonctionnel #}
                 {{ form_widget(form.imageFiles, {'attr': {'hidden': 'hidden'}}) }}
                 <i class="fas fa-paperclip"></i>
                 <p>Glisser-déposer ou <span class="browse">Parcourir</span></p>
@@ -109,8 +108,6 @@
         <div class="form-actions">
             <button type="submit" class="btn-submit">Valider le déchargement</button>
         </div>
-
-        {# Rendu des champs cachés et CSRF token #}
         {{ form_rest(form) }}
     {{ form_end(form) }}
 </div>

@@ -5,5 +5,8 @@
     {{ form_widget(item.nbPaquets, {'attr': {'class': 'table-input input-paquets', 'placeholder': '0', 'min': '0'}}) }}
 </td>
 <td>
+    {{ form_widget(item.description, {'attr': {'class': 'table-input', 'placeholder': 'Désignation produit...'}}) }}
+</td>
+<td>
     {{ form_widget(item.emplacement, {'attr': {'class': 'table-input'}}) }}
 </td>

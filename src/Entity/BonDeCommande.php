@@ -5,6 +5,8 @@ namespace App\Entity;
 use App\Repository\BonDeCommandeRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: BonDeCommandeRepository::class)]
 class BonDeCommande
@@ -31,9 +33,13 @@ class BonDeCommande
     #[ORM\JoinColumn(nullable: false)]
     private ?FicheDechargement $fiche = null;
 
+    #[ORM\OneToMany(mappedBy: 'bonDeCommande', targetEntity: PhotoBonCommande::class, cascade: ['persist', 'remove'])]
+    private Collection $photos;
+
     public function __construct()
     {
         $this->date = new \DateTime();
+        $this->photos = new ArrayCollection(); 
     }
 
     public function getId(): ?int
@@ -93,6 +99,18 @@ class BonDeCommande
     public function setFiche(?FicheDechargement $fiche): static
     {
         $this->fiche = $fiche;
+        return $this;
+    }
+
+    /** @return Collection<int, PhotoBonCommande> */
+    public function getPhotos(): Collection { return $this->photos; }
+
+    public function addPhoto(PhotoBonCommande $photo): static
+    {
+        if (!$this->photos->contains($photo)) {
+            $this->photos->add($photo);
+            $photo->setBonDeCommande($this);
+        }
         return $this;
     }
 }

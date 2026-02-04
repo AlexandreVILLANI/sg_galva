@@ -34,14 +34,19 @@
         <table class="table-custom">
             <thead>
                 <tr>
-                    <th>NOMBRE DE PAQUETS</th>
-                    <th>EMPLACEMENT</th>
+                    <th style="width: 20%;">NOMBRE DE PAQUETS</th>
+                    <th style="width: 50%;">PRODUIT / DESCRIPTION</th> {# --- Nouvelle Colonne --- #}
+                    <th style="width: 30%;">EMPLACEMENT</th>
                 </tr>
             </thead>
             <tbody>
                 {% for ligne in fiche.lignes %}
                     <tr>
                         <td style="text-align: center; padding: 15px;">{{ ligne.nbPaquets }}</td>
+                        {# --- Affichage de la description --- #}
+                        <td style="padding: 15px; color: #555; font-style: italic;">
+                            {{ ligne.description|default('Non précisé') }}
+                        </td>
                         <td style="padding: 15px;">{{ ligne.emplacement.nom }}</td>
                     </tr>
                 {% endfor %}
@@ -49,7 +54,8 @@
             <tfoot>
                 <tr>
                     <td class="sum-value">Total : {{ fiche.totalPaquets }} paquets</td>
-                    <td class="sum-empty"></td>
+                    <td class="sum-empty"></td> {# Vide pour la description #}
+                    <td class="sum-empty"></td> {# Vide pour l'emplacement #}
                 </tr>
             </tfoot>
         </table>

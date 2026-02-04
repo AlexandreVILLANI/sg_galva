@@ -6,6 +6,7 @@ use App\Entity\BonDeCommande;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\FileType; // <--- AJOUTE CETTE LIGNE
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -16,7 +17,7 @@ class BonDeCommandeType extends AbstractType
         $builder
             ->add('refi', TextType::class, [
                 'label' => 'Référence Interne (REFI)',
-                'attr' => ['class' => 'form-control']
+                'attr' => ['class' => 'form-control', 'readonly' => 'readonly']
             ])
             ->add('forfait', ChoiceType::class, [
                 'label' => 'Type de Forfait',
@@ -27,6 +28,14 @@ class BonDeCommandeType extends AbstractType
                     'Montage' => 'Montage',
                 ],
                 'attr' => ['class' => 'form-control']
+            ])
+            // --- Le champ pour les photos spécifiques au Bon ---
+            ->add('imageFiles', FileType::class, [
+                'label' => 'Photos complémentaires',
+                'multiple' => true,
+                'mapped' => false, // Important : ce champ n'est pas une colonne SQL du BC
+                'required' => false,
+                'attr' => ['accept' => 'image/*']
             ]);
     }
 

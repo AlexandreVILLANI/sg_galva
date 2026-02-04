@@ -6,9 +6,6 @@ use App\Entity\BonDeCommande;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
-/**
- * @extends ServiceEntityRepository<BonDeCommande>
- */
 class BonDeCommandeRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -16,5 +13,18 @@ class BonDeCommandeRepository extends ServiceEntityRepository
         parent::__construct($registry, BonDeCommande::class);
     }
 
-    //TODO
+    /**
+     * Récupère le REFI le plus élevé
+     */
+    public function getLastRefi(): ?string
+    {
+        $result = $this->createQueryBuilder('b')
+            ->select('b.refi')
+            ->orderBy('b.id', 'DESC') 
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $result ? $result['refi'] : null;
     }
+}

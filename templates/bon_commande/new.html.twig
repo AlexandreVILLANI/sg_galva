@@ -1,10 +1,11 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Commande Provisoire - {{ fiche.client.nom }}{% endblock %}
+{% block title %}Bon de commande - {{ fiche.client.nom }}{% endblock %}
 
 {% block body %}
 <div class="bc-wrapper">
     {{ form_start(form, {'attr': {'class': 'bc-paper'}}) }}
+    
         
         {# --- ENTÊTE --- #}
         <div class="bc-header">
@@ -12,11 +13,12 @@
                 <img src="{{ asset('images/sg-galva-logo.png') }}" alt="Logo" class="bc-logo">
             </div>
             <div class="bc-title-container">
-                <h1>(COMMANDE PROVISOIRE)</h1>
+                <h1>BON DE COMMANDE</h1>
             </div>
             <div class="bc-refi-container">
                 <label>REFI -</label>
-                {{ form_widget(form.refi, {'attr': {'class': 'refi-input-ghost'}}) }}
+                {# C'est cette ligne qui affiche le REFI généré par le contrôleur #}
+                {{ form_widget(form.refi, {'attr': {'class': 'refi-input-ghost', 'readonly': 'readonly'}}) }}
             </div>
         </div>
 
@@ -24,15 +26,17 @@
         <div class="bc-top-grid">
             <div class="bc-box treatment-box">
                 <p class="box-label">TRAITEMENT :</p>
+                {# Ces cases sont "en dur" (visuelles), elles ne s'enregistrent pas #}
                 <div class="checkbox-group">
-                    <label><input type="checkbox" name="galva"> (Galvanisation)</label>
-                    <label><input type="checkbox" name="cata" checked> (Cataphorèse)</label>
+                    <label><input type="checkbox"> (Galvanisation)</label>
+                    <label><input type="checkbox" checked> (Cataphorèse)</label>
                 </div>
             </div>
             <div class="bc-box summary-box">
                 <div class="summary-line">
                     <span>Forfait :</span> 
-                    <strong>{{ form_widget(form.forfait) }}</strong>
+                    {# On utilise le widget du formulaire ici #}
+                    <strong>{{ form_widget(form.forfait) }}</strong> 
                 </div>
                 <div class="summary-line">
                     <span>Nb PAQ :</span> 
@@ -84,6 +88,8 @@
                     {% for ligne in fiche.lignes %}
                         <li>
                             <strong>{{ ligne.nbPaquets }}</strong> Paquet{{ ligne.nbPaquets > 1 ? 's' : '' }} 
+                            {# On ajoute la description ici #}
+                            de <strong>{{ ligne.description|default('(Produit non précisé)') }}</strong>
                             — Situé en : <strong>{{ ligne.emplacement.nom }}</strong>
                         </li>
                     {% endfor %}
@@ -91,14 +97,6 @@
                 <div class="mt-4">
                     <p>TOTAL : {{ fiche.totalPaquets }}</p>
                 </div>
-            </div>
-
-            <div class="desc-stamp">
-                <p class="stamp-name">(SOPRANZI GALVANISATION)</p>
-                <p class="stamp-sub">(Marchandise en Transit)</p>
-                <p class="stamp-date">{{ "now"|date('d M Y')|upper }}</p>
-                <p class="stamp-extra">(Acceptée sous Réserve)<br>(Pour le Compte de :)</p>
-                <p class="stamp-code">(/CAT)</p>
             </div>
         </div>
 
@@ -111,15 +109,142 @@
                 {% endfor %}
             </strong>
         </div>
+        {# --- SECTION PHOTOS --- #}
+        <div class="photo-section mt-4">
+            {# 1. ARCHIVE DÉCHARGEMENT (Lecture seule) #}
+            <div class="bc-box mb-4">
+                <label class="label">Archive Déchargement (Photos Fiche #{{ fiche.id }})</label>
+                <div class="photo-grid">
+                    {% for photo in fiche.photos %}
+                        <div class="photo-item">
+                            <img src="{{ asset('uploads/fiches/' ~ photo.nomFichier) }}" 
+                                alt="Photo déchargement" 
+                                onclick="window.open(this.src)"
+                                title="Cliquez pour agrandir">
+                        </div>
+                    {% else %}
+                        <p class="no-data">Aucune photo jointe au déchargement.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <hr class="no-print">
+
+            {# 2. PHOTOS DU BON DE COMMANDE (Ajout) #}
+            <div class="bc-box photos-container">
+                <label class="label">Photos complémentaires (Ce Bon)</label>
+                
+                <div class="form-group mt-2">
+                    {# Zone de dépôt #}
+                    <div class="upload-zone" id="drop-zone" onclick="document.getElementById('{{ form.imageFiles.vars.id }}').click()">
+                        {{ form_widget(form.imageFiles, {'attr': {'hidden': 'hidden'}}) }}
+                        <i class="fas fa-paperclip"></i>
+                        <p>Glisser-déposer ou <span class="browse">Parcourir</span></p>
+                    </div>
+
+                    {# Conteneur des miniatures avec bouton supprimer #}
+                    <div id="file-preview" class="photo-grid mt-3">
+                        </div>
+                </div>
+            </div>
+        </div>
 
         {# --- ACTIONS --- #}
         <div class="bc-actions no-print">
-            <a href="{{ path('app_dechargement_show', {'id': fiche.id}) }}" class="btn-cancel">Annuler</a>
-            <button type="submit" class="btn-confirm">VALIDER LE BON DE COMMANDE</button>
-        </div>
+            {# Lien de retour à l'accueil #}
+            <a href="{{ path('app_reception_home') }}" class="btn-cancel">
+                <i class="fas fa-arrow-left"></i> Annuler
+            </a>
 
+            {# Bouton de soumission pour enregistrer en BDD #}
+            <button type="submit" class="btn-confirm">
+                <i class="fas fa-save"></i> SAUVEGARDER LE BON
+            </button>
+        </div>
+        {{ form_rest(form) }}
     {{ form_end(form) }}
 </div>
+
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('{{ form.imageFiles.vars.id }}');
+    const preview = document.getElementById('file-preview');
+    
+    // Objet pour stocker les fichiers réellement sélectionnés
+    let dataTransfer = new DataTransfer();
+
+    // Gestion du clic et du changement d'input
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    // Gestion du Drag & Drop
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+        Array.from(files).forEach(file => {
+            // Ajouter le fichier à notre collection
+            dataTransfer.items.add(file);
+            
+            // Création de la miniature
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const container = document.createElement('div');
+                container.className = 'photo-item';
+                
+                container.innerHTML = `
+                    <img src="${event.target.result}">
+                    <button type="button" class="btn-remove-photo" data-name="${file.name}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                preview.appendChild(container);
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        // Mettre à jour l'input réel avec la nouvelle liste de fichiers
+        fileInput.files = dataTransfer.files;
+    }
+
+    // Gestion de la suppression
+    preview.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-remove-photo');
+        if (!btn) return;
+
+        const fileName = btn.getAttribute('data-name');
+        const newDataTransfer = new DataTransfer();
+
+        // On reconstruit la liste de fichiers sans celui supprimé
+        Array.from(dataTransfer.files).forEach(file => {
+            if (file.name !== fileName) newDataTransfer.items.add(file);
+        });
+
+        dataTransfer = newDataTransfer;
+        fileInput.files = dataTransfer.files; // Update input
+        btn.parentElement.remove(); // Remove preview
+    });
+document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+    const preview = document.getElementById('preview-new-photos');
+    preview.innerHTML = ''; // On vide la prévisualisation actuelle
+    
+    Array.from(this.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const div = document.createElement('div');
+            div.className = 'photo-item';
+            div.innerHTML = `<img src="${event.target.result}" alt="Aperçu">`;
+            preview.appendChild(div);
+        }
+        reader.readAsDataURL(file);
+    });
+});
+</script>
 
 <style>
     .bc-tech-list {
@@ -150,8 +275,8 @@
 
     /* Grilles */
     .bc-top-grid, .bc-middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 20px; }
-    .bc-box { border: 1px solid #ddd; padding: 15px; }
-
+    .bc-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; }
+    
     /* Traitement / Forfait */
     .checkbox-group { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
     .summary-line { display: flex; justify-content: space-between; border-bottom: 1px solid #f0f0f0; padding: 3px 0; font-size: 13px; }
@@ -173,5 +298,165 @@
     .btn-confirm { flex: 2; background: #2e46a6; color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; }
 
     @media print { .no-print { display: none; } .bc-wrapper { padding: 0; background: white; } .bc-paper { box-shadow: none; border: none; } }
+    .photo-grid { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+        gap: 15px; 
+        margin-top: 10px; 
+    }
+    
+    .photo-item img { 
+        width: 100%; 
+        height: 150px; 
+        object-fit: cover; 
+        border-radius: 6px; 
+        cursor: pointer; 
+        border: 2px solid #eee; 
+        transition: 0.2s;
+    }
+    
+    .photo-item img:hover { 
+        border-color: var(--primary-blue, #2e46a6); 
+        transform: scale(1.02); 
+    }
+
+    /* Archive Déchargement */
+    .mini-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+        background: #f9f9f9;
+        padding: 10px;
+        border-radius: 4px;
+    }
+
+    .img-readonly {
+        width: 100%;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        filter: grayscale(30%); /* Un petit effet pour montrer que c'est une archive */
+        transition: 0.3s;
+    }
+
+    .img-readonly:hover {
+        filter: grayscale(0%);
+        transform: scale(1.05);
+    }
+
+    /* Upload Bon de Commande */
+    .bon-photos input[type="file"] {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin-top: 10px;
+        border: 2px dashed #2e46a6;
+        background: #f0f4ff;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    #preview-new-photos {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .preview-item {
+        position: relative;
+    }
+
+    .preview-item img {
+        width: 100%;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 2px solid #2e46a6;
+    }
+
+    /* Séparateur horizontal */
+    .split-photos hr {
+        border: none;
+        border-top: 1px solid #eee;
+        margin: 0;
+    }
+
+    /* Gestion de l'impression */
+    @media print {
+        .bon-photos, #preview-new-photos {
+            display: none; /* On ne veut pas imprimer le bouton "Parcourir" */
+        }
+        .fiche-photos {
+            width: 100%;
+        }
+        .img-readonly {
+            filter: none; /* On imprime en couleur */
+        }
+    }
+    .mb-4 { margin-bottom: 1.5rem; }
+    .no-data { color: #888; font-style: italic; font-size: 0.9rem; }
+    .upload-zone-wrapper {
+        background: #f8f9fa;
+        padding: 15px;
+        border: 2px dashed #2e46a6;
+        border-radius: 6px;
+    }
+
+    /* Cache l'archive en gris léger pour bien différencier l'ancien du nouveau */
+    .fiche-photos .photo-item img {
+        filter: contrast(0.9);
+    }
+
+    @media print {
+        .no-print, .upload-zone-wrapper { display: none !important; }
+        .photo-grid { grid-template-columns: repeat(3, 1fr); } /* 3 photos par ligne sur papier */
+    }
+
+    .upload-zone {
+        border: 2px dashed var(--primary-blue, #2e46a6);
+        background: #f0f4ff;
+        padding: 30px;
+        text-align: center;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.3s;
+        color: #444;
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+        background: #e1e9ff;
+        border-color: #1e2e6e;
+    }
+
+    .upload-zone i { font-size: 2rem; color: var(--primary-blue); margin-bottom: 10px; }
+    .browse { color: var(--primary-blue); font-weight: bold; text-decoration: underline; }
+
+    /* Style des miniatures avec bouton X */
+    .photo-item { position: relative; }
+    
+    .btn-remove-photo {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background: #e06e54;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 10;
+        transition: 0.2s;
+    }
+
+    .btn-remove-photo:hover { transform: scale(1.1); background: #c0392b; }
 </style>
 {% endblock %}
