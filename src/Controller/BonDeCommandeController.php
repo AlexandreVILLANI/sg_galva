@@ -93,4 +93,52 @@ class BonDeCommandeController extends AbstractController
             'fiche' => $bon->getFiche(), 
         ]);
     }
+
+    #[Route('/reception/bon-commande/modifier/{id}', name: 'app_bon_commande_edit')]
+    public function edit(BonDeCommande $bon, Request $request, EntityManagerInterface $em): Response
+    {
+        // On récupère la fiche liée automatiquement via l'objet $bon
+        $fiche = $bon->getFiche();
+
+        $form = $this->createForm(BonDeCommandeType::class, $bon);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // Logique pour ajouter de NOUVELLES photos (identique au new)
+            $imageFiles = $form->get('imageFiles')->getData();
+            if ($imageFiles) {
+                foreach ($imageFiles as $imageFile) {
+                    $newFilename = uniqid().'.'.$imageFile->guessExtension();
+                    $imageFile->move($this->getParameter('kernel.project_dir').'/public/uploads/bons', $newFilename);
+                    
+                    $photo = new PhotoBonCommande();
+                    $photo->setNomFichier($newFilename);
+                    $bon->addPhoto($photo);
+                }
+            }
+
+            $em->flush(); // Pas besoin de persist() car l'objet existe déjà
+            $this->addFlash('success', "Le Bon de Commande {$bon->getRefi()} a été mis à jour.");
+                return $this->redirectToRoute('app_reception_home', ['section' => 'list-scans']);
+        }
+
+        return $this->render('bon_commande/edit.html.twig', [
+            'form' => $form->createView(),
+            'fiche' => $fiche,
+            'bon' => $bon
+        ]);
+    }
+
+    #[Route('/reception/bon-commande/supprimer/{id}', name: 'app_bon_commande_delete', methods: ['POST'])]
+    public function delete(BonDeCommande $bon, Request $request, EntityManagerInterface $em): Response
+    {
+        // Vérification de sécurité (token CSRF)
+        if ($this->isCsrfTokenValid('delete'.$bon->getId(), $request->request->get('_token'))) {
+            $em->remove($bon);
+            $em->flush();
+            $this->addFlash('success', 'Le bon de commande a été supprimé.');
+        }
+
+        return $this->redirectToRoute('app_reception_home', ['section' => 'list-dechargement']);
+    }
 }

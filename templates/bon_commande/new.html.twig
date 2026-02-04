@@ -225,7 +225,7 @@
             if (file.name !== fileName) newDataTransfer.items.add(file);
         });
 
-        dataTransfer = newDataTransfer;
+        dataTransfer = newDataTransfer; 
         fileInput.files = dataTransfer.files; // Update input
         btn.parentElement.remove(); // Remove preview
     });

@@ -5,19 +5,32 @@
 
     <div class="table-container">
         <div class="table-grid-scans header">
-            <span>REFI (Interne)</span>
-            <span>Date Scan</span>
+            <span>REFI</span>
+            <span>Date création</span>
             <span>Client</span>
-            <span>Forfait / Dest.</span>
+            <span >Forfait</span>
+            <span style="text-align: center;">Actions</span>
         </div>
 
         {% for bon in bons %}
-            <div class="table-grid-scans row clickable-row" onclick="window.location='{{ path('app_bon_commande_show', {'id': bon.id}) }}'">
+            <div class="table-grid-scans row clickable-row" onclick="window.location='{{ path('app_bon_commande_edit', {'id': bon.id}) }}'">
                 <span class="ref-cell">{{ bon.refi }}</span>
                 <span class="date-cell">{{ bon.date|date('d/m H:i') }}</span>
                 <span class="client-cell" style="font-weight: 500;">{{ bon.client.nom }}</span>
                 <span class="dest-cell">
                     <span class="badge-forfait">{{ bon.forfait|default('Standard') }}</span>
+                </span>
+                
+                {# --- BOUTON SUPPRIMER --- #}
+                <span class="actions-cell" onclick="event.stopPropagation();">
+                    <form method="post" action="{{ path('app_bon_commande_delete', {'id': bon.id}) }}" onsubmit="return confirm('Êtes-vous SÛR de vouloir supprimer définitivement le bon {{ bon.refi }} ?');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ bon.id) }}">
+                        {# Nouveau bouton avec texte #}
+                        <button class="btn-delete-explicit" title="Supprimer ce bon">
+                            <i class="fas fa-trash-alt"></i>
+                            <span>Supprimer</span>
+                        </button>
+                    </form>
                 </span>
             </div>
         {% else %}
@@ -31,15 +44,50 @@
 </section>
 
 <style>
-    /* On ajuste la grille pour 4 colonnes maintenant */
     .table-grid-scans {
         display: grid;
-        grid-template-columns: 140px 120px 1fr 150px;
+        grid-template-columns: 140px 120px 1fr 130px 120px; 
         padding: 12px 20px;
         align-items: center;
         font-size: 13px;
     }
 
+    .actions-cell {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 1 !important;
+    }
+
+    /* --- NOUVEAU STYLE DE BOUTON --- */
+    .btn-delete-explicit {
+        background-color: #fee2e2; /* Fond rouge clair */
+        color: #dc2626; /* Texte rouge foncé */
+        border: 1px solid #fecaca;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px; /* Espace entre icône et texte */
+        font-weight: 600;
+        font-size: 12px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-delete-explicit i {
+        font-size: 14px;
+    }
+
+    .btn-delete-explicit:hover {
+        background-color: #dc2626; /* Devient rouge vif au survol */
+        color: white;
+        border-color: #dc2626;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+    }
+
+    /* --- Le reste de tes styles --- */
     .table-grid-scans.header {
         background: #f9fafb;
         color: #6b7280;
