@@ -36,9 +36,26 @@ class BonDeCommande
     #[ORM\OneToMany(mappedBy: 'bonDeCommande', targetEntity: PhotoBonCommande::class, cascade: ['persist', 'remove'])]
     private Collection $photos;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $nomChauffeur = null;
+
+    #[ORM\Column(nullable: true)] 
+    private ?bool $isGalvanisation = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $isCataphorese = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $stockage = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $typeGalva = null;
+
     public function __construct()
     {
-        $this->date = new \DateTime();
+        $dateParis = new \DateTime('now', new \DateTimeZone('Europe/Paris'));
+        
+        $this->date = $dateParis;
         $this->photos = new ArrayCollection(); 
     }
 
@@ -65,6 +82,10 @@ class BonDeCommande
 
     public function setDate(\DateTimeInterface $date): static
     {
+        if ($date instanceof \DateTime) {
+            $date->setTimezone(new \DateTimeZone('Europe/Paris'));
+        }
+        
         $this->date = $date;
         return $this;
     }
@@ -111,6 +132,85 @@ class BonDeCommande
             $this->photos->add($photo);
             $photo->setBonDeCommande($this);
         }
+        return $this;
+    }
+
+    public function getNomChauffeur(): ?string
+    {
+        return $this->nomChauffeur;
+    }
+
+    public function setNomChauffeur(?string $nomChauffeur): static
+    {
+        $this->nomChauffeur = $nomChauffeur;
+        return $this;
+    }
+
+    public function isIsGalvanisation(): ?bool 
+    {
+        return $this->isGalvanisation;
+    }
+
+    public function setIsGalvanisation(?bool $isGalvanisation): static
+    {
+        $this->isGalvanisation = $isGalvanisation;
+        return $this;
+    }
+
+    public function isIsCataphorese(): ?bool
+    {
+        return $this->isCataphorese;
+    }
+
+    public function setIsCataphorese(?bool $isCataphorese): static
+    {
+        $this->isCataphorese = $isCataphorese;
+        return $this;
+    }
+
+    public function isGalvanisation(): ?bool
+    {
+        return $this->isGalvanisation;
+    }
+
+    public function isCataphorese(): ?bool
+    {
+        return $this->isCataphorese;
+    }
+
+    public function getStockage(): ?string
+    {
+        return $this->stockage;
+    }
+
+    public function setStockage(?string $stockage): static
+    {
+        $this->stockage = $stockage;
+
+        return $this;
+    }
+
+    public function getTypeGalva(): ?string
+    {
+        return $this->typeGalva;
+    }
+
+    public function setTypeGalva(?string $typeGalva): static
+    {
+        $this->typeGalva = $typeGalva;
+
+        return $this;
+    }
+
+    public function removePhoto(PhotoBonCommande $photo): static
+    {
+        if ($this->photos->removeElement($photo)) {
+            // set the owning side to null (unless already changed)
+            if ($photo->getBonDeCommande() === $this) {
+                $photo->setBonDeCommande(null);
+            }
+        }
+
         return $this;
     }
 }

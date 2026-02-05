@@ -19,15 +19,13 @@
                 {{ form_widget(form.refi, {'attr': {'class': 'refi-input-ghost', 'readonly': 'readonly'}}) }}
             </div>
         </div>
-
-        {# ... (Gardes tes blocs GRILLE HAUTE, MILIEU, DESCRIPTION et EMPLACEMENT identiques) ... #}
-        {# --- GRILLE HAUTE : TRAITEMENT & FORFAIT --- #}
         <div class="bc-top-grid">
             <div class="bc-box treatment-box">
                 <p class="box-label">TRAITEMENT :</p>
                 <div class="checkbox-group">
-                    <label><input type="checkbox"> (Galvanisation)</label>
-                    <label><input type="checkbox" checked> (Cataphorèse)</label>
+                    {# On utilise les vrais champs de la BDD maintenant #}
+                    <label>{{ form_widget(form.isGalvanisation) }} (Galvanisation)</label>
+                    <label>{{ form_widget(form.isCataphorese) }} (Cataphorèse)</label>
                 </div>
             </div>
             <div class="bc-box summary-box">
@@ -37,10 +35,16 @@
                 </div>
                 <div class="summary-line">
                     <span>Nb PAQ :</span> 
-                    <strong>{{ fiche.totalPaquets }}</strong> 
+                    <strong class="val-readonly">{{ fiche.totalPaquets }}</strong> 
                 </div>
-                <div class="summary-line"><span>Stockage :</span> <strong>(AV)</strong></div>
-                <div class="summary-line"><span>GALVA :</span> <strong>(GB)</strong></div>
+                <div class="summary-line">
+                    <span>Stockage :</span> 
+                    <strong>{{ form_widget(form.stockage) }}</strong>
+                </div>
+                <div class="summary-line">
+                    <span>GALVA :</span> 
+                    <strong>{{ form_widget(form.typeGalva) }}</strong>
+                </div>
             </div>
         </div>
 
@@ -56,13 +60,14 @@
                 </div>
                 <div class="field">
                     <span class="label">Date :</span> 
-                    <span class="val">{{ "now"|date('d/m/Y') }}</span> 
+                    {# On affiche la date en texte fixe, formatée pour Paris #}
+                    <span class="val">{{ bon.date|date('d/m/Y H:i', 'Europe/Paris') }}</span>
                 </div>
             </div>
             <div class="bc-box driver-box">
                 <div class="field">
                     <span class="label">Nom du chauffeur :</span> 
-                    <input type="text" placeholder="(DOMEZEL LEO)" class="ghost-input">
+                    {{ form_widget(form.nomChauffeur) }}
                 </div>
                 <div class="field">
                     <span class="label">Tél :</span> 
@@ -274,5 +279,95 @@
     .btn-confirm { flex: 2; background: #2e46a6; color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; }
 
     @media print { .no-print { display: none; } .bc-wrapper { padding: 0; background: white; } .bc-paper { box-shadow: none; border: none; } }
+
+    .driver-box input.ghost-input {
+        border: none;
+        border-bottom: 1px dashed #2e46a6;
+        background: transparent;
+        color: #333;
+        font-weight: 600;
+        width: 100%;
+        outline: none;
+        padding: 2px 5px;
+    }
+
+    .driver-box input.ghost-input:focus {
+        border-bottom-style: solid;
+        background: #f0f4ff;
+    }
+
+    /* Style pour la valeur non modifiable des paquets */
+    .val-readonly {
+        color: #666;
+        background: #f9fafb;
+        padding: 2px 8px;
+        border-radius: 4px;
+        border: 1px solid #eee;
+    }
+
+    .summary-box select {
+        border: none;
+        border-bottom: 1px dashed #2e46a6;
+        background: transparent;
+        font-weight: bold;
+        color: #2e46a6;
+        cursor: pointer;
+        outline: none;
+        font-size: 13px;
+        appearance: none; /* Cache la flèche par défaut pour un look plus ghost */
+        text-align: right;
+    }
+
+    .summary-box select:hover {
+        background: #f0f4ff;
+    }
+
+    /* Style des Checkboxes */
+    .checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        margin-bottom: 5px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        accent-color: #2e46a6; /* Change la couleur de la coche en bleu SG */
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+
+    /* Ajustement pour que le summary soit bien aligné */
+    .summary-line strong {
+        display: flex;
+        align-items: center;
+    }
+
+    input[type="date"].ghost-input {
+        border: none;
+        border-bottom: 1px dashed #2e46a6;
+        background: transparent;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+        outline: none;
+        width: 140px;
+        cursor: pointer;
+    }
+
+    /* Pour masquer ou styliser l'icône du calendrier (Chrome/Edge/Safari) */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        opacity: 0.5;
+        filter: invert(20%) sepia(50%) saturate(5000%) hue-rotate(200deg); /* Donne une teinte bleutée à l'icône */
+    }
+
+    input[type="date"]:focus {
+        background: #f0f4ff;
+        border-bottom-style: solid;
+    }
 </style>
 {% endblock %}

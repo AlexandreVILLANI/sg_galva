@@ -28,8 +28,8 @@
                 <p class="box-label">TRAITEMENT :</p>
                 {# Ces cases sont "en dur" (visuelles), elles ne s'enregistrent pas #}
                 <div class="checkbox-group">
-                    <label><input type="checkbox"> (Galvanisation)</label>
-                    <label><input type="checkbox" checked> (Cataphorèse)</label>
+                    <label>{{ form_widget(form.isGalvanisation) }} (Galvanisation)</label>
+                    <label>{{ form_widget(form.isCataphorese) }} (Cataphorèse)</label>
                 </div>
             </div>
             <div class="bc-box summary-box">
@@ -42,8 +42,14 @@
                     <span>Nb PAQ :</span> 
                     <strong>{{ fiche.totalPaquets }}</strong> 
                 </div>
-                <div class="summary-line"><span>Stockage :</span> <strong>(AV)</strong></div>
-                <div class="summary-line"><span>GALVA :</span> <strong>(GB)</strong></div>
+                <div class="summary-line">
+                    <span>Stockage :</span> 
+                    <strong>{{ form_widget(form.stockage) }}</strong>
+                </div>
+                <div class="summary-line">
+                    <span>GALVA :</span> 
+                    <strong>{{ form_widget(form.typeGalva) }}</strong>
+                </div>
             </div>
         </div>
 
@@ -66,7 +72,7 @@
             <div class="bc-box driver-box">
                 <div class="field">
                     <span class="label">Nom du chauffeur :</span> 
-                    <input type="text" placeholder="(DOMEZEL LEO)" class="ghost-input">
+                    {{ form_widget(form.nomChauffeur, {'attr': {'class': 'ghost-input', 'placeholder': '(DOMEZEL LEO)'}}) }}
                 </div>
                 <div class="field">
                     <span class="label">Tél :</span> 
