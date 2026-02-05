@@ -76,13 +76,37 @@ class HomeController extends AbstractController
         $date = $request->query->get('date');
         $section = $request->query->get('section');
 
+        // 1. Récupération des données principales
         $fiches = $ficheRepository->findWithFilters($client, $cariste, $date);
-
         $bons = $bcRepository->findBy([], ['date' => 'DESC'], 10);
 
+        // 2. LOGIQUE DYNAMIQUE POUR LES FILTRES (AJOUT)
+        // Récupération des forfaits uniques pour le filtre des Scans
+        $queryForfaits = $bcRepository->createQueryBuilder('b')
+            ->select('DISTINCT b.forfait AS name')
+            ->where('b.forfait IS NOT NULL')
+            ->orderBy('b.forfait', 'ASC')
+            ->getQuery()
+            ->getScalarResult();
+        
+        $uniqueForfaits = array_filter(array_column($queryForfaits, 'name'));
+
+        // Récupération des caristes uniques pour le filtre de l'Historique
+        $queryCaristes = $ficheRepository->createQueryBuilder('f')
+            ->select('DISTINCT u.prenom AS name')
+            ->join('f.cariste', 'u')
+            ->orderBy('u.prenom', 'ASC')
+            ->getQuery()
+            ->getScalarResult();
+            
+        $uniqueCaristes = array_filter(array_column($queryCaristes, 'name'));
+
+        // 3. Envoi à la vue
         return $this->render('home/reception.html.twig', [
             'fiches' => $fiches,
             'bons' => $bons,
+            'uniqueForfaits' => $uniqueForfaits, // La variable manquante est ici
+            'uniqueCaristes' => $uniqueCaristes, // Pour l'historique
             'search_client' => $client,
             'search_cariste' => $cariste,
             'search_date' => $date,

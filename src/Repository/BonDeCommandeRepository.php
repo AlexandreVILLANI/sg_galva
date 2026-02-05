@@ -27,4 +27,16 @@ class BonDeCommandeRepository extends ServiceEntityRepository
 
         return $result ? $result['refi'] : null;
     }
+    public function findUniqueForfaits(): array
+    {
+        $results = $this->createQueryBuilder('b')
+            ->select('DISTINCT b.forfait')
+            ->where('b.forfait IS NOT NULL')
+            ->orderBy('b.forfait', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        // On "aplatit" le tableau car Doctrine renvoie un tableau de tableaux [['forfait' => '...'], ...]
+        return array_column($results, 'forfait');
+    }
 }

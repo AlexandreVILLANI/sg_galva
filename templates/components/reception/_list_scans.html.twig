@@ -1,94 +1,143 @@
 <section id="list-scans" class="content-section">
     <div class="section-header">
-        <h2 class="section-title">Derniers scans de Bons de Commande</h2>
+        <h2 class="section-title">Derniers Bons de Commande</h2>
+    </div>
+
+    <div class="filter-bar">
+        <div class="filter-form">
+            {# Filtre REFI #}
+            <div class="filter-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="filterRefi" placeholder="REFI...">
+            </div>
+
+            {# Filtre Client #}
+            <div class="filter-group">
+                <i class="fas fa-user"></i>
+                <input type="text" id="filterClient" placeholder="Client...">
+            </div>
+
+            {# Filtre Forfait (Mis en cohérence) #}
+            <div class="filter-group">
+                <i class="fas fa-tags"></i>
+                <select id="filterForfait">
+                    <option value="">Tous les forfaits</option>
+                    {% for forfaitNom in uniqueForfaits|default([]) %}
+                        <option value="{{ forfaitNom|lower|trim }}">{{ forfaitNom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <a href="#" class="btn-reset" id="clearScansFilters" title="Réinitialiser">
+                <i class="fas fa-eraser"></i>
+            </a>
+        </div>
     </div>
 
     <div class="table-container">
-        <div class="table-grid-scans header">
+        <div class="table-grid header">
             <span>REFI</span>
             <span>Date création</span>
             <span>Client</span>
-            <span >Forfait</span>
+            <span>Forfait</span>
             <span style="text-align: center;">Actions</span>
         </div>
 
-        {% for bon in bons %}
-            <div class="table-grid-scans row clickable-row" onclick="window.location='{{ path('app_bon_commande_edit', {'id': bon.id}) }}'">
-                <span class="ref-cell">{{ bon.refi }}</span>
-                <span class="date-cell">{{ bon.date|date('d/m H:i') }}</span>
-                <span class="client-cell" style="font-weight: 500;">{{ bon.client.nom }}</span>
-                <span class="dest-cell">
-                    <span class="badge-forfait">{{ bon.forfait|default('Standard') }}</span>
-                </span>
-                
-                {# --- BOUTON SUPPRIMER --- #}
-                <span class="actions-cell" onclick="event.stopPropagation();">
-                    <form method="post" action="{{ path('app_bon_commande_delete', {'id': bon.id}) }}" onsubmit="return confirm('Êtes-vous SÛR de vouloir supprimer définitivement le bon {{ bon.refi }} ?');">
-                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ bon.id) }}">
-                        {# Nouveau bouton avec texte #}
-                        <button class="btn-delete-explicit" title="Supprimer ce bon">
-                            <i class="fas fa-trash-alt"></i>
-                            <span>Supprimer</span>
-                        </button>
-                    </form>
-                </span>
-            </div>
-        {% else %}
-            <div class="table-grid-scans row no-data">
-                <span style="grid-column: span 4; text-align: center; padding: 20px; color: #9ca3af;">
-                    Aucun bon de commande scanné pour le moment.
-                </span>
-            </div>
-        {% endfor %}
+        <div id="scansTableBody">
+            {% for bon in bons %}
+                <div class="table-grid row clickable-row" 
+                     data-refi="{{ bon.refi|trim|lower }}" 
+                     data-client="{{ bon.client.nom|trim|lower }}" 
+                     data-forfait="{{ bon.forfait|default('Standard')|trim|lower }}"
+                     onclick="window.location='{{ path('app_bon_commande_edit', {'id': bon.id}) }}'">
+                    
+                    <span class="ref-cell">{{ bon.refi }}</span>
+                    <span class="date-cell">{{ bon.date|date('d/m H:i') }}</span>
+                    <span class="client-cell" style="font-weight: 500;">{{ bon.client.nom }}</span>
+                    <span>
+                        <span class="badge-success">{{ bon.forfait|default('Standard') }}</span>
+                    </span>
+                    
+                    <span style="display: flex; justify-content: center;" onclick="event.stopPropagation();">
+                        <form method="post" action="{{ path('app_bon_commande_delete', {'id': bon.id}) }}" onsubmit="return confirm('Supprimer le bon {{ bon.refi }} ?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ bon.id) }}">
+                            <button type="submit" class="btn-delete-simple">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
     </div>
 </section>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inputRefi = document.getElementById('filterRefi');
+    const inputClient = document.getElementById('filterClient');
+    const selectForfait = document.getElementById('filterForfait');
+    const btnReset = document.getElementById('clearScansFilters');
+    const rows = document.querySelectorAll('#scansTableBody .row');
+
+    function filterTable() {
+        const valRefi = inputRefi.value.toLowerCase().trim();
+        const valClient = inputClient.value.toLowerCase().trim();
+        const valForfait = selectForfait.value.toLowerCase().trim();
+
+        rows.forEach(row => {
+            const rowRefi = row.dataset.refi;
+            const rowClient = row.dataset.client;
+            const rowForfait = row.dataset.forfait;
+
+            const matchesRefi = rowRefi.includes(valRefi);
+            const matchesClient = rowClient.includes(valClient);
+            // Comparaison exacte pour le forfait, sauf si "Tous" est sélectionné
+            const matchesForfait = valForfait === "" || rowForfait === valForfait;
+
+            if (matchesRefi && matchesClient && matchesForfait) {
+                row.style.display = 'grid';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    inputRefi.addEventListener('input', filterTable);
+    inputClient.addEventListener('input', filterTable);
+    selectForfait.addEventListener('change', filterTable);
+
+    btnReset.addEventListener('click', (e) => {
+        e.preventDefault();
+        inputRefi.value = '';
+        inputClient.value = '';
+        selectForfait.value = '';
+        filterTable();
+    });
+});
+</script>
+
 <style>
-    .table-grid-scans {
+    /* --- TON STYLE EXACT --- */
+    .table-grid {
         display: grid;
-        grid-template-columns: 140px 120px 1fr 130px 120px; 
+        grid-template-columns: 140px 150px 1fr 100px 100px;
         padding: 12px 20px;
         align-items: center;
         font-size: 13px;
     }
 
-    .actions-cell {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        opacity: 1 !important;
+    .clickable-row { cursor: pointer; transition: background 0.2s; }
+    .clickable-row:hover { background-color: #f0f4ff !important; }
+
+    .table-container { 
+        background: white; 
+        border: 1px solid #f3f4f6; 
+        border-radius: 8px; 
+        overflow: hidden;
     }
 
-    /* --- NOUVEAU STYLE DE BOUTON --- */
-    .btn-delete-explicit {
-        background-color: #fee2e2; /* Fond rouge clair */
-        color: #dc2626; /* Texte rouge foncé */
-        border: 1px solid #fecaca;
-        padding: 6px 12px;
-        border-radius: 6px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px; /* Espace entre icône et texte */
-        font-weight: 600;
-        font-size: 12px;
-        transition: all 0.2s ease;
-    }
-
-    .btn-delete-explicit i {
-        font-size: 14px;
-    }
-
-    .btn-delete-explicit:hover {
-        background-color: #dc2626; /* Devient rouge vif au survol */
-        color: white;
-        border-color: #dc2626;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
-    }
-
-    /* --- Le reste de tes styles --- */
-    .table-grid-scans.header {
+    .table-grid.header {
         background: #f9fafb;
         color: #6b7280;
         font-weight: 600;
@@ -97,34 +146,138 @@
         font-size: 11px;
     }
 
-    .table-grid-scans.row {
+    .table-grid.row {
         border-bottom: 1px solid #f9fafb;
         color: #374151;
-        transition: background 0.2s;
-        cursor: pointer;
     }
 
-    .table-grid-scans.row:hover {
-        background-color: #f8fafc;
+    .no-data {
+        grid-template-columns: 1fr !important;
+        text-align: center;
+        padding: 40px !important;
+        color: #9ca3af;
+        font-style: italic;
+    }
+    
+    .badge-success {
+        background: #ecfdf5;
+        color: #10b981;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
     }
 
+    /* Filter Bar Styles */
+    .filter-bar {
+        background: white;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+    }
+    .filter-form {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+    .filter-group {
+        display: flex;
+        align-items: center;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        padding: 8px 12px;
+        border-radius: 6px;
+        flex: 1;
+    }
+    .filter-group i { color: #9ca3af; margin-right: 8px; }
+    .filter-group input {
+        border: none;
+        background: transparent;
+        font-size: 13px;
+        outline: none;
+        width: 100%;
+    }
+
+    .btn-reset {
+        color: #6b7280;
+        background: #f3f4f6;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+    }
+
+    .btn-reset:hover {
+        background: #e5e7eb;
+        color: #2e46a6;
+        border-color: #2e46a6;
+        transform: rotate(180deg);
+    }
+
+    /* Spécifique aux Scans */
     .ref-cell { 
         font-family: 'Monaco', 'Consolas', monospace; 
         font-weight: 600; 
         color: #2e46a6; 
-        background: #f0f4ff;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        width: fit-content;
     }
 
-    .badge-forfait {
-        background: #f3f4f6;
-        color: #4b5563;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 11px;
+    .btn-delete-simple {
+        background: none;
+        border: none;
+        color: #ef4444;
+        cursor: pointer;
+        font-size: 16px;
+        transition: transform 0.2s;
+        padding: 5px;
+    }
+    .btn-delete-simple:hover { transform: scale(1.2); color: #b91c1c; }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        background: #f9fafb;
         border: 1px solid #e5e7eb;
+        padding: 8px 12px;
+        border-radius: 6px;
+        flex: 1;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    /* Style commun pour input ET select dans les groupes */
+    .filter-group input, 
+    .filter-group select {
+        border: none;
+        background: transparent;
+        font-size: 13px;
+        outline: none;
+        width: 100%;
+        color: #374151;
+        cursor: pointer; /* Pour le select */
+    }
+
+    /* On retire la flèche par défaut sur certains navigateurs si on veut un look ultra-propre, 
+       ou on la laisse pour l'ergonomie (recommandé ici) */
+    .filter-group select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        /* Ajout d'une petite flèche personnalisée si besoin, ou on garde celle du système */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right center;
+        background-size: 14px;
+        padding-right: 20px;
+    }
+
+    .filter-group:focus-within {
+        border-color: #2e46a6;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(46, 70, 166, 0.05);
     }
 </style>
