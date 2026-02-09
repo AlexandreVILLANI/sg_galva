@@ -43,15 +43,15 @@ security:
     # config/packages/security.yaml
     role_hierarchy:
         # La réception et les caristes sont des utilisateurs
-        ROLE_RECEPTION:   ROLE_USER
+        ROLE_RECEPTION_TERRAIN:   ROLE_USER
         ROLE_CARISTE:     ROLE_USER
         # L'admin a TOUS les pouvoirs des autres
-        ROLE_ADMIN:       [ROLE_RECEPTION, ROLE_CARISTE]
+        ROLE_ADMIN:       [ROLE_RECEPTION_TERRAIN, ROLE_CARISTE]
 
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/admin, roles: ROLE_ADMIN }
-        - { path: ^/reception, roles: ROLE_RECEPTION }
+        - { path: ^/reception, roles: ROLE_RECEPTION_TERRAIN }
         - { path: ^/cariste, roles: ROLE_CARISTE }
         
         # /home sert de "base" pour tout utilisateur connecté

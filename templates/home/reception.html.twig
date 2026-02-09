@@ -32,6 +32,15 @@
     </aside>
 
     <main class="main-content">
+        <header class="user-welcome-bar">
+            <div class="welcome-message">
+                Bonjour, <strong>{{ app.user.prenom|default('Utilisateur') }}</strong>
+            </div>
+            <div class="current-date">
+                <i class="far fa-calendar-alt"></i>
+                {{ "now"|date('d/m/Y', 'Europe/Paris') }}
+            </div>
+        </header>
         <div id="empty-state" class="empty-placeholder">
             <div class="dashed-container">
                 <p>Sélectionnez un document dans le menu de gauche</p>
@@ -93,6 +102,40 @@
 
 
 <style>
+
+    /* --- STYLE BARRE BIENVENUE --- */
+    .user-welcome-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px 25px 20px; /* On laisse de l'espace en bas */
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 20px;
+    }
+
+    .welcome-message {
+        font-size: 18px;
+        color: #111827;
+        font-weight: 400;
+    }
+
+    .welcome-message strong {
+        color: var(--primary-blue);
+        font-weight: 700;
+        text-transform: capitalize;
+    }
+
+    .current-date {
+        font-size: 13px;
+        color: var(--text-gray);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--bg-gray);
+        padding: 6px 12px;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+    }
     :root {
         --sidebar-width: 260px;
         --primary-blue: #2e46a6;

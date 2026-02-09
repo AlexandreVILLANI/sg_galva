@@ -18,7 +18,7 @@
             <div class="filter-group">
                 <i class="fas fa-tags"></i>
                 <select id="filterForfait">
-                    <option value="">Tous les forfaits</option>
+                    <option value="">Tous les forfaits</option>                    
                     {% for forfaitNom in uniqueForfaits|default([]) %}
                         <option value="{{ forfaitNom|lower|trim }}">{{ forfaitNom }}</option>
                     {% endfor %}
@@ -70,6 +70,76 @@
 </section>
 
 <script>
+function setupBonCommandeFilters() {
+        const inputRefi = document.getElementById('filterRefi');
+        const inputClient = document.getElementById('filterClient');
+        const selectForfait = document.getElementById('filterForfait');
+        const btnReset = document.getElementById('clearScansFilters');
+        
+        // On récupère les lignes
+        const rows = document.querySelectorAll('#scansTableBody .row');
+
+        // Sécurité : Si les éléments ne sont pas encore dans la page, on sort
+        if (!inputRefi || rows.length === 0) {
+            return;
+        }
+
+        console.log("Filtres Bons de Commande initialisés");
+
+        function filterTable() {
+            const valRefi = inputRefi.value.toLowerCase().trim();
+            const valClient = inputClient.value.toLowerCase().trim();
+            const valForfait = selectForfait.value.toLowerCase().trim();
+
+            rows.forEach(row => {
+                const rowRefi = row.dataset.refi || "";
+                const rowClient = row.dataset.client || "";
+                const rowForfait = row.dataset.forfait || "";
+
+                const matchesRefi = rowRefi.includes(valRefi);
+                const matchesClient = rowClient.includes(valClient);
+                const matchesForfait = valForfait === "" || rowForfait === valForfait;
+
+                row.style.display = (matchesRefi && matchesClient && matchesForfait) ? 'grid' : 'none';
+            });
+        }
+
+        // On supprime les anciens écouteurs pour éviter les doublons (important avec Turbo)
+        inputRefi.removeEventListener('input', filterTable);
+        inputClient.removeEventListener('input', filterTable);
+        selectForfait.removeEventListener('change', filterTable);
+
+        // On ajoute les écouteurs
+        inputRefi.addEventListener('input', filterTable);
+        inputClient.addEventListener('input', filterTable);
+        selectForfait.addEventListener('change', filterTable);
+
+        if (btnReset) {
+            btnReset.addEventListener('click', (e) => {
+                e.preventDefault();
+                inputRefi.value = '';
+                inputClient.value = '';
+                selectForfait.value = '';
+                filterTable();
+            });
+        }
+    }
+
+    // --- LA DOUBLE SÉCURITÉ ICI ---
+
+    // 1. On écoute les changements de page Turbo
+    document.addEventListener('turbo:load', setupBonCommandeFilters);
+
+    // 2. On l'exécute AUSSI immédiatement (pour le premier chargement ou l'include)
+    setupBonCommandeFilters();
+
+    // 3. Petit bonus : on l'exécute quand on clique sur l'onglet "Bon de commande" 
+    // car ton système de sidebar cache/montre les div sans recharger
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            setTimeout(setupBonCommandeFilters, 50); // Petit délai pour laisser le temps au display:block
+        });
+    });
 document.addEventListener('DOMContentLoaded', function() {
     const inputRefi = document.getElementById('filterRefi');
     const inputClient = document.getElementById('filterClient');

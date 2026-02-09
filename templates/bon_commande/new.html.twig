@@ -49,7 +49,7 @@
                 <div class="summary-line">
                     <span>GALVA :</span> 
                     <strong>{{ form_widget(form.typeGalva) }}</strong>
-                </div>
+                </div>            
             </div>
         </div>
 
@@ -115,6 +115,15 @@
                 {% endfor %}
             </strong>
         </div>
+
+        {# --- NOUVEAU : COMMENTAIRES --- #}
+        <div class="bc-box comment-box">
+            <span class="label">Commentaires / Observations :</span>
+            <div class="mt-2">
+                {{ form_widget(form.commentaire) }}
+            </div>
+        </div>
+
         {# --- SECTION PHOTOS --- #}
         <div class="photo-section mt-4">
             {# 1. ARCHIVE DÉCHARGEMENT (Lecture seule) #}
@@ -464,5 +473,51 @@ document.querySelector('input[type="file"]').addEventListener('change', function
     }
 
     .btn-remove-photo:hover { transform: scale(1.1); background: #c0392b; }
+
+    .comment-box {
+        background-color: white; /* On reste sur du blanc pour être raccord */
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .comment-box textarea {
+        width: 100%;
+        border: none;
+        background: transparent;
+        /* On reprend le pointillé bleu des autres champs modifiables */
+        border-bottom: 1px dashed #2e46a6; 
+        line-height: 1.8;
+        font-family: inherit;
+        /* Augmentation de la taille pour être raccord avec les autres inputs */
+        font-size: 15px; 
+        color: #333;
+        resize: vertical;
+        outline: none;
+        padding: 10px 0;
+        transition: border-bottom 0.3s ease;
+    }
+
+    .comment-box textarea:focus {
+        /* Devient plein au focus comme les autres champs */
+        border-bottom: 1px solid #2e46a6;
+        background: #f8faff;
+    }
+
+    .comment-box textarea::placeholder {
+        color: #aaa;
+        font-weight: normal;
+        font-style: italic;
+        font-size: 13px; /* Placeholder un peu plus petit pour la discrétion */
+    }
+
+    @media print {
+        .comment-box textarea {
+            border-bottom: 1px solid #eee; /* Plus discret à l'impression */
+        }
+        .comment-box textarea::placeholder {
+            display: none;
+        }
+    }
 </style>
 {% endblock %}

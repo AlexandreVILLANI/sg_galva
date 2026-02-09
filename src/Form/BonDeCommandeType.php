@@ -3,6 +3,7 @@
 namespace App\Form;
 
 use App\Entity\BonDeCommande;
+
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -10,6 +11,7 @@ use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 
 class BonDeCommandeType extends AbstractType
 {
@@ -28,7 +30,9 @@ class BonDeCommandeType extends AbstractType
                     'Perçage' => 'Perçage',
                     'Montage' => 'Montage',
                 ],
-                'attr' => ['class' => 'form-control']
+                'required' => false, // Autorise à ne rien envoyer
+                'placeholder' => 'Aucun forfait', // Ajoute une ligne vide/par défaut au début
+                'attr' => ['class' => 'ghost-select']
             ])
             ->add('nomChauffeur', TextType::class, [
                 'required' => false,
@@ -47,17 +51,27 @@ class BonDeCommandeType extends AbstractType
             ->add('isCataphorese', CheckboxType::class, ['required' => false])
             ->add('stockage', ChoiceType::class, [
                 'choices' => [
-                    'AV (Avancement)' => 'AV',
-                    'ST (Stockage)' => 'ST',
-                    'UR (Urgent)' => 'UR',
+                    'AV' => 'AV (Avancement)',
+                    'ST' => 'ST (Stockage)',
+                    'UR' => 'UR (Urgent)',
                 ],
             ])
            
             ->add('typeGalva', ChoiceType::class, [
                 'choices' => [
-                    'GB (Gros Bain)' => 'GB',
-                    'PB (Petit Bain)' => 'PB',
+                    'GB' => 'GB (Grand Bain)',
+                    'PB' => 'PB (Petit Bain)',
+                    'Mixte' => 'Mixte (GB + PB)',
                 ],
+            ])
+            ->add('commentaire', TextareaType::class, [
+                'required' => false,
+                'label' => false,
+                'attr' => [
+                    'rows' => 3, 
+                    'placeholder' => 'Remarques éventuelles (ex: pièces fragiles, urgence...)',
+                    'class' => 'paper-textarea'
+                ]
             ]);
     }
 

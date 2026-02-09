@@ -91,7 +91,7 @@
             <i class="fas fa-arrow-left"></i> Retour à la liste
         </a>
 
-        {% if is_granted('ROLE_RECEPTION') %}
+        {% if is_granted('ROLE_RECEPTION_TERRAIN') %}
             <a href="{{ path('app_bon_commande_new', {'ficheId': fiche.id}) }}" class="btn-create-bc-large">
                 <i class="fas fa-file-invoice"></i> Créer le Bon de Commande (REFI)
             </a>

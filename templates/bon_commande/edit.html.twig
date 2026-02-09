@@ -96,6 +96,7 @@
             </div>
         </div>
 
+        {# --- EMPLACEMENT --- #}
         <div class="bc-box emplacement-box">
             <span class="label">Emplacement :</span>
             <strong>
@@ -103,6 +104,14 @@
                     {{ ligne.emplacement.nom }}{% if not loop.last %} // {% endif %}
                 {% endfor %}
             </strong>
+        </div>
+
+        {# --- ZONE COMMENTAIRES (OBSERVATIONS) --- #}
+        <div class="bc-box comment-box">
+            <span class="label">Commentaires / Observations :</span>
+            <div class="mt-2">
+                {{ form_widget(form.commentaire, {'attr': {'placeholder': 'Saisir ici vos observations (urgences, état des pièces...)', 'rows': '3'}}) }}
+            </div>
         </div>
 
         {# --- SECTION PHOTOS --- #}
@@ -368,6 +377,52 @@
     input[type="date"]:focus {
         background: #f0f4ff;
         border-bottom-style: solid;
+    }
+
+    /* --- STYLE OBSERVATIONS HARMONISÉ --- */
+    .comment-box {
+        background-color: white;
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .comment-box textarea {
+        width: 100%;
+        border: none;
+        background: transparent;
+        /* On reprend le pointillé bleu spécifique aux champs modifiables */
+        border-bottom: 1px dashed #2e46a6; 
+        line-height: 1.8;
+        font-family: inherit;
+        /* Taille de texte augmentée pour être raccord avec le reste */
+        font-size: 15px; 
+        color: #333;
+        resize: vertical; /* Permet d'agrandir seulement en hauteur */
+        outline: none;
+        padding: 10px 0;
+        transition: all 0.3s ease;
+    }
+
+    .comment-box textarea:focus {
+        border-bottom: 1px solid #2e46a6;
+        background: #f8faff; /* Léger fond bleu au focus comme pour le chauffeur */
+    }
+
+    .comment-box textarea::placeholder {
+        color: #aaa;
+        font-style: italic;
+        font-size: 13px;
+        font-weight: normal;
+    }
+
+    @media print {
+        .comment-box textarea {
+            border-bottom: 1px solid #eee; /* Plus discret sur le papier */
+        }
+        .comment-box textarea::placeholder {
+            display: none;
+        }
     }
 </style>
 {% endblock %}

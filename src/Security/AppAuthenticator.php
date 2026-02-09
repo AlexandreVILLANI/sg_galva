@@ -47,7 +47,7 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
 
         if (in_array('ROLE_ADMIN', $roles)) {
             $target = 'app_admin_home';
-        } elseif (in_array('ROLE_RECEPTION', $roles)) {
+        } elseif (in_array('ROLE_RECEPTION_TERRAIN', $roles)) {
             $target = 'app_reception_home';
         } else {
             $target = 'app_home'; // Pour ROLE_CARISTE ou ROLE_USER

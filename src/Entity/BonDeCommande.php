@@ -51,6 +51,9 @@ class BonDeCommande
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $typeGalva = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $commentaire = null;
+
     public function __construct()
     {
         $dateParis = new \DateTime('now', new \DateTimeZone('Europe/Paris'));
@@ -211,6 +214,17 @@ class BonDeCommande
             }
         }
 
+        return $this;
+    }
+
+    public function getCommentaire(): ?string
+    {
+        return $this->commentaire;
+    }
+
+    public function setCommentaire(?string $commentaire): static
+    {
+        $this->commentaire = $commentaire;
         return $this;
     }
 }

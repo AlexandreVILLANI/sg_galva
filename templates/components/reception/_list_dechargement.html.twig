@@ -65,6 +65,73 @@
     </div>
 </section>
 <script>
+
+function setupHistoFilters() {
+        const inputClient = document.getElementById('filterClientHisto');
+        const inputCariste = document.getElementById('filterCaristeHisto');
+        const inputDate = document.getElementById('filterDateHisto');
+        const btnReset = document.getElementById('resetHistoFilters');
+        
+        // On sélectionne les lignes présentes dans le DOM au moment de l'appel
+        const rows = document.querySelectorAll('#histoTableBody .row:not(.no-data)');
+
+        // Sécurité : Si on n'est pas sur la bonne vue, on ne fait rien
+        if (!inputClient || rows.length === 0) return;
+
+        console.log("Filtres Historique initialisés");
+
+        function filterHisto() {
+            const valClient = inputClient.value.toLowerCase().trim();
+            const valCariste = inputCariste.value.toLowerCase().trim();
+            const valDate = inputDate.value;
+
+            rows.forEach(row => {
+                const matchesClient = row.dataset.client.includes(valClient);
+                const matchesCariste = row.dataset.cariste.includes(valCariste);
+                const matchesDate = valDate === "" || row.dataset.date === valDate;
+
+                if (matchesClient && matchesCariste && matchesDate) {
+                    row.style.display = 'grid';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Nettoyage des anciens écouteurs pour éviter les accumulations de mémoire
+        inputClient.removeEventListener('input', filterHisto);
+        inputCariste.removeEventListener('input', filterHisto);
+        inputDate.removeEventListener('change', filterHisto);
+
+        // Attachement des nouveaux écouteurs
+        inputClient.addEventListener('input', filterHisto);
+        inputCariste.addEventListener('input', filterHisto);
+        inputDate.addEventListener('change', filterHisto);
+
+        if (btnReset) {
+            btnReset.addEventListener('click', function(e) {
+                e.preventDefault();
+                inputClient.value = '';
+                inputCariste.value = '';
+                inputDate.value = '';
+                filterHisto();
+            });
+        }
+    }
+
+    // --- DOUBLE SÉCURITÉ ---
+    // 1. Pour les changements de page via Turbo
+    document.addEventListener('turbo:load', setupHistoFilters);
+
+    // 2. Pour le premier chargement ou l'inclusion directe
+    setupHistoFilters();
+
+    // 3. Pour le changement d'onglet (Sidebar)
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            setTimeout(setupHistoFilters, 50);
+        });
+    });
 document.addEventListener('DOMContentLoaded', function() {
     const inputClient = document.getElementById('filterClientHisto');
     const inputCariste = document.getElementById('filterCaristeHisto');

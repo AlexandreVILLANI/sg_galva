@@ -50,10 +50,10 @@ class AppFixtures extends Fixture
 
         // 3. Création du compte RÉCEPTION 1
         $reception1 = new User();
-        $reception1->setUsername('reception1');
-        $reception1->setPrenom('Réception 1');
+        $reception1->setUsername('thibaut');
+        $reception1->setPrenom('Thibaut');
         $reception1->setTypeAcces('MDP');
-        $reception1->setRoles(['ROLE_RECEPTION']); // Le badge technique
+        $reception1->setRoles(['ROLE_RECEPTION_TERRAIN']); // Le badge technique
         $reception1->setUserRole($receptionRole); // Le lien vers l'entité
         $reception1->setPassword($this->hasher->hashPassword($reception1, 'reception'));
         $manager->persist($reception1);

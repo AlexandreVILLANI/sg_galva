@@ -30,7 +30,7 @@ class HomeController extends AbstractController
             return $this->redirectToRoute('app_admin_home');
         }
         
-        if ($this->isGranted('ROLE_RECEPTION')) {
+        if ($this->isGranted('ROLE_RECEPTION_TERRAIN')) {
             return $this->redirectToRoute('app_reception_home');
         }
 
@@ -52,7 +52,7 @@ class HomeController extends AbstractController
         if ($this->isGranted('ROLE_ADMIN')) {
             return $this->redirectToRoute('app_admin_home');
         }
-        if ($this->isGranted('ROLE_RECEPTION')) {
+        if ($this->isGranted('ROLE_RECEPTION_TERRAIN')) {
             return $this->redirectToRoute('app_reception_home');
         }
 
@@ -65,7 +65,7 @@ class HomeController extends AbstractController
      * Espace RÉCEPTION
      */
     #[Route('/reception', name: 'app_reception_home')]
-    #[IsGranted('ROLE_RECEPTION')]
+    #[IsGranted('ROLE_RECEPTION_TERRAIN')]
     public function receptionIndex(
         Request $request, 
         FicheDechargementRepository $ficheRepository,
