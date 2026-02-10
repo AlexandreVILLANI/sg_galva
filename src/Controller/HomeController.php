@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -30,12 +29,17 @@ class HomeController extends AbstractController
             return $this->redirectToRoute('app_admin_home');
         }
         
+        // AJOUT : Redirection pour Dali
+        if ($this->isGranted('ROLE_RECEPTION_ORDONNANCEMENT')) {
+            return $this->redirectToRoute('app_reception_ordonnancement_home');
+        }
+        
         if ($this->isGranted('ROLE_RECEPTION_TERRAIN')) {
-            return $this->redirectToRoute('app_reception_home');
+            return $this->redirectToRoute('app_reception_terrain_home');
         }
 
         if ($this->isGranted('ROLE_CARISTE')) {
-            return $this->redirectToRoute('app_home'); // Les caristes vont sur /home
+            return $this->redirectToRoute('app_home');
         }
         
         return $this->redirectToRoute('app_home');
@@ -48,12 +52,15 @@ class HomeController extends AbstractController
     #[IsGranted('ROLE_USER')]
     public function home(): Response
     {
-        // Si un Admin ou une Réception arrive ici, on les redirige vers leur dashboard propre
         if ($this->isGranted('ROLE_ADMIN')) {
             return $this->redirectToRoute('app_admin_home');
         }
+        // AJOUT : Sécurité pour Dali s'il arrive sur /home
+        if ($this->isGranted('ROLE_RECEPTION_ORDONNANCEMENT')) {
+            return $this->redirectToRoute('app_reception_ordonnancement_home');
+        }
         if ($this->isGranted('ROLE_RECEPTION_TERRAIN')) {
-            return $this->redirectToRoute('app_reception_home');
+            return $this->redirectToRoute('app_reception_terrain_home');
         }
 
         return $this->render('home/index.html.twig', [
@@ -62,9 +69,9 @@ class HomeController extends AbstractController
     }
 
     /**
-     * Espace RÉCEPTION
+     * Espace RÉCEPTION TERRAIN (Thibaut)
      */
-    #[Route('/reception', name: 'app_reception_home')]
+    #[Route('/reception-terrain', name: 'app_reception_terrain_home')]
     #[IsGranted('ROLE_RECEPTION_TERRAIN')]
     public function receptionIndex(
         Request $request, 
@@ -76,12 +83,9 @@ class HomeController extends AbstractController
         $date = $request->query->get('date');
         $section = $request->query->get('section');
 
-        // 1. Récupération des données principales
         $fiches = $ficheRepository->findWithFilters($client, $cariste, $date);
         $bons = $bcRepository->findBy([], ['date' => 'DESC'], 10);
 
-        // 2. LOGIQUE DYNAMIQUE POUR LES FILTRES (AJOUT)
-        // Récupération des forfaits uniques pour le filtre des Scans
         $queryForfaits = $bcRepository->createQueryBuilder('b')
             ->select('DISTINCT b.forfait AS name')
             ->where('b.forfait IS NOT NULL')
@@ -91,7 +95,6 @@ class HomeController extends AbstractController
         
         $uniqueForfaits = array_filter(array_column($queryForfaits, 'name'));
 
-        // Récupération des caristes uniques pour le filtre de l'Historique
         $queryCaristes = $ficheRepository->createQueryBuilder('f')
             ->select('DISTINCT u.prenom AS name')
             ->join('f.cariste', 'u')
@@ -101,16 +104,30 @@ class HomeController extends AbstractController
             
         $uniqueCaristes = array_filter(array_column($queryCaristes, 'name'));
 
-        // 3. Envoi à la vue
-        return $this->render('home/reception.html.twig', [
+        return $this->render('home/reception_terrain.html.twig', [
             'fiches' => $fiches,
             'bons' => $bons,
-            'uniqueForfaits' => $uniqueForfaits, // La variable manquante est ici
-            'uniqueCaristes' => $uniqueCaristes, // Pour l'historique
+            'uniqueForfaits' => $uniqueForfaits,
+            'uniqueCaristes' => $uniqueCaristes,
             'search_client' => $client,
             'search_cariste' => $cariste,
             'search_date' => $date,
             'active_section' => $section, 
+        ]);
+    }
+
+    /**
+     * Espace RÉCEPTION ORDONNANCEMENT (Dali)
+     */
+    #[Route('/reception-ordonnancement', name: 'app_reception_ordonnancement_home')]
+    #[IsGranted('ROLE_RECEPTION_ORDONNANCEMENT')]
+    public function receptionOrdonnancementIndex(BonDeCommandeRepository $bcRepository): Response
+    {
+        // Dali voit tous les bons de commande pour les transformer en bons de travail
+        $bons = $bcRepository->findBy([], ['date' => 'DESC']);
+
+        return $this->render('home/reception_ordonnancement.html.twig', [
+            'bons' => $bons,
         ]);
     }
 

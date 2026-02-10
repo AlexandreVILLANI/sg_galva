@@ -16,15 +16,12 @@ class AppFixtures extends Fixture
 
     public function __construct(UserPasswordHasherInterface $hasher)
     {
-        // On injecte le service de hashage de mot de passe
         $this->hasher = $hasher;
     }
 
-    // src/DataFixtures/AppFixtures.php
-
     public function load(ObjectManager $manager): void
     {
-        // 1. Création des Rôles (pour ta table Role)
+        // 1. Création des Rôles (pour ta table Role de référence)
         $adminRole = new Role();
         $adminRole->setNom('Administrateur');
         $manager->persist($adminRole);
@@ -33,32 +30,48 @@ class AppFixtures extends Fixture
         $caristeRole->setNom('Cariste');
         $manager->persist($caristeRole);
 
-        // NOUVEAU : Rôle Réception
-        $receptionRole = new Role();
-        $receptionRole->setNom('Réception');
-        $manager->persist($receptionRole);
+        // Rôle pour Thibaut
+        $receptionTerrainRole = new Role();
+        $receptionTerrainRole->setNom('Réception Terrain');
+        $manager->persist($receptionTerrainRole);
 
-        // 2. Création de ton compte Admin
+        // Rôle pour Dali
+        $receptionOrdoRole = new Role();
+        $receptionOrdoRole->setNom('Réception Ordonnancement');
+        $manager->persist($receptionOrdoRole);
+
+        // 2. Création de ton compte Admin (Alex)
         $admin = new User();
         $admin->setUsername('alex');
         $admin->setPrenom('Alex');
         $admin->setTypeAcces('MDP');
         $admin->setRoles(['ROLE_ADMIN']); 
         $admin->setUserRole($adminRole);
-        $admin->setPassword($this->hasher->hashPassword($admin, 'admin')); // ou 'SgGalva2026!'
+        $admin->setPassword($this->hasher->hashPassword($admin, 'admin'));
         $manager->persist($admin);
 
-        // 3. Création du compte RÉCEPTION 1
+        // 3. Création du compte RÉCEPTION TERRAIN (Thibaut)
         $reception1 = new User();
         $reception1->setUsername('thibaut');
         $reception1->setPrenom('Thibaut');
         $reception1->setTypeAcces('MDP');
-        $reception1->setRoles(['ROLE_RECEPTION_TERRAIN']); // Le badge technique
-        $reception1->setUserRole($receptionRole); // Le lien vers l'entité
+        $reception1->setRoles(['ROLE_RECEPTION_TERRAIN']);
+        $reception1->setUserRole($receptionTerrainRole);
         $reception1->setPassword($this->hasher->hashPassword($reception1, 'reception'));
         $manager->persist($reception1);
 
-        // 4. Création d'un Cariste
+        // 4. Création du compte RÉCEPTION ORDONNANCEMENT (Dali)
+        $reception2 = new User();
+        $reception2->setUsername('dali');
+        $reception2->setPrenom('Dali');
+        $reception2->setTypeAcces('MDP');
+        $reception2->setRoles(['ROLE_RECEPTION_ORDONNANCEMENT']);
+        $reception2->setUserRole($receptionOrdoRole);
+        // Mot de passe pour se connecter : 'dali'
+        $reception2->setPassword($this->hasher->hashPassword($reception2, 'reception'));
+        $manager->persist($reception2);
+
+        // 5. Création d'un Cariste (Jean)
         $cariste = new User();
         $cariste->setUsername('cariste_nord');
         $cariste->setPrenom('Jean Cariste');
@@ -69,6 +82,7 @@ class AppFixtures extends Fixture
         $cariste->setPassword($this->hasher->hashPassword($cariste, 'cariste'));
         $manager->persist($cariste);
 
+        // 6. Emplacements et Clients (inchangé)
         $zones = ['Zone A1', 'Zone A2', 'Quai Nord', 'Quai Sud', 'Stockage Extérieur'];
         foreach ($zones as $nomZone) {
             $emplacement = new Emplacement();
@@ -76,8 +90,7 @@ class AppFixtures extends Fixture
             $manager->persist($emplacement);
         }
 
-        // 5. Clients (inchangé)
-        $nomsClients = ['ArcelorMittal', 'Eiffage', 'Bouygues Construction', 'Vinci','À définir'];
+        $nomsClients = ['ArcelorMittal', 'Eiffage', 'Bouygues Construction', 'Vinci', 'À définir'];
         foreach ($nomsClients as $nom) {
             $client = new Client();
             $client->setNom($nom);
@@ -89,8 +102,6 @@ class AppFixtures extends Fixture
             $client->setFax('418 643-3210');
             $manager->persist($client);
         }
-
-        
 
         $manager->flush();
     }

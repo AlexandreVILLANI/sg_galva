@@ -1,0 +1,226 @@
+<section id="list-bons-ordo" class="content-section">
+    <div class="section-header">
+        <h2 class="section-title">Bons de Commande à Ordonnancer</h2>
+    </div>
+
+    {# --- BARRE DE FILTRES COMPLÈTE --- #}
+    <div class="filter-bar">
+        <div class="filter-form">
+            {# 1. Recherche Texte #}
+            <div class="filter-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="filterGeneralOrdo" placeholder="REFI ou Client...">
+            </div>
+
+            {# 2. Filtre Date #}
+            <div class="filter-group">
+                <i class="fas fa-calendar-day"></i>
+                <input type="date" id="filterDateOrdo">
+            </div>
+
+            {# 3. Filtre Forfait (NOUVEAU) #}
+            <div class="filter-group">
+                <i class="fas fa-tags"></i>
+                <select id="filterForfaitOrdo">
+                    <option value="">Tous les forfaits</option>
+                    <option value="standard">Standard</option>
+                    <option value="usinage">Usinage</option>
+                    <option value="perçage">Perçage</option>
+                    <option value="montage">Montage</option>
+                </select>
+            </div>
+
+            {# 4. Filtre Statut (NOUVEAU) #}
+            <div class="filter-group">
+                <i class="fas fa-check-circle"></i>
+                <select id="filterStatusOrdo">
+                    <option value="">Tous les états</option>
+                    <option value="attente">À valider</option>
+                    <option value="valide">Validé</option>
+                </select>
+            </div>
+            
+            <a href="#" class="btn-reset" id="resetOrdoFilters" title="Réinitialiser">
+                <i class="fas fa-sync-alt"></i>
+            </a>
+        </div>
+    </div>
+
+    {# --- TABLEAU --- #}
+    <div class="table-container">
+        <div class="table-grid header">
+            <span>REFI / Date</span>
+            <span>Client</span>
+            <span>Forfait</span>
+            <span>Statut</span>
+            <span style="text-align: center;">Actions</span>
+        </div>
+
+        <div id="ordoTableBody">
+            {% for bon in bons %}
+                <div class="table-grid row clickable-row" 
+                     data-refi="{{ bon.refi|trim|lower }}" 
+                     data-client="{{ bon.client.nom|trim|lower }}" 
+                     data-date="{{ bon.date|date('Y-m-d') }}"
+                     data-forfait="{{ bon.forfait|default('Standard')|lower }}" 
+                     data-status="{{ bon.isValidatedOrdo ? 'valide' : 'attente' }}"
+                     onclick="window.location='{{ path('app_bon_commande_ordo_edit', {'id': bon.id}) }}'">
+                    
+                    <div class="ref-cell-group">
+                        <span class="ref-cell">{{ bon.refi }}</span>
+                        <small class="date-subtext">{{ bon.date|date('d/m H:i') }}</small>
+                    </div>
+
+                    <span class="client-cell" style="font-weight: 500;">{{ bon.client.nom }}</span>
+
+                    <span>
+                        <span class="badge-info">{{ bon.forfait|default('Standard') }}</span>
+                    </span>
+
+                    <span>
+                        {% if bon.isValidatedOrdo %}
+                            <span class="badge-success">
+                                <i class="fas fa-check-circle"></i> Validé
+                            </span>
+                        {% else %}
+                            <span class="badge-waiting">
+                                <i class="fas fa-hourglass-half"></i> À valider
+                            </span>
+                        {% endif %}
+                    </span>
+
+                    <span class="actions-cell" style="display: flex; justify-content: center;" onclick="event.stopPropagation();">
+                        <a href="{{ path('app_bon_commande_ordo_edit', {'id': bon.id}) }}" class="btn-edit-simple">
+                            {% if bon.isValidatedOrdo %}
+                                <i class="fas fa-eye" style="color: #10b981;"></i>
+                            {% else %}
+                                <i class="fas fa-edit"></i>
+                            {% endif %}
+                        </a>
+                    </span>
+                </div>
+            {% else %}
+                <div class="no-data">
+                    <i class="fas fa-inbox" style="font-size: 24px; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+                    <span>Aucun bon de commande trouvé.</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<script>
+    function setupOrdoFilters() {
+        // 1. Récupération des inputs
+        const inputSearch = document.getElementById('filterGeneralOrdo');
+        const inputDate = document.getElementById('filterDateOrdo');
+        const selectForfait = document.getElementById('filterForfaitOrdo');
+        const selectStatus = document.getElementById('filterStatusOrdo');
+        const btnReset = document.getElementById('resetOrdoFilters');
+        
+        const rows = document.querySelectorAll('#ordoTableBody .row');
+
+        if (!inputSearch || rows.length === 0) return;
+
+        // 2. La fonction de filtrage (4 critères)
+        function filterTable() {
+            const valSearch = inputSearch.value.toLowerCase().trim();
+            const valDate = inputDate.value;
+            const valForfait = selectForfait.value.toLowerCase();
+            const valStatus = selectStatus.value;
+
+            rows.forEach(row => {
+                const rowRefi = row.dataset.refi || "";
+                const rowClient = row.dataset.client || "";
+                const rowDate = row.dataset.date || "";
+                const rowForfait = row.dataset.forfait || "";
+                const rowStatus = row.dataset.status || "";
+
+                // Vérification des 4 conditions
+                const matchesSearch = rowRefi.includes(valSearch) || rowClient.includes(valSearch);
+                const matchesDate = valDate === "" || rowDate === valDate;
+                const matchesForfait = valForfait === "" || rowForfait.includes(valForfait);
+                const matchesStatus = valStatus === "" || rowStatus === valStatus;
+
+                // Affichage si TOUT est vrai
+                row.style.display = (matchesSearch && matchesDate && matchesForfait && matchesStatus) ? 'grid' : 'none';
+            });
+        }
+
+        // 3. Nettoyage et ajout des écouteurs
+        [inputSearch, inputDate, selectForfait, selectStatus].forEach(el => {
+            el.removeEventListener('input', filterTable);
+            el.removeEventListener('change', filterTable);
+            el.addEventListener(el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input', filterTable);
+        });
+
+        // 4. Bouton Reset
+        if (btnReset) {
+            btnReset.addEventListener('click', (e) => {
+                e.preventDefault();
+                inputSearch.value = '';
+                inputDate.value = '';
+                selectForfait.value = '';
+                selectStatus.value = '';
+                filterTable();
+            });
+        }
+    }
+
+    document.addEventListener('turbo:load', setupOrdoFilters);
+    setupOrdoFilters();
+
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => { setTimeout(setupOrdoFilters, 50); });
+    });
+</script>
+
+<style>
+    /* --- STYLE MODIFIÉ POUR ACCUEILLIR 4 FILTRES --- */
+    .filter-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    
+    .filter-group { 
+        display: flex; 
+        align-items: center; 
+        background: #f9fafb; 
+        border: 1px solid #e5e7eb; 
+        padding: 8px 12px; 
+        border-radius: 6px; 
+        flex: 1; 
+        min-width: 140px; /* Assure que les select ne soient pas trop petits */
+        transition: all 0.2s ease; 
+    }
+
+    .filter-group select {
+        border: none;
+        background: transparent;
+        font-size: 13px;
+        outline: none;
+        width: 100%;
+        color: #374151;
+        cursor: pointer;
+    }
+
+    /* Le reste du style reste identique */
+    #list-bons-ordo .table-grid { grid-template-columns: 160px 1fr 140px 140px 80px; }
+    .table-grid { display: grid; align-items: center; padding: 12px 20px; font-size: 13px; }
+    .table-container { background: white; border: 1px solid #f3f4f6; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .table-grid.header { background: #f9fafb; color: #6b7280; font-weight: 600; border-bottom: 1px solid #f3f4f6; text-transform: uppercase; font-size: 11px; }
+    .table-grid.row { border-bottom: 1px solid #f9fafb; color: #374151; transition: background 0.2s; }
+    .clickable-row { cursor: pointer; }
+    .clickable-row:hover { background-color: #f0f4ff !important; }
+    .filter-bar { background: white; padding: 15px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .filter-group:focus-within { border-color: #2e46a6; background: white; box-shadow: 0 0 0 3px rgba(46, 70, 166, 0.05); }
+    .filter-group i { color: #9ca3af; margin-right: 10px; font-size: 14px; }
+    .filter-group input { border: none; background: transparent; font-size: 13px; outline: none; width: 100%; color: #374151; font-family: inherit; }
+    .btn-reset { color: #6b7280; background: #f3f4f6; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.3s; border: 1px solid #e5e7eb; flex-shrink: 0; }
+    .btn-reset:hover { background: #e5e7eb; color: #2e46a6; border-color: #2e46a6; transform: rotate(180deg); }
+    .btn-edit-simple { color: #2e46a6; font-size: 16px; transition: transform 0.2s; text-decoration: none; }
+    .btn-edit-simple:hover { transform: scale(1.2); }
+    .badge-waiting { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .badge-info { background: #f0f9ff; color: #0369a1; border: 1px solid #e0f2fe; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .badge-success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .ref-cell { font-family: 'Monaco', 'Consolas', monospace; font-weight: 600; color: #2e46a6; }
+    .date-subtext { color: #9ca3af; font-size: 11px; display: block; }
+    .no-data { grid-template-columns: 1fr !important; text-align: center; padding: 40px !important; color: #9ca3af; font-style: italic; }
+</style>

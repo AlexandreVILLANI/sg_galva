@@ -72,7 +72,7 @@ class FormulaireController extends AbstractController
         ]);
     }
 
-    #[Route('/reception/dechargement/{id}', name: 'app_dechargement_show')]
+    #[Route('/reception-terrain/dechargement/{id}', name: 'app_dechargement_show')]
     #[IsGranted('ROLE_RECEPTION_TERRAIN')]
     public function show(FicheDechargement $fiche): Response
     {
