@@ -116,7 +116,7 @@
 
         {# --- SECTION PHOTOS --- #}
         <div class="photo-section mt-4">
-            {# 1. ARCHIVE DÉCHARGEMENT (Lecture seule) #}
+            {# ARCHIVE DÉCHARGEMENT (Lecture seule) #}
             <div class="bc-box mb-4">
                 <label class="label">Archive Déchargement (Fiche #{{ fiche.id }})</label>
                 <div class="photo-grid">
@@ -128,7 +128,7 @@
                 </div>
             </div>
 
-            {# 2. PHOTOS DU BON DE COMMANDE (Gestion) #}
+            {# PHOTOS DU BON DE COMMANDE (Gestion) #}
             <div class="bc-box">
                 <label class="label">Photos du Bon (Déjà enregistrées)</label>
                 <div class="photo-grid mb-4">
@@ -150,15 +150,16 @@
                     <i class="fas fa-cloud-upload-alt"></i>
                     <p>Glisser-déposer ou <span class="browse">Parcourir</span></p>
                 </div>
-                
-                {# Conteneur pour l'aperçu des NOUVELLES photos #}
                 <div id="file-preview" class="photo-grid mt-3"></div>
             </div>
         </div>
 
         {# --- ACTIONS --- #}
         <div class="bc-actions no-print">
-            <a href="{{ path('app_reception_terrain_home') }}" class="btn-cancel"><i class="fas fa-arrow-left"></i> Annuler</a>
+            <a href="{{ path('app_reception_terrain_home', {'section': 'list-scans'}) }}" class="btn-cancel">
+                <i class="fas fa-arrow-left"></i> Annuler
+            </a>
+            
             <button type="submit" class="btn-confirm"><i class="fas fa-save"></i> METTRE À JOUR</button>
         </div>
         {{ form_rest(form) }}
