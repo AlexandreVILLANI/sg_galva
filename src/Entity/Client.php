@@ -30,10 +30,10 @@ class Client
     #[ORM\Column(length: 150, nullable: true)]
     private ?string $ville = null; // Correspond à "Ville"
 
-    #[ORM\Column(length: 20, nullable: true)]
+    #[ORM\Column(length: 50, nullable: true)]
     private ?string $telephone = null; // Correspond à "Téléphone"
 
-    #[ORM\Column(length: 20, nullable: true)]
+    #[ORM\Column(length: 50, nullable: true)]
     private ?string $fax = null; // Correspond à "Télécopie"
 
 
