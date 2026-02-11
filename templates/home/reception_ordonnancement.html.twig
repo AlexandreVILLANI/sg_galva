@@ -12,12 +12,13 @@
             </div>
 
             <nav class="sidebar-nav">
+                {# --- NAVIGATION MISE À JOUR --- #}
                 <a href="#" class="nav-item" data-target="list-bons-ordo">
-                    <i class="fas fa-tasks"></i>
+                    <i class="fas fa-clipboard-list"></i>
                     <span>Bon de commande</span>
                 </a>
-                <a href="#" class="nav-item" data-target="historique-ordo">
-                    <i class="fas fa-history"></i>
+                <a href="#" class="nav-item" data-target="list-bons-travail">
+                    <i class="fas fa-tools"></i>
                     <span>Bon de travail</span>
                 </a>
             </nav>
@@ -43,15 +44,18 @@
         </header>
 
         {# État vide par défaut #}
-        <div id="empty-state" class="empty-placeholder">
+        <div id="empty-state" class="empty-placeholder" style="display: none;">
             <div class="dashed-container">
                 <p>Sélectionnez une file de travail dans le menu de gauche</p>
             </div>
         </div>
 
         <div id="content-area">
-            {# Inclusion du composant de liste pour Dali #}
+            {# 1. Liste des Bons de Commande (Dali) #}
             {{ include('components/reception-ordonnancement/_list_bon_commande.html.twig') }}
+
+            {# 2. Liste des Bons de Travail (Atelier) --- À CRÉER --- #}
+            {{ include('components/reception-ordonnancement/_list_bon_travail.html.twig') }}
         </div>
     </main>
 </div>
@@ -62,7 +66,6 @@
         const emptyState = document.getElementById('empty-state');
         const sections = document.querySelectorAll('.content-section');
 
-        // Fonction pour afficher une section spécifique
         function showSection(id) {            
             const target = document.getElementById(id);
             const nav = document.querySelector(`[data-target="${id}"]`);
@@ -70,7 +73,7 @@
             if (target && nav) {
                 if (emptyState) emptyState.style.display = 'none';
                 
-                // 1. On cache tout
+                // 1. On cache toutes les sections
                 sections.forEach(s => { 
                     s.style.display = 'none'; 
                     s.classList.remove('active'); 
@@ -82,46 +85,38 @@
                 target.classList.add('active');
                 nav.classList.add('active');
 
-                // 3. On sauvegarde le choix dans la mémoire du navigateur
+                // 3. Sauvegarde
                 localStorage.setItem('ordoLastTab', id);
+
+                // 4. Relancer les scripts de filtrage spécifiques à la section
+                if (id === 'list-bons-ordo' && typeof setupOrdoFilters === 'function') setupOrdoFilters();
+                if (id === 'list-bons-travail' && typeof setupBTFilters === 'function') setupBTFilters();
             }
         }
 
-        // Gestion du clic sur les menus
         navItems.forEach(item => {
             item.onclick = function(e) {
                 e.preventDefault();
-                const targetId = this.getAttribute('data-target');
-                showSection(targetId);
+                showSection(this.getAttribute('data-target'));
             };
         });
 
-        // --- LOGIQUE DE CHARGEMENT INTELLIGENTE ---
-        
-        // 1. On regarde s'il y a un paramètre dans l'URL (ex: venant du contrôleur après validation)
+        // Logique de chargement
         const urlParams = new URLSearchParams(window.location.search);
         const sectionParam = urlParams.get('section');
-
-        // 2. On regarde s'il y a un souvenir dans le navigateur
         const storedTab = localStorage.getItem('ordoLastTab');
 
         if (sectionParam) {
-            // Priorité absolue à l'URL (quand on vient de valider)
             showSection(sectionParam);
-            // On nettoie l'URL pour que ce soit propre (optionnel)
             window.history.replaceState({}, document.title, window.location.pathname);
         } else if (storedTab) {
-            // Sinon, on restaure le dernier onglet visité
             showSection(storedTab);
         } else {
-            // Par défaut, on affiche la liste
             showSection('list-bons-ordo');
         }
     }
 
-    // Compatibilité Turbo
     document.addEventListener('turbo:load', initOrdoDashboard);
-    // Compatibilité Chargement classique
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initOrdoDashboard);
     } else {
@@ -133,6 +128,7 @@
     :root {
         --sidebar-width: 260px;
         --primary-blue: #2e46a6;
+        --primary-gold: #dcb35c; /* Couleur pour le Bon de Travail */
         --text-gray: #6b7280;
         --bg-gray: #f9fafb;
         --border-color: #f3f4f6;
@@ -154,30 +150,26 @@
     .logo-box { 
         background: var(--primary-blue); 
         color: white; 
-        width: 32px; 
-        height: 32px; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        border-radius: 6px; 
-        font-weight: 800; 
-        font-size: 13px; 
+        width: 32px; height: 32px; 
+        display: flex; align-items: center; justify-content: center; 
+        border-radius: 6px; font-weight: 800; font-size: 13px; 
     }
     .brand-name { font-weight: 700; color: #111827; font-size: 15px; letter-spacing: -0.3px; }
 
     .nav-item { 
-        display: flex; 
-        align-items: center; 
-        gap: 12px; 
-        padding: 12px 20px; 
-        text-decoration: none; 
-        color: #4b5563; 
-        font-size: 13px; 
-        transition: 0.2s;
+        display: flex; align-items: center; gap: 12px; padding: 12px 20px; 
+        text-decoration: none; color: #4b5563; font-size: 13px; transition: 0.2s;
     }
     .nav-item i { font-size: 14px; width: 20px; text-align: center; }
     .nav-item:hover { background: var(--bg-gray); }
-    .nav-item.active { color: var(--primary-blue); font-weight: 600; background: #f0f4ff; border-right: 3px solid var(--primary-blue); }
+    
+    /* Styles actifs différenciés */
+    .nav-item[data-target="list-bons-ordo"].active { 
+        color: var(--primary-blue); font-weight: 600; background: #f0f4ff; border-right: 3px solid var(--primary-blue); 
+    }
+    .nav-item[data-target="list-bons-travail"].active { 
+        color: var(--primary-gold); font-weight: 600; background: #fffdf5; border-right: 3px solid var(--primary-gold); 
+    }
 
     .sidebar-footer { padding: 15px 20px; border-top: 1px solid var(--border-color); }
     .logout-link { color: #ef4444; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; }
@@ -186,26 +178,16 @@
     .main-content { flex-grow: 1; background: white; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
     
     .user-welcome-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 20px 25px 20px;
-        border-bottom: 1px solid var(--border-color);
-        margin-bottom: 20px;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 20px 25px 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px;
     }
 
     .welcome-message { font-size: 18px; color: #111827; }
     .welcome-message strong { color: var(--primary-blue); font-weight: 700; text-transform: capitalize; }
 
     .current-date {
-        font-size: 13px;
-        color: var(--text-gray);
-        display: flex;
-        align-items: center; gap: 8px;
-        background: var(--bg-gray);
-        padding: 6px 12px;
-        border-radius: 20px;
-        border: 1px solid var(--border-color);
+        font-size: 13px; color: var(--text-gray); display: flex; align-items: center; gap: 8px;
+        background: var(--bg-gray); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border-color);
     }
 
     .empty-placeholder { flex-grow: 1; display: flex; padding: 10px; }
@@ -215,7 +197,8 @@
         color: #9ca3af; font-size: 14px; background: #fafafa;
     }
 
-    .content-section { display: none; padding: 20px; }
+    /* Sections */
+    .content-section { display: none; }
     .content-section.active { display: block; animation: fadeIn 0.3s ease; }
 
     @keyframes fadeIn {

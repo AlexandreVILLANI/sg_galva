@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 
 use App\Repository\FicheDechargementRepository;
 use App\Repository\BonDeCommandeRepository; 
+use App\Repository\BonTravailRepository;
 
 class HomeController extends AbstractController
 {
@@ -121,13 +122,19 @@ class HomeController extends AbstractController
      */
     #[Route('/reception-ordonnancement', name: 'app_reception_ordonnancement_home')]
     #[IsGranted('ROLE_RECEPTION_ORDONNANCEMENT')]
-    public function receptionOrdonnancementIndex(BonDeCommandeRepository $bcRepository): Response
-    {
-        // Dali voit tous les bons de commande pour les transformer en bons de travail
+    public function receptionOrdonnancementIndex(
+        BonDeCommandeRepository $bcRepository,
+        BonTravailRepository $btRepository // <--- Injection du Repository des BT
+    ): Response {
+        // 1. Dali voit tous les bons de commande
         $bons = $bcRepository->findBy([], ['date' => 'DESC']);
+
+        // 2. RÉCUPÉRATION DES BONS DE TRAVAIL (La variable qui manquait !)
+        $bons_travail = $btRepository->findBy([], ['dateCreation' => 'DESC']);
 
         return $this->render('home/reception_ordonnancement.html.twig', [
             'bons' => $bons,
+            'bons_travail' => $bons_travail, // <--- On l'envoie enfin au template
         ]);
     }
 
