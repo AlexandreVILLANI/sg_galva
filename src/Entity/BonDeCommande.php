@@ -53,9 +53,6 @@ class BonDeCommande
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $commentaire = null;
-
-    // --- CHAMPS DE VALIDATION ORDONNANCEMENT (DALI) ---
-    // On garde ça car c'est utile pour filtrer la liste
     
     #[ORM\Column(options: ["default" => false])]
     private ?bool $isValidatedOrdo = false;
@@ -63,7 +60,9 @@ class BonDeCommande
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $validatedAtOrdo = null;
 
-    // -------------------------------------------
+    #[ORM\OneToOne(mappedBy: 'bonCommande', cascade: ['persist', 'remove'])]
+    private ?BonTravail $bonTravail = null;
+
 
     public function __construct()
     {
@@ -113,11 +112,11 @@ class BonDeCommande
 
     public function isIsGalvanisation(): ?bool { return $this->isGalvanisation; }
     public function setIsGalvanisation(?bool $isGalvanisation): static { $this->isGalvanisation = $isGalvanisation; return $this; }
-    public function isGalvanisation(): ?bool { return $this->isGalvanisation; } // Alias
+    public function isGalvanisation(): ?bool { return $this->isGalvanisation; }
 
     public function isIsCataphorese(): ?bool { return $this->isCataphorese; }
     public function setIsCataphorese(?bool $isCataphorese): static { $this->isCataphorese = $isCataphorese; return $this; }
-    public function isCataphorese(): ?bool { return $this->isCataphorese; } // Alias
+    public function isCataphorese(): ?bool { return $this->isCataphorese; } 
 
     public function getStockage(): ?string { return $this->stockage; }
     public function setStockage(?string $stockage): static { $this->stockage = $stockage; return $this; }
@@ -133,4 +132,10 @@ class BonDeCommande
 
     public function getValidatedAtOrdo(): ?\DateTimeInterface { return $this->validatedAtOrdo; }
     public function setValidatedAtOrdo(?\DateTimeInterface $validatedAtOrdo): static { $this->validatedAtOrdo = $validatedAtOrdo; return $this; }
+    public function getBonTravail(): ?BonTravail { return $this->bonTravail;}
+    public function setBonTravail(BonTravail $bonTravail): self {
+        if ($bonTravail->getBonCommande() !== $this) {
+            $bonTravail->setBonCommande($this);
+        } $this->bonTravail = $bonTravail; return $this;
+    }
 }

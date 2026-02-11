@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\LigneDechargementRepository;
+use Doctrine\DBAL\Types\Types; // Nécessaire pour le type TEXT
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: LigneDechargementRepository::class)]
@@ -16,7 +17,6 @@ class LigneDechargement
     #[ORM\Column]
     private ?int $nbPaquets = null;
 
-    // Nouveau champ pour le nom du produit / description
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $description = null;
 
@@ -28,12 +28,30 @@ class LigneDechargement
     #[ORM\JoinColumn(nullable: false)]
     private ?FicheDechargement $fiche = null;
 
+    // --- NOUVEAUX CHAMPS (Pour le Bon de Travail) ---
+
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    private ?float $poids = null; // Poids en KG
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $u = null; // "U" (contient des lettres)
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $reference = null; // Référence (ex: GK, GFO...)
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $travauxAnnexes = null; // Liste des travaux à faire
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $observations = null; // Observations générales
+
+    // --- GETTERS ET SETTERS ---
+
     public function getId(): ?int { return $this->id; }
 
     public function getNbPaquets(): ?int { return $this->nbPaquets; }
     public function setNbPaquets(int $nbPaquets): self { $this->nbPaquets = $nbPaquets; return $this; }
 
-    // Getter et Setter pour la description
     public function getDescription(): ?string { return $this->description; }
     public function setDescription(?string $description): self { $this->description = $description; return $this; }
 
@@ -42,4 +60,21 @@ class LigneDechargement
 
     public function getFiche(): ?FicheDechargement { return $this->fiche; }
     public function setFiche(?FicheDechargement $fiche): self { $this->fiche = $fiche; return $this; }
+
+    // --- NOUVEAUX GETTERS ET SETTERS ---
+
+    public function getPoids(): ?float { return $this->poids; }
+    public function setPoids(?float $poids): self { $this->poids = $poids; return $this; }
+
+    public function getU(): ?string { return $this->u; }
+    public function setU(?string $u): self { $this->u = $u; return $this; }
+
+    public function getReference(): ?string { return $this->reference; }
+    public function setReference(?string $reference): self { $this->reference = $reference; return $this; }
+
+    public function getTravauxAnnexes(): ?string { return $this->travauxAnnexes; }
+    public function setTravauxAnnexes(?string $travauxAnnexes): self { $this->travauxAnnexes = $travauxAnnexes; return $this; }
+
+    public function getObservations(): ?string { return $this->observations; }
+    public function setObservations(?string $observations): self { $this->observations = $observations; return $this; }
 }

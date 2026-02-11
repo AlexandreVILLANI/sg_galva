@@ -72,8 +72,8 @@ class FormulaireController extends AbstractController
         ]);
     }
 
-    #[Route('/reception-terrain/dechargement/{id}', name: 'app_dechargement_show')]
-    #[IsGranted('ROLE_RECEPTION_TERRAIN')]
+    #[Route('/reception/dechargement/{id}', name: 'app_dechargement_show')]
+    #[IsGranted('ROLE_RECEPTION')]
     public function show(FicheDechargement $fiche): Response
     {
         return $this->render('formulaire/show.html.twig', [
