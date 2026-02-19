@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use App\Repository\FicheDechargementRepository;
 use App\Repository\BonDeCommandeRepository; 
 use App\Repository\BonTravailRepository;
+use App\Repository\PlanningRepository; 
 
 class HomeController extends AbstractController
 {
@@ -30,7 +31,11 @@ class HomeController extends AbstractController
             return $this->redirectToRoute('app_admin_home');
         }
         
-        // AJOUT : Redirection pour Dali
+        // --- NOUVEAU : Redirection pour le Planning / Ordonnancement ---
+        if ($this->isGranted('ROLE_ORDONNANCEMENT')) {
+            return $this->redirectToRoute('app_ordonnancement_home');
+        }
+        
         if ($this->isGranted('ROLE_RECEPTION_ORDONNANCEMENT')) {
             return $this->redirectToRoute('app_reception_ordonnancement_home');
         }
@@ -56,10 +61,16 @@ class HomeController extends AbstractController
         if ($this->isGranted('ROLE_ADMIN')) {
             return $this->redirectToRoute('app_admin_home');
         }
-        // AJOUT : Sécurité pour Dali s'il arrive sur /home
+        
+        // --- NOUVEAU : Sécurité pour Ordonnancement ---
+        if ($this->isGranted('ROLE_ORDONNANCEMENT')) {
+            return $this->redirectToRoute('app_ordonnancement_home');
+        }
+        
         if ($this->isGranted('ROLE_RECEPTION_ORDONNANCEMENT')) {
             return $this->redirectToRoute('app_reception_ordonnancement_home');
         }
+        
         if ($this->isGranted('ROLE_RECEPTION_TERRAIN')) {
             return $this->redirectToRoute('app_reception_terrain_home');
         }
@@ -124,17 +135,40 @@ class HomeController extends AbstractController
     #[IsGranted('ROLE_RECEPTION_ORDONNANCEMENT')]
     public function receptionOrdonnancementIndex(
         BonDeCommandeRepository $bcRepository,
-        BonTravailRepository $btRepository // <--- Injection du Repository des BT
+        BonTravailRepository $btRepository
     ): Response {
-        // 1. Dali voit tous les bons de commande
         $bons = $bcRepository->findBy([], ['date' => 'DESC']);
-
-        // 2. RÉCUPÉRATION DES BONS DE TRAVAIL (La variable qui manquait !)
         $bons_travail = $btRepository->findBy([], ['dateCreation' => 'DESC']);
 
         return $this->render('home/reception_ordonnancement.html.twig', [
             'bons' => $bons,
-            'bons_travail' => $bons_travail, // <--- On l'envoie enfin au template
+            'bons_travail' => $bons_travail,
+        ]);
+    }
+
+    // =========================================================================
+    // NOUVEAU BLOC : ESPACE ORDONNANCEMENT (Planning)
+    // =========================================================================
+    
+    /**
+     * Espace ORDONNANCEMENT (Gestion des Plannings GB/PB)
+     */
+    #[Route('/ordonnancement', name: 'app_ordonnancement_home')]
+    #[IsGranted('ROLE_ORDONNANCEMENT')]
+    public function ordonnancementIndex(
+        BonTravailRepository $btRepository,
+        PlanningRepository $planningRepository // <--- INJECTION ICI
+    ): Response {
+        
+        // 1. On récupère les Bons de Travail pour l'onglet "À planifier"
+        $bons_travail = $btRepository->findBy([], ['dateCreation' => 'DESC']);
+        
+        // 2. On récupère les Plannings pour l'onglet "Plannings du Jour"
+        $plannings = $planningRepository->findBy([], ['datePlanning' => 'DESC']);
+        
+        return $this->render('home/ordonnancement.html.twig', [
+            'bons_travail' => $bons_travail,
+            'plannings' => $plannings,
         ]);
     }
 

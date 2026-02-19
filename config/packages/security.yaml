@@ -46,12 +46,14 @@ security:
         ROLE_RECEPTION_ORDONNANCEMENT: ROLE_USER
         ROLE_RECEPTION_TERRAIN:   ROLE_USER
         ROLE_CARISTE:     ROLE_USER
+        ROLE_ORDONNANCEMENT: ROLE_USER
         # L'admin a TOUS les pouvoirs des autres
-        ROLE_ADMIN: [ROLE_RECEPTION_TERRAIN, ROLE_RECEPTION_ORDONNANCEMENT, ROLE_CARISTE]
+        ROLE_ADMIN: [ROLE_RECEPTION_TERRAIN, ROLE_RECEPTION_ORDONNANCEMENT, ROLE_CARISTE, ROLE_ORDONNANCEMENT]
 
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/ordonnancement, roles: ROLE_ORDONNANCEMENT }
         - { path: ^/reception-terrain, roles: ROLE_RECEPTION_TERRAIN }
         - { path: ^/reception-ordonnancement, roles: ROLE_RECEPTION_ORDONNANCEMENT }
         - { path: ^/cariste, roles: ROLE_CARISTE }

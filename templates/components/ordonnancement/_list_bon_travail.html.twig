@@ -1,4 +1,4 @@
-<section id="list-bons-travail" class="content-section" style="display: none;">
+<section id="ordo-bons-travail" class="content-section" style="display: none;">
     <div class="section-header">
         <h2 class="section-title">Bons de Travail</h2>
     </div>
@@ -8,24 +8,24 @@
         <div class="filter-form">
             <div class="filter-group">
                 <i class="fas fa-search"></i>
-                <input type="text" id="filterGeneralBT" placeholder="N° BT, REFI ou Client...">
+                <input type="text" id="filterGeneralOrdoBT" placeholder="N° BT, REFI ou Client...">
             </div>
 
             <div class="filter-group">
                 <i class="fas fa-calendar-alt"></i>
-                <input type="date" id="filterDateBT">
+                <input type="date" id="filterDateOrdoBT">
             </div>
 
             <div class="filter-group">
                 <i class="fas fa-tasks"></i>
-                <select id="filterStatusBT">
+                <select id="filterStatusOrdoBT">
                     <option value="">Tous les états</option>
                     <option value="urgent">Urgent</option>
                     <option value="normal">Normal</option>
                 </select>
             </div>
             
-            <a href="#" class="btn-reset" id="resetBTFilters" title="Réinitialiser">
+            <a href="#" class="btn-reset" id="resetOrdoBTFilters" title="Réinitialiser">
                 <i class="fas fa-sync-alt"></i>
             </a>
         </div>
@@ -41,18 +41,18 @@
             <span style="text-align: center;">Actions</span>
         </div>
 
-        <div id="btTableBody">
-            {% for bt in bons_travail %}
+        <div id="ordoBtTableBody">
+            {% for bt in bons_travail|default([]) %}
                 <div class="table-grid row clickable-row bt-grid-template" 
                      data-btnum="{{ bt.numero|lower }}"
                      data-refi="{{ bt.bonCommande.refi|lower }}" 
                      data-client="{{ bt.bonCommande.client.nom|lower }}" 
                      data-date="{{ bt.dateCreation|date('Y-m-d') }}"
                      data-status="{{ bt.exigenceParticuliere ? 'urgent' : 'normal' }}"
-                     onclick="window.location='{{ path('app_bon_travail_new', {'id': bt.bonCommande.id}) }}'">
+                     onclick="alert('Ouverture du module de planification pour ce BT (à venir)')">
                     
                     <div class="ref-cell-group">
-                        <span class="ref-cell" style="color: #dcb35c;">{{ bt.numero }}</span>
+                        <span class="ref-cell" style="color: var(--primary-green);">{{ bt.numero }}</span>
                         <small class="date-subtext">Créé le {{ bt.dateCreation|date('d/m/Y') }}</small>
                     </div>
 
@@ -67,15 +67,15 @@
                     </span>
 
                     <span class="actions-cell" style="display: flex; justify-content: center;" onclick="event.stopPropagation();">
-                        <a href="{{ path('app_bon_travail_new', {'id': bt.bonCommande.id}) }}" class="btn-edit-simple">
-                            <i class="fas fa-file-invoice" style="color: #dcb35c;"></i>
+                        <a href="#" class="btn-edit-simple" title="Planifier ce BT">
+                            <i class="fas fa-calendar-plus" style="color: var(--primary-green);"></i>
                         </a>
                     </span>
                 </div>
             {% else %}
                 <div class="no-data">
-                    <i class="fas fa-tools" style="font-size: 24px; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
-                    <span>Aucun bon de travail généré.</span>
+                    <i class="fas fa-clipboard-list" style="font-size: 24px; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+                    <span>Aucun bon de travail en attente de planification.</span>
                 </div>
             {% endfor %}
         </div>
@@ -83,13 +83,13 @@
 </section>
 
 <script>
-function setupBTFilters() {
-    const inputSearch = document.getElementById('filterGeneralBT');
-    const inputDate = document.getElementById('filterDateBT');
-    const selectStatus = document.getElementById('filterStatusBT');
-    const btnReset = document.getElementById('resetBTFilters');
+function setupOrdoBTFilters() {
+    const inputSearch = document.getElementById('filterGeneralOrdoBT');
+    const inputDate = document.getElementById('filterDateOrdoBT');
+    const selectStatus = document.getElementById('filterStatusOrdoBT');
+    const btnReset = document.getElementById('resetOrdoBTFilters');
     
-    const rows = document.querySelectorAll('#btTableBody .row');
+    const rows = document.querySelectorAll('#ordoBtTableBody .row');
 
     if (!inputSearch || rows.length === 0) return;
 
@@ -128,22 +128,35 @@ function setupBTFilters() {
     }
 }
 
-// À ajouter dans tes écouteurs d'événements existants
+// On s'assure que le filtre se lance bien quand on arrive sur la page
 document.addEventListener('turbo:load', () => {
-    setupOrdoFilters();
-    setupBTFilters();
+    if (typeof setupOrdoBTFilters === 'function') {
+        setupOrdoBTFilters();
+    }
 });
 </script>
 
 <style>
     /* Template de grille spécifique pour le BT */
     .bt-grid-template { 
+        display: grid;
         grid-template-columns: 160px 140px 1fr 140px 80px !important; 
+        align-items: center; 
+        padding: 12px 20px;
     }
 
     /* Badge spécifique pour les délais */
+    .badge-info {
+        background: #f0f9ff; color: #0369a1; border: 1px solid #e0f2fe; 
+        padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
+    }
     .badge-info i { margin-right: 4px; font-size: 10px; }
     
-    /* Couleur dorée pour les éléments BT */
-    .btn-edit-simple .fa-file-invoice:hover { transform: scale(1.2); }
+    /* Bouton d'action et couleurs (Adapté au thème Vert de l'Ordonnancement) */
+    .btn-edit-simple { font-size: 16px; transition: transform 0.2s; text-decoration: none; }
+    .btn-edit-simple:hover { transform: scale(1.2); }
+    
+    .table-grid.row { border-bottom: 1px solid #f9fafb; color: #374151; transition: background 0.2s; }
+    .clickable-row { cursor: pointer; }
+    .clickable-row:hover { background-color: #f0fdf4 !important; } /* Un hover vert très léger */
 </style>

@@ -40,6 +40,11 @@ class AppFixtures extends Fixture
         $receptionOrdoRole->setNom('Réception Ordonnancement');
         $manager->persist($receptionOrdoRole);
 
+        // Rôle pour Gérard
+        $ordoRole = new Role();
+        $ordoRole->setNom('Ordonnancement Planning');
+        $manager->persist($ordoRole);
+
         // 2. Création de ton compte Admin (Alex)
         $admin = new User();
         $admin->setUsername('alex');
@@ -67,9 +72,18 @@ class AppFixtures extends Fixture
         $reception2->setTypeAcces('MDP');
         $reception2->setRoles(['ROLE_RECEPTION_ORDONNANCEMENT']);
         $reception2->setUserRole($receptionOrdoRole);
-        // Mot de passe pour se connecter : 'dali'
         $reception2->setPassword($this->hasher->hashPassword($reception2, 'reception'));
         $manager->persist($reception2);
+
+        //Création rôle ordonnacement planning 
+        $userOrdo = new User();
+        $userOrdo->setUsername('gerard'); 
+        $userOrdo->setPrenom('Gerard');
+        $userOrdo->setTypeAcces('MDP');
+        $userOrdo->setRoles(['ROLE_ORDONNANCEMENT']);
+        $userOrdo->setUserRole($ordoRole);
+        $userOrdo->setPassword($this->hasher->hashPassword($userOrdo, 'ordonnancement'));
+        $manager->persist($userOrdo);
 
         // 5. Création d'un Cariste (Jean)
         $cariste = new User();

@@ -19,14 +19,13 @@ class BonTravailController extends AbstractController
     public function new(BonDeCommande $commande, Request $request, EntityManagerInterface $em, BonTravailRepository $btRepo): Response 
     {
         $bt = $commande->getBonTravail();
-        
-        // Si aucun BT n'existe pour cette commande, on le crée
+
         if (!$bt) {
             $bt = new BonTravail();
             $bt->setBonCommande($commande);
 
-            $lastNumero = $btRepo->findLastNumero(); // ex: "BT-26-0023"
-            $currentYear = date('y'); // "26"
+            $lastNumero = $btRepo->findLastNumero();
+            $currentYear = date('y'); 
             $nextSequence = 1;
 
             if ($lastNumero) {
@@ -34,8 +33,6 @@ class BonTravailController extends AbstractController
                 $lastYear = $parts[1] ?? '';
                 $lastSequence = (int) end($parts); 
 
-                // Si on change d'année (ex: on passe de 25 à 26), on repart à 1
-                // Sinon on incrémente
                 if ($lastYear === $currentYear) {
                     $nextSequence = $lastSequence + 1;
                 }
@@ -45,7 +42,6 @@ class BonTravailController extends AbstractController
             
             $bt->setNumero($newNumero);
             
-            // IMPORTANT : On persiste et on flush tout de suite pour bloquer le numéro en DB
             $em->persist($bt);
             $em->flush();
         }
@@ -63,7 +59,7 @@ class BonTravailController extends AbstractController
             'form' => $form->createView(),
             'bt' => $bt,
             'commande' => $commande,
-            'lignes' => $bt->getLignes(), // Utilise la méthode getLignes de l'entité BT
+            'lignes' => $bt->getLignes(), 
         ]);
     }
 }
