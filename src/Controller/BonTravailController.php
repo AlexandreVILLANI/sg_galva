@@ -15,6 +15,9 @@ use App\Repository\BonTravailRepository;
 
 class BonTravailController extends AbstractController
 {
+    /**
+     * ROUTE 1 : Création / Édition du Bon de Travail (Pour Dali)
+     */
     #[Route('/bon-travail/generer/{id}', name: 'app_bon_travail_new')]
     public function new(BonDeCommande $commande, Request $request, EntityManagerInterface $em, BonTravailRepository $btRepo): Response 
     {
@@ -60,6 +63,33 @@ class BonTravailController extends AbstractController
             'bt' => $bt,
             'commande' => $commande,
             'lignes' => $bt->getLignes(), 
+        ]);
+    }
+
+    /**
+     * ROUTE 2 : Vue en LECTURE SEULE (sauf le délai) pour Ordonnancement
+     */
+    #[Route('/bon-travail/voir/{id}', name: 'app_bon_travail_show', methods: ['GET', 'POST'])]
+    public function show(BonTravail $bt, Request $request, EntityManagerInterface $em): Response
+    {
+        if ($request->isMethod('POST')) {
+            $nouveauDelai = $request->request->get('delai_client');
+            
+            if ($nouveauDelai) {
+                $bt->setDelaiClient(new \DateTime($nouveauDelai));
+            } else {
+                $bt->setDelaiClient(null); 
+            }
+
+            $em->flush();
+            $this->addFlash('success', 'Le délai client a été mis à jour.');
+        
+            return $this->redirectToRoute('app_bon_travail_show', ['id' => $bt->getId()]);
+        }
+
+        return $this->render('bon_travail/show.html.twig', [
+            'bt' => $bt,
+            'commande' => $bt->getBonCommande(),
         ]);
     }
 }

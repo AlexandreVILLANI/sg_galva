@@ -44,12 +44,12 @@
         <div id="ordoBtTableBody">
             {% for bt in bons_travail|default([]) %}
                 <div class="table-grid row clickable-row bt-grid-template" 
-                     data-btnum="{{ bt.numero|lower }}"
-                     data-refi="{{ bt.bonCommande.refi|lower }}" 
-                     data-client="{{ bt.bonCommande.client.nom|lower }}" 
-                     data-date="{{ bt.dateCreation|date('Y-m-d') }}"
-                     data-status="{{ bt.exigenceParticuliere ? 'urgent' : 'normal' }}"
-                     onclick="alert('Ouverture du module de planification pour ce BT (à venir)')">
+                    data-btnum="{{ bt.numero|lower }}"
+                    data-refi="{{ bt.bonCommande.refi|lower }}" 
+                    data-client="{{ bt.bonCommande.client.nom|lower }}" 
+                    data-date="{{ bt.dateCreation|date('Y-m-d') }}"
+                    data-status="{{ bt.exigenceParticuliere ? 'urgent' : 'normal' }}"
+                    onclick="window.location='{{ path('app_bon_travail_show', {'id': bt.id}) }}'">
                     
                     <div class="ref-cell-group">
                         <span class="ref-cell" style="color: var(--primary-green);">{{ bt.numero }}</span>
@@ -128,7 +128,6 @@ function setupOrdoBTFilters() {
     }
 }
 
-// On s'assure que le filtre se lance bien quand on arrive sur la page
 document.addEventListener('turbo:load', () => {
     if (typeof setupOrdoBTFilters === 'function') {
         setupOrdoBTFilters();
@@ -137,26 +136,52 @@ document.addEventListener('turbo:load', () => {
 </script>
 
 <style>
-    /* Template de grille spécifique pour le BT */
-    .bt-grid-template { 
-        display: grid;
-        grid-template-columns: 160px 140px 1fr 140px 80px !important; 
-        align-items: center; 
-        padding: 12px 20px;
-    }
-
-    /* Badge spécifique pour les délais */
-    .badge-info {
-        background: #f0f9ff; color: #0369a1; border: 1px solid #e0f2fe; 
-        padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
-    }
-    .badge-info i { margin-right: 4px; font-size: 10px; }
+    /* --- CSS RAPATRIÉ ET ADAPTÉ --- */
     
-    /* Bouton d'action et couleurs (Adapté au thème Vert de l'Ordonnancement) */
+    /* Structure de la barre de filtres */
+    .filter-bar { background: white; padding: 15px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .filter-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    
+    .filter-group { 
+        display: flex; aƒgn-items: center; background: #f9fafb; border: 1px solid #e5e7eb; 
+        padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 140px; transition: all 0.2s ease; 
+    }
+    .filter-group i { color: #9ca3af; margin-right: 10px; font-size: 14px; }
+    .filter-group input { border: none; background: transparent; font-size: 13px; outline: none; width: 100%; color: #374151; font-family: inherit; }
+    .filter-group select { border: none; background: transparent; font-size: 13px; outline: none; width: 100%; color: #374151; cursor: pointer; }
+    
+    /* Focus adapté au thème vert (--primary-green) */
+    .filter-group:focus-within { border-color: var(--primary-green); background: white; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.05); }
+
+    .btn-reset { 
+        color: #6b7280; background: #f3f4f6; width: 38px; height: 38px; display: flex; 
+        align-items: center; justify-content: center; border-radius: 6px; transition: all 0.3s; 
+        border: 1px solid #e5e7eb; flex-shrink: 0; 
+    }
+    .btn-reset:hover { background: #e5e7eb; color: var(--primary-green); border-color: var(--primary-green); transform: rotate(180deg); }
+
+    /* Structure du Tableau */
+    .table-container { background: white; border: 1px solid #f3f4f6; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .table-grid { display: grid; align-items: center; padding: 12px 20px; font-size: 13px; }
+    .table-grid.header { background: #f9fafb; color: #6b7280; font-weight: 600; border-bottom: 1px solid #f3f4f6; text-transform: uppercase; font-size: 11px; }
+    .table-grid.row { border-bottom: 1px solid #f9fafb; color: #374151; transition: background 0.2s; }
+    
+    /* Hover adapté au vert */
+    .clickable-row { cursor: pointer; }
+    .clickable-row:hover { background-color: #f0fdf4 !important; }
+
+    /* Template spécifique aux BT */
+    .bt-grid-template { grid-template-columns: 160px 140px 1fr 140px 80px !important; }
+
+    /* Typographies et Badges */
+    .ref-cell { font-family: 'Monaco', 'Consolas', monospace; font-weight: 600; color: #374151; }
+    .date-subtext { color: #9ca3af; font-size: 11px; display: block; }
+    
+    .badge-info { background: #f0f9ff; color: #0369a1; border: 1px solid #e0f2fe; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .badge-info i { margin-right: 4px; font-size: 10px; }
+
     .btn-edit-simple { font-size: 16px; transition: transform 0.2s; text-decoration: none; }
     .btn-edit-simple:hover { transform: scale(1.2); }
-    
-    .table-grid.row { border-bottom: 1px solid #f9fafb; color: #374151; transition: background 0.2s; }
-    .clickable-row { cursor: pointer; }
-    .clickable-row:hover { background-color: #f0fdf4 !important; } /* Un hover vert très léger */
+
+    .no-data { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px !important; color: #9ca3af; font-style: italic; }
 </style>
