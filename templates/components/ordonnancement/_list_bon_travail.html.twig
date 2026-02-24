@@ -3,25 +3,34 @@
         <h2 class="section-title">Bons de Travail</h2>
     </div>
 
-    {# --- BARRE DE FILTRES BT --- #}
+    {# --- BARRE DE FILTRES --- #}
     <div class="filter-bar">
         <div class="filter-form">
             <div class="filter-group">
                 <i class="fas fa-search"></i>
-                <input type="text" id="filterGeneralOrdoBT" placeholder="N° BT, REFI ou Client...">
+                <input type="text" id="filterGeneralOrdoBT" placeholder="N° BT, REFI, Client...">
             </div>
 
             <div class="filter-group">
-                <i class="fas fa-calendar-alt"></i>
-                <input type="date" id="filterDateOrdoBT">
+                <i class="fas fa-calendar-check"></i>
+                <input type="date" id="filterDateOrdoBT" title="Filtrer par date de délai">
             </div>
 
             <div class="filter-group">
-                <i class="fas fa-tasks"></i>
-                <select id="filterStatusOrdoBT">
-                    <option value="">Tous les états</option>
-                    <option value="urgent">Urgent</option>
+                <i class="fas fa-exclamation-triangle"></i>
+                <select id="filterUrgenceOrdoBT">
+                    <option value="">Tous les délais</option>
+                    <option value="urgent">Urgent (J ou J+1)</option>
                     <option value="normal">Normal</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <i class="fas fa-comment-dots"></i>
+                <select id="filterExigenceOrdoBT">
+                    <option value="">Toutes les notes</option>
+                    <option value="oui">Avec exigence</option>
+                    <option value="non">Sans exigence</option>
                 </select>
             </div>
             
@@ -31,7 +40,6 @@
         </div>
     </div>
 
-    {# --- TABLEAU --- #}
     <div class="table-container">
         <div class="table-grid header bt-grid-template">
             <span>N° BT / Date</span>
@@ -43,16 +51,25 @@
 
         <div id="ordoBtTableBody">
             {% for bt in bons_travail|default([]) %}
+                {# LOGIQUE D'URGENCE : Délai <= 2 jours #}
+                {% set isUrgent = bt.delaiClient and bt.delaiClient|date('Y-m-d') <= "now"|date_modify("+1 day")|date('Y-m-d') %}
+                
                 <div class="table-grid row clickable-row bt-grid-template" 
                     data-btnum="{{ bt.numero|lower }}"
                     data-refi="{{ bt.bonCommande.refi|lower }}" 
                     data-client="{{ bt.bonCommande.client.nom|lower }}" 
-                    data-date="{{ bt.dateCreation|date('Y-m-d') }}"
-                    data-status="{{ bt.exigenceParticuliere ? 'urgent' : 'normal' }}"
+                    data-delai="{{ bt.delaiClient ? bt.delaiClient|date('Y-m-d') : '' }}"
+                    data-urgence="{{ isUrgent ? 'urgent' : 'normal' }}"
+                    data-exigence="{{ bt.exigenceParticuliere ? 'oui' : 'non' }}"
                     onclick="window.location='{{ path('app_bon_travail_show', {'id': bt.id}) }}'">
                     
                     <div class="ref-cell-group">
-                        <span class="ref-cell" style="color: var(--primary-green);">{{ bt.numero }}</span>
+                        <span class="ref-cell" style="color: var(--primary-green);">
+                            {{ bt.numero }}
+                            {% if isUrgent %}
+                                <span class="badge-urgent-mini">URGENT</span>
+                            {% endif %}
+                        </span>
                         <small class="date-subtext">Créé le {{ bt.dateCreation|date('d/m/Y') }}</small>
                     </div>
 
@@ -61,21 +78,24 @@
                     <span class="client-cell" style="font-weight: 500;">{{ bt.bonCommande.client.nom }}</span>
 
                     <span>
-                        <span class="badge-info">
+                        <span class="badge-info {{ isUrgent ? 'danger' : '' }}">
                             <i class="far fa-clock"></i> {{ bt.delaiClient ? bt.delaiClient|date('d/m/Y') : 'Non défini' }}
                         </span>
                     </span>
 
                     <span class="actions-cell" style="display: flex; justify-content: center;" onclick="event.stopPropagation();">
-                        <a href="#" class="btn-edit-simple" title="Planifier ce BT">
-                            <i class="fas fa-calendar-plus" style="color: var(--primary-green);"></i>
+                        {% if bt.exigenceParticuliere %}
+                            <i class="fas fa-comment-alt" style="color: var(--primary-gold); margin-right: 15px;" title="{{ bt.exigenceParticuliere }}"></i>
+                        {% endif %}
+                        <a href="{{ path('app_bon_travail_show', {'id': bt.id}) }}" class="btn-edit-simple">
+                            <i class="fas fa-eye" style="color: var(--primary-green);"></i>
                         </a>
                     </span>
                 </div>
             {% else %}
                 <div class="no-data">
                     <i class="fas fa-clipboard-list" style="font-size: 24px; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
-                    <span>Aucun bon de travail en attente de planification.</span>
+                    <span>Aucun bon de travail trouvé.</span>
                 </div>
             {% endfor %}
         </div>
@@ -86,102 +106,69 @@
 function setupOrdoBTFilters() {
     const inputSearch = document.getElementById('filterGeneralOrdoBT');
     const inputDate = document.getElementById('filterDateOrdoBT');
-    const selectStatus = document.getElementById('filterStatusOrdoBT');
+    const selectUrgence = document.getElementById('filterUrgenceOrdoBT');
+    const selectExigence = document.getElementById('filterExigenceOrdoBT');
     const btnReset = document.getElementById('resetOrdoBTFilters');
     
     const rows = document.querySelectorAll('#ordoBtTableBody .row');
-
     if (!inputSearch || rows.length === 0) return;
 
     function filterTable() {
         const valSearch = inputSearch.value.toLowerCase().trim();
         const valDate = inputDate.value;
-        const valStatus = selectStatus.value;
+        const valUrgence = selectUrgence.value;
+        const valExigence = selectExigence.value;
 
         rows.forEach(row => {
-            const rowBt = row.dataset.btnum || "";
-            const rowRefi = row.dataset.refi || "";
-            const rowClient = row.dataset.client || "";
-            const rowDate = row.dataset.date || "";
-            const rowStatus = row.dataset.status || "";
+            const matchesSearch = row.dataset.btnum.includes(valSearch) || 
+                                row.dataset.refi.includes(valSearch) || 
+                                row.dataset.client.includes(valSearch);
+            
+            const matchesDate = valDate === "" || row.dataset.delai === valDate;
+            const matchesUrgence = valUrgence === "" || row.dataset.urgence === valUrgence;
+            const matchesExigence = valExigence === "" || row.dataset.exigence === valExigence;
 
-            const matchesSearch = rowBt.includes(valSearch) || rowRefi.includes(valSearch) || rowClient.includes(valSearch);
-            const matchesDate = valDate === "" || rowDate === valDate;
-            const matchesStatus = valStatus === "" || rowStatus === valStatus;
-
-            row.style.display = (matchesSearch && matchesDate && matchesStatus) ? 'grid' : 'none';
+            row.style.display = (matchesSearch && matchesDate && matchesUrgence && matchesExigence) ? 'grid' : 'none';
         });
     }
 
-    [inputSearch, inputDate, selectStatus].forEach(el => {
+    [inputSearch, inputDate, selectUrgence, selectExigence].forEach(el => {
         el.addEventListener(el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input', filterTable);
     });
 
     if (btnReset) {
         btnReset.addEventListener('click', (e) => {
             e.preventDefault();
-            inputSearch.value = '';
-            inputDate.value = '';
-            selectStatus.value = '';
+            inputSearch.value = ''; inputDate.value = ''; selectUrgence.value = ''; selectExigence.value = '';
             filterTable();
         });
     }
+    
+    filterTable(); // Init
 }
 
 document.addEventListener('turbo:load', () => {
-    if (typeof setupOrdoBTFilters === 'function') {
-        setupOrdoBTFilters();
-    }
+    setTimeout(setupOrdoBTFilters, 50);
 });
 </script>
 
 <style>
-    /* --- CSS RAPATRIÉ ET ADAPTÉ --- */
-    
-    /* Structure de la barre de filtres */
     .filter-bar { background: white; padding: 15px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #e5e7eb; }
     .filter-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    
-    .filter-group { 
-        display: flex; aƒgn-items: center; background: #f9fafb; border: 1px solid #e5e7eb; 
-        padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 140px; transition: all 0.2s ease; 
-    }
+    .filter-group { display: flex; align-items: center; background: #f9fafb; border: 1px solid #e5e7eb; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 140px; transition: all 0.2s ease; }
     .filter-group i { color: #9ca3af; margin-right: 10px; font-size: 14px; }
-    .filter-group input { border: none; background: transparent; font-size: 13px; outline: none; width: 100%; color: #374151; font-family: inherit; }
-    .filter-group select { border: none; background: transparent; font-size: 13px; outline: none; width: 100%; color: #374151; cursor: pointer; }
-    
-    /* Focus adapté au thème vert (--primary-green) */
+    .filter-group input, .filter-group select { border: none; background: transparent; font-size: 13px; outline: none; width: 100%; color: #374151; }
     .filter-group:focus-within { border-color: var(--primary-green); background: white; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.05); }
 
-    .btn-reset { 
-        color: #6b7280; background: #f3f4f6; width: 38px; height: 38px; display: flex; 
-        align-items: center; justify-content: center; border-radius: 6px; transition: all 0.3s; 
-        border: 1px solid #e5e7eb; flex-shrink: 0; 
-    }
-    .btn-reset:hover { background: #e5e7eb; color: var(--primary-green); border-color: var(--primary-green); transform: rotate(180deg); }
-
-    /* Structure du Tableau */
-    .table-container { background: white; border: 1px solid #f3f4f6; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .table-grid { display: grid; align-items: center; padding: 12px 20px; font-size: 13px; }
+    .bt-grid-template { grid-template-columns: 160px 140px 1fr 140px 100px !important; display: grid; align-items: center; padding: 12px 20px; }
+    .table-container { background: white; border: 1px solid #f3f4f6; border-radius: 8px; overflow: hidden; }
     .table-grid.header { background: #f9fafb; color: #6b7280; font-weight: 600; border-bottom: 1px solid #f3f4f6; text-transform: uppercase; font-size: 11px; }
-    .table-grid.row { border-bottom: 1px solid #f9fafb; color: #374151; transition: background 0.2s; }
+    .table-grid.row { border-bottom: 1px solid #f9fafb; transition: background 0.2s; cursor: pointer; }
+    .table-grid.row:hover { background-color: #f0fdf4 !important; }
+
+    .badge-urgent-mini { background: #fee2e2; color: #991b1b; font-size: 8px; padding: 2px 4px; border-radius: 3px; border: 1px solid #f87171; margin-left: 5px; vertical-align: middle; font-weight: 800; }
+    .badge-info.danger { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
     
-    /* Hover adapté au vert */
-    .clickable-row { cursor: pointer; }
-    .clickable-row:hover { background-color: #f0fdf4 !important; }
-
-    /* Template spécifique aux BT */
-    .bt-grid-template { grid-template-columns: 160px 140px 1fr 140px 80px !important; }
-
-    /* Typographies et Badges */
-    .ref-cell { font-family: 'Monaco', 'Consolas', monospace; font-weight: 600; color: #374151; }
-    .date-subtext { color: #9ca3af; font-size: 11px; display: block; }
-    
-    .badge-info { background: #f0f9ff; color: #0369a1; border: 1px solid #e0f2fe; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-    .badge-info i { margin-right: 4px; font-size: 10px; }
-
-    .btn-edit-simple { font-size: 16px; transition: transform 0.2s; text-decoration: none; }
-    .btn-edit-simple:hover { transform: scale(1.2); }
-
-    .no-data { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px !important; color: #9ca3af; font-style: italic; }
+    .btn-reset { color: #6b7280; background: #f3f4f6; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #e5e7eb; }
+    .no-data { padding: 40px; text-align: center; color: #9ca3af; grid-column: 1 / -1; }
 </style>
