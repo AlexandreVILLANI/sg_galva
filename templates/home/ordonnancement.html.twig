@@ -99,7 +99,8 @@
         if (storedTab) {
             showSection(storedTab);
         } else {
-            showSection('planning-jour'); // Onglet par défaut
+            // CORRECTION ICI : On met le bon onglet par défaut
+            showSection('ordo-bons-travail'); 
         }
     }
 
@@ -115,7 +116,7 @@
     :root {
         --sidebar-width: 260px;
         --primary-blue: #2e46a6;
-        --primary-green: #10b981; /* Couleur distincte pour l'ordonnancement */
+        --primary-green: #10b981; 
         --primary-gold: #dcb35c;
         --text-gray: #6b7280;
         --bg-gray: #f9fafb;
@@ -146,12 +147,13 @@
     .nav-item i { font-size: 14px; width: 20px; text-align: center; }
     .nav-item:hover { background: var(--bg-gray); }
     
-    /* Styles actifs pour le Planning */
-    .nav-item[data-target="planning-jour"].active { 
-        color: var(--primary-green); font-weight: 600; background: #ecfdf5; border-right: 3px solid var(--primary-green); 
-    }
-    .nav-item[data-target="planning-historique"].active { 
-        color: var(--primary-blue); font-weight: 600; background: #f0f4ff; border-right: 3px solid var(--primary-blue); 
+    /* CORRECTION ICI : Les deux onglets s'allument en BLEU quand ils sont actifs */
+    .nav-item[data-target="ordo-bons-travail"].active,
+    .nav-item[data-target="ordo-plannings"].active { 
+        color: var(--primary-blue); 
+        font-weight: 600; 
+        background: #f0f4ff; 
+        border-right: 3px solid var(--primary-blue); 
     }
 
     .sidebar-footer { padding: 15px 20px; border-top: 1px solid var(--border-color); }

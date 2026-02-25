@@ -31,7 +31,7 @@ class PlanningLigne
     /**
      * Heure de passage / Mise à disposition (Saisie manuelle)
      */
-    #[ORM\Column(type: Types::TIME_MUTABLE, nullable: true)]
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $heureMiseADisposition = null;
 
     /**
@@ -51,6 +51,12 @@ class PlanningLigne
      */
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $observations = null;
+
+    /**
+     * Marqueur de priorité pour l'atelier (Important = vrai/faux)
+     */
+    #[ORM\Column(type: 'boolean')]
+    private ?bool $importance = false;
 
     // --- GETTERS ET SETTERS ---
 
@@ -122,6 +128,17 @@ class PlanningLigne
     public function setObservations(?string $observations): self
     {
         $this->observations = $observations;
+        return $this;
+    }
+
+    public function isImportance(): ?bool
+    {
+        return $this->importance;
+    }
+
+    public function setImportance(bool $importance): self
+    {
+        $this->importance = $importance;
         return $this;
     }
 }
