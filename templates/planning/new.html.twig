@@ -150,7 +150,6 @@
     .stat-item strong { font-size: 24px; font-weight: 900; }
     .stat-item.green { color: var(--primary-green); }
 
-    /* TABLEAU : Fixation stricte des largeurs */
     .planning-table-container { border: 2px solid var(--border-dark); overflow: visible !important; }
     .bc-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
     
@@ -167,32 +166,64 @@
 
     .bc-table td { border-bottom: 1px solid #ddd; border-right: 1px solid #ddd; height: 40px; vertical-align: middle; position: relative; }
     
-    /* Styles des inputs */
-    .cell-input { width: 100%; height: 100%; border: none; background: transparent; padding: 0 8px; font-size: 12px; outline: none; box-sizing: border-box; }
-    .dt-input { font-size: 11px; } /* Pour que la date/heure tienne sur une ligne */
-
-    /* Couleurs spécifiques */
+    /* On ajoute une transition pour le rouge en cas d'erreur */
+    .cell-input { width: 100%; height: 100%; border: none; background: transparent; padding: 0 8px; font-size: 12px; outline: none; box-sizing: border-box; transition: 0.2s; }
+    .dt-input { font-size: 11px; } 
     .dt-input.is-important { color: var(--primary-red) !important; font-weight: 900; background: #fff1f2; }
     .center-text { text-align: center; }
     .p-0 { padding: 0 !important; }
 
-    /* Suggestions (Autocomplete) */
     .autocomplete-results { 
         position: absolute; top: 100%; left: 0; right: 0; 
         background: white; border: 1px solid var(--border-dark); 
         z-index: 9999; display: none; max-height: 200px; overflow-y: auto; 
         box-shadow: 0 10px 15px rgba(0,0,0,0.1); 
     }
+    .suggestion-item { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; font-size: 11px; }
+    .suggestion-item:hover { background: #f0fdf4; }
 
-    /* Actions */
+    .btn-add-row { width: 100%; background: white; border: 2px dashed #10b981; color: #10b981; padding: 10px; cursor: pointer; font-weight: bold; border-radius: 4px; margin-top: 10px; }
+    .btn-del-row { background: none; border: none; color: #ef4444; font-size: 18px; font-weight: bold; cursor: pointer; opacity: 0.5; }
+    .btn-del-row:hover { opacity: 1; }
+
     .bc-actions { display: flex; gap: 15px; margin-top: 30px; }
     .btn-save { flex: 4; background: var(--primary-green); color: white; border: none; padding: 15px; border-radius: 4px; font-weight: 800; cursor: pointer; font-size: 16px; }
     .btn-back { flex: 1; background: #6b7280; color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-weight: bold; }
 </style>
 
 <script>
+// --- FONCTION QUI VÉRIFIE LES DOUBLONS EN TEMPS RÉEL ---
+function checkDuplicates() {
+    const inputs = document.querySelectorAll('.refi-autocomplete');
+    const seen = new Set();
+    let hasDuplicate = false;
 
+    inputs.forEach(input => {
+        input.style.boxShadow = "none"; // On nettoie le rouge
+        const val = input.value.trim().toUpperCase();
+        
+        if (val !== "") {
+            if (seen.has(val)) {
+                // Si on l'a déjà vu, on met la case en rouge
+                input.style.boxShadow = "inset 0 0 0 2px var(--primary-red)";
+                hasDuplicate = true;
+            } else {
+                seen.add(val);
+            }
+        }
+    });
+    
+    return hasDuplicate;
+}
+
+// --- VALIDATION ET SAUVEGARDE ---
 async function validerPlanning() {
+    // 1. On vérifie les doublons AVANT de faire quoi que ce soit
+    if (checkDuplicates()) {
+        alert("Attention : Le même REFI a été saisi plusieurs fois ! Veuillez supprimer ou modifier les cases en rouge.");
+        return; // On bloque tout
+    }
+
     const catInput = document.querySelector('input[name="cat"]:checked');
     const categorie = catInput ? catInput.value : 'GB';
 
@@ -202,10 +233,13 @@ async function validerPlanning() {
     rows.forEach(row => {
         const refi = row.querySelector('.refi-autocomplete').value.trim();
         const client = row.querySelector('.client-name').value.trim();
+        const ligneId = row.getAttribute('data-ligne-id'); // Pour la modif (sera null dans new)
         
+        // On n'enregistre que les lignes pleines et valides
         if (refi !== "" && client !== "" && client !== "..." && client !== "NON TROUVÉ") {
             const obsInput = row.querySelector('input[placeholder="Note d\'atelier..."]');
             lignes.push({
+                id: ligneId ? parseInt(ligneId) : null, 
                 refi: refi,
                 important: row.querySelector('.important-check').checked,
                 hmad: row.querySelector('.dt-input').value,
@@ -226,7 +260,10 @@ async function validerPlanning() {
         btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ENREGISTREMENT...';
         btnSave.disabled = true;
 
-        const response = await fetch("{{ path('app_planning_save') }}", {
+        const planningId = "{{ planning.id|default('') }}";
+        const url = planningId ? "{{ path('app_planning_update', {'id': 'ID_PLACEHOLDER'}) }}".replace('ID_PLACEHOLDER', planningId) : "{{ path('app_planning_save') }}";
+
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -241,27 +278,25 @@ async function validerPlanning() {
         const data = await response.json();
 
         if (response.ok && data.success) {
-            // ZÉRO POPUP : On sauvegarde l'onglet et on redirige direct
             localStorage.setItem('planningLastTab', 'ordo-plannings');
             window.location.href = "{{ path('app_ordonnancement_home') }}";
         } else {
-            alert("Erreur lors de l'enregistrement : " + (data.message || "Erreur inconnue."));
+            alert("Erreur : " + (data.message || "Inconnue."));
             btnSave.innerHTML = oldText;
             btnSave.disabled = false;
         }
     } catch (err) {
-        console.error("Erreur d'envoi", err);
-        alert("Une erreur de réseau est survenue.");
+        alert("Erreur réseau. Impossible d'enregistrer.");
         document.querySelector('.btn-save').disabled = false;
     }
 }
-
 
 function removeRow(btn) {
     const row = btn.closest('tr');
     if (document.querySelectorAll('.planning-row').length > 1) {
         row.remove();
         updateStats();
+        checkDuplicates(); // On revérifie au cas où on viendrait de supprimer le doublon
     }
 }
 
@@ -281,17 +316,24 @@ function updateStats() {
 }
 
 function initPlanning() {
+    updateStats(); 
+
     const tbody = document.getElementById('planning-body');
     const addBtn = document.getElementById('add-new-line');
 
+    // AJOUT DE LIGNE
     addBtn.addEventListener('click', () => {
         const firstRow = document.querySelector('.planning-row');
         const newRow = firstRow.cloneNode(true);
+        
+        newRow.removeAttribute('data-ligne-id'); 
+        
         newRow.querySelectorAll('input').forEach(input => {
             if (input.type === 'checkbox') input.checked = false;
             else if (input.type === 'datetime-local') input.value = "{{ "now"|date('Y-m-d') }}T08:00";
             else input.value = '';
             input.classList.remove('is-important');
+            input.style.boxShadow = "none";
         });
         newRow.style.background = 'transparent';
         newRow.querySelector('.autocomplete-results').style.display = 'none';
@@ -299,11 +341,16 @@ function initPlanning() {
         updateStats();
     });
 
+    // ÉCOUTEUR SUR TOUT LE TABLEAU
     tbody.addEventListener('input', async (e) => {
+        // Recherche REFI
         if (e.target.classList.contains('refi-autocomplete')) {
             const input = e.target;
             const resultsDiv = input.nextElementSibling;
             const val = input.value.trim();
+            
+            checkDuplicates(); // Vérification en direct pendant qu'il tape
+            
             if (val.length < 2) { resultsDiv.style.display = 'none'; return; }
             try {
                 const response = await fetch(`/api/search-bt?q=${val}`);
@@ -319,6 +366,11 @@ function initPlanning() {
                             input.closest('tr').querySelector('.client-name').value = item.client;
                             resultsDiv.style.display = 'none';
                             updateStats();
+                            
+                            // On vérifie une fois qu'il a cliqué sur le nom
+                            if (checkDuplicates()) {
+                                alert(`Erreur : Le REFI ${item.refi} est déjà présent dans ce planning !`);
+                            }
                         };
                         resultsDiv.appendChild(div);
                     });
@@ -326,9 +378,19 @@ function initPlanning() {
                 }
             } catch (err) {}
         }
+        
+        // Mise à jour des stats si on tape un code
         if (e.target.classList.contains('avancement-code')) updateStats();
     });
 
+    // Quand on quitte la case REFI (copier-coller sans utiliser l'autocomplete)
+    tbody.addEventListener('focusout', (e) => {
+        if (e.target.classList.contains('refi-autocomplete')) {
+            setTimeout(checkDuplicates, 100); 
+        }
+    });
+
+    // Cases à cocher (Important)
     tbody.addEventListener('change', (e) => {
         if (e.target.classList.contains('important-check')) {
             const dtInput = e.target.closest('tr').querySelector('.dt-input');
@@ -336,6 +398,7 @@ function initPlanning() {
         }
     });
 
+    // Fermer les listes déroulantes si on clique ailleurs
     document.addEventListener('click', (e) => {
         if (!e.target.classList.contains('refi-autocomplete')) {
             document.querySelectorAll('.autocomplete-results').forEach(d => d.style.display = 'none');

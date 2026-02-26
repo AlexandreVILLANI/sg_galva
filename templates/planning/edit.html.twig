@@ -175,7 +175,8 @@
 
     .bc-table td { border-bottom: 1px solid #ddd; border-right: 1px solid #ddd; height: 40px; vertical-align: middle; position: relative; }
     
-    .cell-input { width: 100%; height: 100%; border: none; background: transparent; padding: 0 8px; font-size: 12px; outline: none; box-sizing: border-box; }
+    /* On ajoute une transition pour l'effet d'erreur rouge */
+    .cell-input { width: 100%; height: 100%; border: none; background: transparent; padding: 0 8px; font-size: 12px; outline: none; box-sizing: border-box; transition: 0.2s; }
     .dt-input { font-size: 11px; } 
     .dt-input.is-important { color: var(--primary-red) !important; font-weight: 900; background: #fff1f2; }
     .center-text { text-align: center; }
@@ -200,7 +201,38 @@
 </style>
 
 <script>
+// --- FONCTION QUI VÉRIFIE LES DOUBLONS EN TEMPS RÉEL ---
+function checkDuplicates() {
+    const inputs = document.querySelectorAll('.refi-autocomplete');
+    const seen = new Set();
+    let hasDuplicate = false;
+
+    inputs.forEach(input => {
+        input.style.boxShadow = "none"; // On nettoie le rouge
+        const val = input.value.trim().toUpperCase(); // On met en majuscule pour être sûr
+        
+        if (val !== "") {
+            if (seen.has(val)) {
+                // Si on l'a déjà vu, on met la case en rouge
+                input.style.boxShadow = "inset 0 0 0 2px var(--primary-red)";
+                hasDuplicate = true;
+            } else {
+                seen.add(val);
+            }
+        }
+    });
+    
+    return hasDuplicate;
+}
+
+// --- VALIDATION ET SAUVEGARDE ---
 async function validerPlanning() {
+    // 1. On vérifie les doublons AVANT de faire quoi que ce soit
+    if (checkDuplicates()) {
+        alert("Attention : Le même REFI a été saisi plusieurs fois ! Veuillez supprimer ou modifier les cases en rouge.");
+        return; // On bloque tout
+    }
+
     const catInput = document.querySelector('input[name="cat"]:checked');
     const categorie = catInput ? catInput.value : 'GB';
 
@@ -210,8 +242,9 @@ async function validerPlanning() {
     rows.forEach(row => {
         const refi = row.querySelector('.refi-autocomplete').value.trim();
         const client = row.querySelector('.client-name').value.trim();
-        const ligneId = row.getAttribute('data-ligne-id'); 
+        const ligneId = row.getAttribute('data-ligne-id'); // Pour la modif (sera null dans new)
         
+        // On n'enregistre que les lignes pleines et valides
         if (refi !== "" && client !== "" && client !== "..." && client !== "NON TROUVÉ") {
             const obsInput = row.querySelector('input[placeholder="Note d\'atelier..."]');
             lignes.push({
@@ -233,10 +266,14 @@ async function validerPlanning() {
     try {
         const btnSave = document.querySelector('.btn-save');
         const oldText = btnSave.innerHTML;
-        btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MISE À JOUR...';
+        btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ENREGISTREMENT...';
         btnSave.disabled = true;
 
-        const response = await fetch("{{ path('app_planning_update', {'id': planning.id}) }}", {
+        // Astuce : On détecte si on est sur la page EDIT ou NEW pour taper sur la bonne route
+        const planningId = "{{ planning.id|default('') }}";
+        const url = planningId ? "{{ path('app_planning_update', {'id': 'ID_PLACEHOLDER'}) }}".replace('ID_PLACEHOLDER', planningId) : "{{ path('app_planning_save') }}";
+
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -259,7 +296,7 @@ async function validerPlanning() {
             btnSave.disabled = false;
         }
     } catch (err) {
-        alert("Erreur réseau.");
+        alert("Erreur réseau. Impossible d'enregistrer.");
         document.querySelector('.btn-save').disabled = false;
     }
 }
@@ -269,6 +306,7 @@ function removeRow(btn) {
     if (document.querySelectorAll('.planning-row').length > 1) {
         row.remove();
         updateStats();
+        checkDuplicates(); // On revérifie au cas où on viendrait de supprimer le doublon
     }
 }
 
@@ -293,6 +331,7 @@ function initPlanning() {
     const tbody = document.getElementById('planning-body');
     const addBtn = document.getElementById('add-new-line');
 
+    // AJOUT DE LIGNE
     addBtn.addEventListener('click', () => {
         const firstRow = document.querySelector('.planning-row');
         const newRow = firstRow.cloneNode(true);
@@ -304,6 +343,7 @@ function initPlanning() {
             else if (input.type === 'datetime-local') input.value = "{{ "now"|date('Y-m-d') }}T08:00";
             else input.value = '';
             input.classList.remove('is-important');
+            input.style.boxShadow = "none";
         });
         newRow.style.background = 'transparent';
         newRow.querySelector('.autocomplete-results').style.display = 'none';
@@ -311,11 +351,16 @@ function initPlanning() {
         updateStats();
     });
 
+    // ÉCOUTEUR SUR TOUT LE TABLEAU
     tbody.addEventListener('input', async (e) => {
+        // Recherche REFI
         if (e.target.classList.contains('refi-autocomplete')) {
             const input = e.target;
             const resultsDiv = input.nextElementSibling;
             const val = input.value.trim();
+            
+            checkDuplicates(); // Vérification en direct pendant qu'il tape
+            
             if (val.length < 2) { resultsDiv.style.display = 'none'; return; }
             try {
                 const response = await fetch(`/api/search-bt?q=${val}`);
@@ -331,6 +376,11 @@ function initPlanning() {
                             input.closest('tr').querySelector('.client-name').value = item.client;
                             resultsDiv.style.display = 'none';
                             updateStats();
+                            
+                            // On vérifie une fois qu'il a cliqué sur le nom
+                            if (checkDuplicates()) {
+                                alert(`Erreur : Le REFI ${item.refi} est déjà présent dans ce planning !`);
+                            }
                         };
                         resultsDiv.appendChild(div);
                     });
@@ -338,9 +388,19 @@ function initPlanning() {
                 }
             } catch (err) {}
         }
+        
+        // Mise à jour des stats si on tape un code
         if (e.target.classList.contains('avancement-code')) updateStats();
     });
 
+    // Quand on quitte la case REFI (copier-coller sans utiliser l'autocomplete)
+    tbody.addEventListener('focusout', (e) => {
+        if (e.target.classList.contains('refi-autocomplete')) {
+            setTimeout(checkDuplicates, 100); 
+        }
+    });
+
+    // Cases à cocher (Important)
     tbody.addEventListener('change', (e) => {
         if (e.target.classList.contains('important-check')) {
             const dtInput = e.target.closest('tr').querySelector('.dt-input');
@@ -348,6 +408,7 @@ function initPlanning() {
         }
     });
 
+    // Fermer les listes déroulantes si on clique ailleurs
     document.addEventListener('click', (e) => {
         if (!e.target.classList.contains('refi-autocomplete')) {
             document.querySelectorAll('.autocomplete-results').forEach(d => d.style.display = 'none');
