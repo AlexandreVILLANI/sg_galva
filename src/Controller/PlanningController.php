@@ -15,7 +15,6 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class PlanningController extends AbstractController
 {
-
     /**
      * AFFICHER LA PAGE DE MODIFICATION D'UN PLANNING EXISTANT
      */
@@ -41,7 +40,6 @@ class PlanningController extends AbstractController
 
         $planning->setCategorie($data['categorie'] ?? 'GB');
 
-        // On garde une trace des lignes existantes pour savoir lesquelles supprimer si Gérard a cliqué sur la croix
         $existingLignes = $planning->getLignes();
         $receivedIds = [];
 
@@ -55,14 +53,13 @@ class PlanningController extends AbstractController
                 ->getOneOrNullResult();
 
             if ($bt) {
-                // Si la ligne a un ID, on la modifie, sinon on la crée
                 if (!empty($ligneData['id'])) {
                     $ligne = $em->getRepository(PlanningLigne::class)->find($ligneData['id']);
                     $receivedIds[] = $ligne->getId();
                 } else {
                     $ligne = new PlanningLigne();
                     $ligne->setPlanning($planning);
-                    $ligne->setAvancement(false); // Fait = false par défaut pour les nouvelles lignes
+                    $ligne->setAvancement(false); 
                     $em->persist($ligne);
                 }
 
@@ -79,7 +76,6 @@ class PlanningController extends AbstractController
             }
         }
 
-        // On supprime les lignes que Gérard a enlevées (uniquement si elles ne sont pas déjà cochées "Faites" par le chef)
         foreach ($existingLignes as $exLigne) {
             if (!in_array($exLigne->getId(), $receivedIds) && !$exLigne->isAvancement()) {
                 $em->remove($exLigne);
@@ -91,11 +87,9 @@ class PlanningController extends AbstractController
         return new JsonResponse(['success' => true]);
     }
 
-    
     #[Route('/ordonnancement/planning/nouveau', name: 'app_planning_new')]
     public function new(BonTravailRepository $btRepository): Response
     {
-        // On récupère quelques BT pour le test (si besoin de pré-remplir)
         $bons_travail = $btRepository->findBy([], ['dateCreation' => 'DESC'], 10);
 
         return $this->render('planning/new.html.twig', [
@@ -103,10 +97,28 @@ class PlanningController extends AbstractController
         ]);
     }
 
+    /**
+     * SUPPRIMER UN PLANNING (Action sécurisée)
+     */
+    #[Route('/ordonnancement/planning/{id}/delete', name: 'app_planning_delete', methods: ['POST'])]
+    public function delete(Request $request, Planning $planning, EntityManagerInterface $em): Response
+    {
+        // On vérifie le jeton CSRF pour éviter les suppressions accidentelles ou malveillantes
+        if ($this->isCsrfTokenValid('delete'.$planning->getId(), $request->request->get('_token'))) {
+            $em->remove($planning);
+            $em->flush();
+
+            $this->addFlash('success', 'Le planning a été supprimé.');
+        }
+
+        // Redirection vers la page de liste (À ADAPTER SELON VOTRE ROUTE D'ACCUEIL)
+        // Si votre route de liste s'appelle différemment, changez le nom ici :
+        return $this->redirectToRoute('app_ordonnancement_home'); 
+    }
+
     #[Route('/api/bt-info/{refi}', name: 'api_bt_info')]
     public function getBtInfo(string $refi, BonTravailRepository $btRepo): JsonResponse
     {
-        // On cherche le Bon de Travail par le REFI du Bon de Commande associé
         $bt = $btRepo->createQueryBuilder('bt')
             ->join('bt.bonCommande', 'bc')
             ->where('bc.refi = :refi')
@@ -149,32 +161,22 @@ class PlanningController extends AbstractController
         return new JsonResponse($data);
     }
 
-    /**
-     * NOUVELLE ROUTE : SAUVEGARDE DU PLANNING DANS LA BASE DE DONNÉES
-     */
     #[Route('/api/planning/save', name: 'app_planning_save', methods: ['POST'])]
     public function savePlanning(Request $request, EntityManagerInterface $em, BonTravailRepository $btRepo): JsonResponse
     {
-        // 1. On récupère le JSON envoyé par le Javascript (fetch)
         $data = json_decode($request->getContent(), true);
 
-        // Vérification de sécurité
         if (!$data || !isset($data['lignes']) || empty($data['lignes'])) {
-            return new JsonResponse(['success' => false, 'message' => 'Aucune donnée reçue ou tableau vide.'], 400);
+            return new JsonResponse(['success' => false, 'message' => 'Aucune donnée reçue.'], 400);
         }
 
-        // 2. Création de l'entête du Planning
         $planning = new Planning();
-        $planning->setDatePlanning(new \DateTime()); // Date de création (aujourd'hui)
-        $planning->setCategorie($data['categorie'] ?? 'GB'); // GB ou PB
+        $planning->setDatePlanning(new \DateTime());
+        $planning->setCategorie($data['categorie'] ?? 'GB');
 
-        // On "prépare" la sauvegarde du planning
         $em->persist($planning);
 
-        // 3. Boucle sur toutes les lignes envoyées par le tableau
         foreach ($data['lignes'] as $ligneData) {
-            
-            // On retrouve le Bon de Travail grâce au REFI
             $bt = $btRepo->createQueryBuilder('bt')
                 ->join('bt.bonCommande', 'bc')
                 ->where('bc.refi = :refi')
@@ -183,37 +185,27 @@ class PlanningController extends AbstractController
                 ->getQuery()
                 ->getOneOrNullResult();
 
-            // Si le Bon de Travail existe bien, on crée la ligne de planning
             if ($bt) {
                 $ligne = new PlanningLigne();
                 $ligne->setPlanning($planning);
                 $ligne->setBonTravail($bt);
                 
-                // Gestion de la date et heure (H.M.A.D)
                 if (!empty($ligneData['hmad'])) {
-                    try {
-                        $ligne->setHeureMiseADisposition(new \DateTime($ligneData['hmad']));
-                    } catch (\Exception $e) {
-                        // En cas de format invalide, on ignore sans bloquer
-                    }
+                    try { $ligne->setHeureMiseADisposition(new \DateTime($ligneData['hmad'])); } 
+                    catch (\Exception $e) {}
                 }
                 
                 $ligne->setImportance($ligneData['important'] ?? false);
                 $ligne->setObservations($ligneData['observations'] ?? null);
                 $ligne->setAvancementCode($ligneData['code'] ?? null);
-                
-                // Fait/Non fait (toujours à "false" quand Gérard crée le planning)
                 $ligne->setAvancement(false);
 
-                // On "prépare" la sauvegarde de cette ligne
                 $em->persist($ligne);
             }
         }
 
-        // 4. On exécute toutes les requêtes d'un coup (Sauvegarde finale)
         $em->flush();
 
-        // 5. On renvoie un signal de succès au Javascript
         return new JsonResponse(['success' => true]);
     }
 }
