@@ -22,31 +22,13 @@ class HomeController extends AbstractController
     public function index(): Response
     {
         $user = $this->getUser();
-        if (!$user) {
-            return $this->redirectToRoute('app_login');
-        }
+        if (!$user) return $this->redirectToRoute('app_login');
         
-        // Priorité des redirections selon le rôle le plus haut
-        if ($this->isGranted('ROLE_ADMIN')) {
-            return $this->redirectToRoute('app_admin_home');
-        }
-        
-        // --- NOUVEAU : Redirection pour le Planning / Ordonnancement ---
-        if ($this->isGranted('ROLE_ORDONNANCEMENT')) {
-            return $this->redirectToRoute('app_ordonnancement_home');
-        }
-        
-        if ($this->isGranted('ROLE_RECEPTION_ORDONNANCEMENT')) {
-            return $this->redirectToRoute('app_reception_ordonnancement_home');
-        }
-        
-        if ($this->isGranted('ROLE_RECEPTION_TERRAIN')) {
-            return $this->redirectToRoute('app_reception_terrain_home');
-        }
-
-        if ($this->isGranted('ROLE_CARISTE')) {
-            return $this->redirectToRoute('app_home');
-        }
+        if ($this->isGranted('ROLE_ADMIN')) return $this->redirectToRoute('app_admin_home');
+        if ($this->isGranted('ROLE_CHEF_EQUIPE')) return $this->redirectToRoute('app_chef_equipe_home');
+        if ($this->isGranted('ROLE_ORDONNANCEMENT')) return $this->redirectToRoute('app_ordonnancement_home');
+        if ($this->isGranted('ROLE_RECEPTION_ORDONNANCEMENT')) return $this->redirectToRoute('app_reception_ordonnancement_home');
+        if ($this->isGranted('ROLE_RECEPTION_TERRAIN')) return $this->redirectToRoute('app_reception_terrain_home');
         
         return $this->redirectToRoute('app_home');
     }
@@ -146,9 +128,21 @@ class HomeController extends AbstractController
         ]);
     }
 
-    // =========================================================================
-    // NOUVEAU BLOC : ESPACE ORDONNANCEMENT (Planning)
-    // =========================================================================
+    /**
+     * Espace CHEF D'ÉQUIPE
+     */
+    #[Route('/chef-equipe', name: 'app_chef_equipe_home')]
+    #[IsGranted('ROLE_CHEF_EQUIPE')]
+    public function chefEquipeIndex(PlanningRepository $planningRepository): Response
+    {
+        // On récupère les plannings récents (ceux d'aujourd'hui et les derniers créés)
+        // pour qu'il puisse pointer l'avancement.
+        $plannings = $planningRepository->findBy([], ['datePlanning' => 'DESC'], 10);
+
+        return $this->render('home/chef_equipe.html.twig', [
+            'plannings' => $plannings,
+        ]);
+    }
     
     /**
      * Espace ORDONNANCEMENT (Gestion des Plannings GB/PB)

@@ -1,0 +1,173 @@
+<section id="ordo-plannings" class="content-section" style="display: none;">
+    <div class="section-header">
+        <h2 class="section-title">Suivi de Production Atelier</h2>
+        {# Le bouton "Nouveau Planning" a été supprimé pour ce rôle #}
+    </div>
+
+    {# --- BARRE DE FILTRES --- #}
+    <div class="filter-bar">
+        <div class="filter-form">
+            <div class="filter-group">
+                <i class="fas fa-calendar-alt"></i>
+                <input type="date" id="filterDatePlanning" title="Filtrer par date">
+            </div>
+
+            <div class="filter-group">
+                <i class="fas fa-layer-group"></i>
+                <select id="filterCatPlanning">
+                    <option value="">Toutes les catégories</option>
+                    <option value="GB">Grand Bain (GB)</option>
+                    <option value="PB">Petit Bain (PB)</option>
+                </select>
+            </div>
+            
+            <a href="#" class="btn-reset" id="resetPlanningFilters" title="Réinitialiser">
+                <i class="fas fa-sync-alt"></i>
+            </a>
+        </div>
+    </div>
+
+    {# --- TABLEAU DES PLANNINGS --- #}
+    <div class="table-container">
+        <div class="table-grid header planning-list-grid">
+            <span>Date du Planning</span>
+            <span>Catégorie</span>
+            <span style="text-align: center;">Lignes à traiter</span>
+            <span>État d'avancement atelier</span>
+            <span style="text-align: center;">Actions</span>
+        </div>
+
+        <div id="planningTableBody">
+            {% for planning in plannings|default([]) %}
+                
+                {# Calcul de l'avancement global #}
+                {% set totalLignes = planning.lignes|length %}
+                {% set lignesFaites = 0 %}
+                {% for ligne in planning.lignes %}
+                    {% if ligne.avancement %} 
+                        {% set lignesFaites = lignesFaites + 1 %} 
+                    {% endif %}
+                {% endfor %}
+                
+                {% set pourcentage = totalLignes > 0 ? (lignesFaites / totalLignes * 100)|round : 0 %}
+                
+                {# Choix de la couleur de la barre selon l'avancement #}
+                {% set barColor = pourcentage == 100 ? '#10b981' : (pourcentage > 0 ? '#f59e0b' : '#e5e7eb') %}
+
+                {# Redirection vers la route de saisie Qualité (add.html.twig) #}
+                <div class="table-grid row clickable-row planning-list-grid" 
+                     data-date="{{ planning.datePlanning|date('Y-m-d') }}"
+                     data-cat="{{ planning.categorie }}"
+                     onclick="window.location='{{ path('app_planning_chef_edit', {'id': planning.id}) }}'">
+
+                    <div class="ref-cell-group">
+                        <span class="ref-cell" style="color: var(--primary-green);">
+                            <i class="far fa-calendar-check"></i> {{ planning.datePlanning|date('d/m/Y') }}
+                        </span>
+                    </div>
+
+                    <div class="center-content">
+                        <span class="badge-cat {{ planning.categorie|lower }}">
+                            {{ planning.categorie == 'GB' ? 'Grand Bain' : 'Petit Bain' }}
+                        </span>
+                    </div>
+
+                    <div class="center-content">
+                        <span class="count-badge">{{ totalLignes }} ligne(s)</span>
+                    </div>
+
+                    <div class="progress-container">
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: {{ pourcentage }}%; background: {{ barColor }};"></div>
+                        </div>
+                        <small class="progress-text">{{ lignesFaites }} / {{ totalLignes }} terminés ({{ pourcentage }}%)</small>
+                    </div>
+
+                    <div class="actions-cell center-content" onclick="event.stopPropagation();">
+                        {# Bouton Ouvrir/Saisir #}
+                        <a href="{{ path('app_planning_chef_edit', {'id': planning.id}) }}" class="btn-action-icon" title="Saisir la production">
+                            <i class="fas fa-edit" style="color: var(--primary-green);"></i>
+                        </a>
+                        {# Bouton Corbeille supprimé intentionnellement #}
+                    </div>
+                </div>
+
+            {% else %}
+                <div class="no-data" style="text-align: center; padding: 40px; color: #9ca3af;">
+                    <i class="fas fa-clipboard-list" style="font-size: 32px; margin-bottom: 10px; opacity: 0.5;"></i>
+                    <p>Aucun planning à traiter pour le moment.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<script>
+function setupPlanningListFilters() {
+    const inputDate = document.getElementById('filterDatePlanning');
+    const selectCat = document.getElementById('filterCatPlanning');
+    const btnReset = document.getElementById('resetPlanningFilters');
+    const rows = document.querySelectorAll('#planningTableBody .row');
+
+    if (rows.length === 0) return;
+
+    function filterPlannings() {
+        const valDate = inputDate.value;
+        const valCat = selectCat.value;
+
+        rows.forEach(row => {
+            const matchesDate = valDate === "" || row.dataset.date === valDate;
+            const matchesCat = valCat === "" || row.dataset.cat === valCat;
+            row.style.display = (matchesDate && matchesCat) ? 'grid' : 'none';
+        });
+    }
+
+    [inputDate, selectCat].forEach(el => el.addEventListener('change', filterPlannings));
+
+    if (btnReset) {
+        btnReset.addEventListener('click', (e) => {
+            e.preventDefault();
+            inputDate.value = '';
+            selectCat.value = '';
+            filterPlannings();
+        });
+    }
+}
+</script>
+
+<style>
+    .filter-bar { background: white; padding: 15px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .filter-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .filter-group { display: flex; align-items: center; background: #f9fafb; border: 1px solid #e5e7eb; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 140px; }
+    .filter-group i { color: #9ca3af; margin-right: 10px; font-size: 14px; }
+    .filter-group input, .filter-group select { border: none; background: transparent; font-size: 13px; outline: none; width: 100%; color: #374151; }
+    
+    .btn-reset { color: #6b7280; background: #f3f4f6; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #e5e7eb; }
+    .btn-reset:hover { background: #e5e7eb; color: var(--primary-green); }
+
+    .table-container { background: white; border: 1px solid #f3f4f6; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .table-grid { display: grid; align-items: center; padding: 12px 20px; font-size: 13px; }
+    .table-grid.header { background: #f9fafb; color: #6b7280; font-weight: 600; border-bottom: 1px solid #f3f4f6; text-transform: uppercase; font-size: 11px; }
+    .table-grid.row { border-bottom: 1px solid #f9fafb; color: #374151; cursor: pointer; transition: 0.2s; }
+    .table-grid.row:hover { background: #f0fdf4; }
+
+    .ref-cell { font-family: 'Monaco', 'Consolas', monospace; font-weight: 600; }
+    .center-content { display: flex; align-items: center; justify-content: center; height: 100%; }
+    
+    .badge-cat { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+    .badge-cat.gb { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-cat.pb { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
+    .count-badge { background: #f3f4f6; color: #4b5563; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; border: 1px solid #e5e7eb; }
+
+    .progress-container { padding: 0 15px; }
+    .progress-bar-bg { background: #e5e7eb; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+    .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .progress-text { font-size: 10px; color: #6b7280; font-weight: bold; }
+
+    .btn-action-icon { font-size: 16px; text-decoration: none; padding: 5px; }
+    .btn-action-icon:hover { transform: scale(1.1); }
+    
+    /* Légère adaptation de la grille puisque le bouton corbeille a disparu */
+    .planning-list-grid { grid-template-columns: 180px 150px 150px 1fr 80px !important; }
+</style>

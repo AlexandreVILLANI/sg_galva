@@ -47,16 +47,20 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
 
         if (in_array('ROLE_ADMIN', $roles)) {
             $target = 'app_admin_home';
+        } elseif (in_array('ROLE_CHEF_EQUIPE', $roles)) {
+            $target = 'app_chef_equipe_home'; 
+        } elseif (in_array('ROLE_ORDONNANCEMENT', $roles)) {
+            $target = 'app_ordonnancement_home';
         } elseif (in_array('ROLE_RECEPTION_TERRAIN', $roles)) {
             $target = 'app_reception_terrain_home';
         } elseif (in_array('ROLE_RECEPTION_ORDONNANCEMENT', $roles)) {
             $target = 'app_reception_ordonnancement_home'; 
         } else {
-            $target = 'app_home'; // Pour ROLE_CARISTE ou ROLE_USER
+            $target = 'app_home'; 
         }
 
-        return new RedirectResponse($this->urlGenerator->generate($target, [], UrlGeneratorInterface::ABSOLUTE_PATH));
-    } 
+        return new RedirectResponse($this->urlGenerator->generate($target));
+    }
 
     protected function getLoginUrl(Request $request): string
     {

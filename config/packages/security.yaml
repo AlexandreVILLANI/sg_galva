@@ -47,8 +47,9 @@ security:
         ROLE_RECEPTION_TERRAIN:   ROLE_USER
         ROLE_CARISTE:     ROLE_USER
         ROLE_ORDONNANCEMENT: ROLE_USER
+        ROLE_CHEF_EQUIPE: ROLE_USER
         # L'admin a TOUS les pouvoirs des autres
-        ROLE_ADMIN: [ROLE_RECEPTION_TERRAIN, ROLE_RECEPTION_ORDONNANCEMENT, ROLE_CARISTE, ROLE_ORDONNANCEMENT]
+        ROLE_ADMIN: [ROLE_RECEPTION_TERRAIN, ROLE_RECEPTION_ORDONNANCEMENT, ROLE_CARISTE, ROLE_ORDONNANCEMENT, ROLE_CHEF_EQUIPE]
 
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }
@@ -57,6 +58,7 @@ security:
         - { path: ^/reception-terrain, roles: ROLE_RECEPTION_TERRAIN }
         - { path: ^/reception-ordonnancement, roles: ROLE_RECEPTION_ORDONNANCEMENT }
         - { path: ^/cariste, roles: ROLE_CARISTE }
+        - { path: ^/chef-equipe, roles: ROLE_CHEF_EQUIPE}
         
         # /home sert de "base" pour tout utilisateur connecté
         - { path: ^/home, roles: ROLE_USER }

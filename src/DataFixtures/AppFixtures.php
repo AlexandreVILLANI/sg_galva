@@ -21,7 +21,7 @@ class AppFixtures extends Fixture
 
     public function load(ObjectManager $manager): void
     {
-        // 1. Création des Rôles (pour ta table Role de référence)
+        // 1. Création des Rôles (Référence)
         $adminRole = new Role();
         $adminRole->setNom('Administrateur');
         $manager->persist($adminRole);
@@ -30,20 +30,22 @@ class AppFixtures extends Fixture
         $caristeRole->setNom('Cariste');
         $manager->persist($caristeRole);
 
-        // Rôle pour Thibaut
         $receptionTerrainRole = new Role();
         $receptionTerrainRole->setNom('Réception Terrain');
         $manager->persist($receptionTerrainRole);
 
-        // Rôle pour Dali
         $receptionOrdoRole = new Role();
         $receptionOrdoRole->setNom('Réception Ordonnancement');
         $manager->persist($receptionOrdoRole);
 
-        // Rôle pour Gérard
         $ordoRole = new Role();
         $ordoRole->setNom('Ordonnancement Planning');
         $manager->persist($ordoRole);
+
+        // NOUVEAU : Rôle pour le Chef d'Équipe
+        $chefEquipeRole = new Role();
+        $chefEquipeRole->setNom("Chef d'Équipe");
+        $manager->persist($chefEquipeRole);
 
         // 2. Création de ton compte Admin (Alex)
         $admin = new User();
@@ -75,17 +77,27 @@ class AppFixtures extends Fixture
         $reception2->setPassword($this->hasher->hashPassword($reception2, 'reception'));
         $manager->persist($reception2);
 
-        //Création rôle ordonnacement planning 
+        // 5. Création compte Ordonnancement (Gérard)
         $userOrdo = new User();
         $userOrdo->setUsername('gerard'); 
-        $userOrdo->setPrenom('Gerard');
+        $userOrdo->setPrenom('Gérard');
         $userOrdo->setTypeAcces('MDP');
         $userOrdo->setRoles(['ROLE_ORDONNANCEMENT']);
         $userOrdo->setUserRole($ordoRole);
         $userOrdo->setPassword($this->hasher->hashPassword($userOrdo, 'ordonnancement'));
         $manager->persist($userOrdo);
 
-        // 5. Création d'un Cariste (Jean)
+        // 6. NOUVEAU : Création du compte CHEF D'ÉQUIPE (Patrick)
+        $userChef = new User();
+        $userChef->setUsername('chef'); 
+        $userChef->setPrenom('Jawed');
+        $userChef->setTypeAcces('MDP');
+        $userChef->setRoles(['ROLE_CHEF_EQUIPE']);
+        $userChef->setUserRole($chefEquipeRole);
+        $userChef->setPassword($this->hasher->hashPassword($userChef, 'chef'));
+        $manager->persist($userChef);
+
+        // 7. Création d'un Cariste (Jean)
         $cariste = new User();
         $cariste->setUsername('cariste_nord');
         $cariste->setPrenom('Jean Cariste');
@@ -96,7 +108,7 @@ class AppFixtures extends Fixture
         $cariste->setPassword($this->hasher->hashPassword($cariste, 'cariste'));
         $manager->persist($cariste);
 
-        // 6. Emplacements et Clients (inchangé)
+        // 8. Emplacements et Clients
         $zones = ['Zone A1', 'Zone A2', 'Quai Nord', 'Quai Sud', 'Stockage Extérieur'];
         foreach ($zones as $nomZone) {
             $emplacement = new Emplacement();

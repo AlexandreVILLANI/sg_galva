@@ -15,9 +15,10 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class PlanningController extends AbstractController
 {
-    /**
-     * AFFICHER LA PAGE DE MODIFICATION D'UN PLANNING EXISTANT
-     */
+    // =========================================================================
+    // PARTIE ORDONNANCEMENT (Inchangée)
+    // =========================================================================
+
     #[Route('/ordonnancement/planning/{id}/modifier', name: 'app_planning_edit')]
     public function edit(Planning $planning): Response
     {
@@ -26,9 +27,6 @@ class PlanningController extends AbstractController
         ]);
     }
 
-    /**
-     * SAUVEGARDER LES MODIFICATIONS D'UN PLANNING EXISTANT
-     */
     #[Route('/api/planning/{id}/update', name: 'app_planning_update', methods: ['POST'])]
     public function updatePlanning(Planning $planning, Request $request, EntityManagerInterface $em, BonTravailRepository $btRepo): JsonResponse
     {
@@ -83,7 +81,6 @@ class PlanningController extends AbstractController
         }
 
         $em->flush();
-
         return new JsonResponse(['success' => true]);
     }
 
@@ -97,22 +94,14 @@ class PlanningController extends AbstractController
         ]);
     }
 
-    /**
-     * SUPPRIMER UN PLANNING (Action sécurisée)
-     */
     #[Route('/ordonnancement/planning/{id}/delete', name: 'app_planning_delete', methods: ['POST'])]
     public function delete(Request $request, Planning $planning, EntityManagerInterface $em): Response
     {
-        // On vérifie le jeton CSRF pour éviter les suppressions accidentelles ou malveillantes
         if ($this->isCsrfTokenValid('delete'.$planning->getId(), $request->request->get('_token'))) {
             $em->remove($planning);
             $em->flush();
-
             $this->addFlash('success', 'Le planning a été supprimé.');
         }
-
-        // Redirection vers la page de liste (À ADAPTER SELON VOTRE ROUTE D'ACCUEIL)
-        // Si votre route de liste s'appelle différemment, changez le nom ici :
         return $this->redirectToRoute('app_ordonnancement_home'); 
     }
 
@@ -140,7 +129,6 @@ class PlanningController extends AbstractController
     public function searchBt(Request $request, BonTravailRepository $btRepo): JsonResponse
     {
         $term = $request->query->get('q', '');
-        
         $results = $btRepo->createQueryBuilder('bt')
             ->join('bt.bonCommande', 'bc')
             ->join('bc.client', 'c')
@@ -152,12 +140,8 @@ class PlanningController extends AbstractController
 
         $data = [];
         foreach ($results as $bt) {
-            $data[] = [
-                'refi' => $bt->getBonCommande()->getRefi(),
-                'client' => $bt->getBonCommande()->getClient()->getNom()
-            ];
+            $data[] = ['refi' => $bt->getBonCommande()->getRefi(), 'client' => $bt->getBonCommande()->getClient()->getNom()];
         }
-
         return new JsonResponse($data);
     }
 
@@ -205,7 +189,83 @@ class PlanningController extends AbstractController
         }
 
         $em->flush();
+        return new JsonResponse(['success' => true]);
+    }
 
+    // =========================================================================
+    // NOUVELLE PARTIE : CHEF D'ÉQUIPE (Qualité & Validation)
+    // =========================================================================
+
+    /**
+     * OUVRE LE PLANNING POUR LE CHEF D'ÉQUIPE (Fichier add.html.twig)
+     */
+    #[Route('/chef-equipe/planning/{id}/saisir', name: 'app_planning_chef_edit')]
+    public function editQuality(Planning $planning): Response
+    {
+        return $this->render('planning/add.html.twig', [
+            'planning' => $planning,
+        ]);
+    }
+
+    /**
+     * SAUVEGARDE UNIQUEMENT LES DONNÉES DE QUALITÉ DU CHEF D'ÉQUIPE
+     */
+    #[Route('/api/planning/{id}/update-quality', name: 'app_planning_quality_update', methods: ['POST'])]
+    public function updateQuality(Planning $planning, Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (!$data || !isset($data['lignes'])) {
+            return new JsonResponse(['success' => false, 'message' => 'Données invalides.'], 400);
+        }
+
+        foreach ($data['lignes'] as $ligneData) {
+            // Le chef d'équipe ne peut que modifier des lignes existantes
+            if (!empty($ligneData['id'])) {
+                $ligne = $em->getRepository(PlanningLigne::class)->find($ligneData['id']);
+                
+                if ($ligne && $ligne->getPlanning() === $planning) {
+                    
+                    // 1. Contrôle Qualité
+                    if (array_key_exists('qualiteConforme', $ligneData)) $ligne->setQualiteConforme($ligneData['qualiteConforme']);
+                    if (array_key_exists('qualiteFicheNC', $ligneData)) $ligne->setQualiteFicheNC($ligneData['qualiteFicheNC']);
+                    if (array_key_exists('qualiteOperations', $ligneData)) $ligne->setQualiteOperations($ligneData['qualiteOperations']);
+
+                    // 2. Affichage
+                    if (array_key_exists('affichageCaseCE', $ligneData)) $ligne->setAffichageCaseCE($ligneData['affichageCaseCE']);
+                    if (array_key_exists('affichageCaseControleur', $ligneData)) $ligne->setAffichageCaseControleur($ligneData['affichageCaseControleur']);
+
+                    // 3. Bains & Rebuts
+                    if (array_key_exists('traitementSurfaceConforme', $ligneData)) $ligne->setTraitementSurfaceConforme($ligneData['traitementSurfaceConforme']);
+                    if (array_key_exists('bainZincConforme', $ligneData)) $ligne->setBainZincConforme($ligneData['bainZincConforme']);
+                    if (array_key_exists('rebuts', $ligneData)) $ligne->setRebuts($ligneData['rebuts']);
+
+                    // 4. Contrôle Final
+                    if (array_key_exists('finalConforme', $ligneData)) $ligne->setFinalConforme($ligneData['finalConforme']);
+                    if (array_key_exists('finalFicheNC', $ligneData)) $ligne->setFinalFicheNC($ligneData['finalFicheNC']);
+
+                    // 5. Validation "Fait"
+                    if (array_key_exists('avancement', $ligneData)) {
+                        $isFait = $ligneData['avancement'];
+                        
+                        // Si le chef d'équipe coche la case
+                        if ($isFait && !$ligne->isAvancement()) {
+                            $ligne->setDateValidation(new \DateTime()); 
+                            $ligne->setValidePar($this->getUser());     
+                        } 
+                        // S'il la décoche
+                        elseif (!$isFait && $ligne->isAvancement()) {
+                            $ligne->setDateValidation(null);
+                            $ligne->setValidePar(null);
+                        }
+                        
+                        $ligne->setAvancement($isFait);
+                    }
+                }
+            }
+        }
+
+        $em->flush();
         return new JsonResponse(['success' => true]);
     }
 }
