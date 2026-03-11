@@ -1,0 +1,180 @@
+<div class="component-header">
+    <div>
+        <h2 class="component-title">Gestion des Clients</h2>
+        <p class="component-subtitle">Liste de toutes les sociétés enregistrées.</p>
+    </div>
+    <div class="component-actions" style="display: flex; align-items: center; gap: 15px;">
+        <div class="search-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="client-search-input" class="search-input" placeholder="Rechercher un client..." onkeyup="filterClients()">
+        </div>
+
+        <form action="{{ path('app_admin_import_clients_csv') }}" method="POST" enctype="multipart/form-data" style="margin: 0;">
+            <label for="csv-upload" class="btn-secondary-admin" style="cursor: pointer;">
+                <i class="fas fa-file-csv"></i> Importer CSV
+            </label>
+            <input type="file" id="csv-upload" name="csv_file" accept=".csv" style="display: none;" onchange="if(this.value) { this.form.submit(); }">
+        </form>
+
+        <button class="btn-primary-admin"><i class="fas fa-plus"></i> Nouveau</button>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="admin-table" id="clients-table">
+        <thead>
+            <tr>
+                {# --- EN-TÊTES CLIQUABLES POUR LE TRI --- #}
+                <th onclick="sortTable(0)" class="sortable">REF <i class="fas fa-sort"></i></th>
+                <th onclick="sortTable(1)" class="sortable">SOCIÉTÉ <i class="fas fa-sort"></i></th>
+                <th>TÉLÉPHONE</th>
+                <th onclick="sortTable(3)" class="sortable">VILLE <i class="fas fa-sort"></i></th>
+                <th style="width: 100px; text-align: right;">ACTIONS</th>
+            </tr>
+        </thead>
+        <tbody id="clients-tbody">
+            {% for client in clients %}
+                <tr class="client-row">
+                    <td class="col-ref" style="color: #6366f1; font-weight: 600; font-size: 13px;">{{ client.refInterne|default('---') }}</td>
+                    <td class="col-name">
+                        <strong style="color: #111827;">{{ client.nom }}</strong>
+                        {% if client.nom|lower in ['à définir', 'a definir'] %}
+                            <span class="badge-warning">Générique</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ client.telephone|default('-') }}</td>
+                    <td class="col-city">{{ client.ville|default('-') }}</td>
+                    <td class="actions-cell">
+                        <a href="#" class="btn-action edit"><i class="fas fa-edit"></i></a>
+                    </td>
+                </tr>
+            {% endfor %}
+            <tr id="no-results-row" style="display: none;">
+                <td colspan="5" class="empty-state-row">Aucun résultat trouvé.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+<script>
+
+// --- FONCTION DE TRI ---
+    function sortTable(n) {
+        let table = document.getElementById("clients-table");
+        let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+        switching = true;
+        dir = "asc"; 
+        
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            for (i = 1; i < (rows.length - 2); i++) { // -2 pour ignorer le "no-results-row"
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("TD")[n];
+                y = rows[i + 1].getElementsByTagName("TD")[n];
+                
+                let xContent = x.innerText.toLowerCase();
+                let yContent = y.innerText.toLowerCase();
+
+                // Gestion spécifique pour les chiffres (REF)
+                if (!isNaN(parseInt(xContent)) && !isNaN(parseInt(yContent))) {
+                    xContent = parseInt(xContent);
+                    yContent = parseInt(yContent);
+                }
+
+                if (dir == "asc") {
+                    if (xContent > yContent) { shouldSwitch = true; break; }
+                } else if (dir == "desc") {
+                    if (xContent < yContent) { shouldSwitch = true; break; }
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+                switchcount ++;      
+            } else {
+                if (switchcount == 0 && dir == "asc") {
+                    dir = "desc";
+                    switching = true;
+                }
+            }
+        }
+    }
+    // --- Fonction de filtrage en temps réel ---
+    function filterClients() {
+        const input = document.getElementById('client-search-input').value.toLowerCase();
+        const rows = document.querySelectorAll('.client-row');
+        const noResultsRow = document.getElementById('no-results-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            // On récupère le texte de toute la ligne (nom, tel, ville)
+            const rowText = row.textContent.toLowerCase();
+            
+            // Si la ligne contient le texte recherché, on l'affiche, sinon on la cache
+            if (rowText.includes(input)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Afficher un message si aucun résultat n'est trouvé pendant la recherche
+        if (noResultsRow) {
+            noResultsRow.style.display = (visibleCount === 0 && input !== '') ? '' : 'none';
+        }
+    }
+</script>
+
+<style>
+    .sortable { cursor: pointer; transition: background 0.2s; }
+    .sortable:hover { background: #f3f4f6 !important; }
+    .sortable i { font-size: 10px; margin-left: 5px; color: #d1d5db; }
+    .admin-table th { position: sticky; top: 0; z-index: 10; }
+    .btn-secondary-admin { background-color: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db; padding: 10px 16px; border-radius: 6px; font-size: 0.875rem; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
+    .btn-secondary-admin:hover { background-color: #e5e7eb; color: #111827; }
+    /* --- Styles spécifiques au composant liste --- */
+    .component-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .component-title { margin: 0; font-size: 1.25rem; color: #111827; font-weight: 700; }
+    .component-subtitle { margin: 5px 0 0 0; font-size: 0.875rem; color: #6b7280; }
+
+    /* --- NOUVEAUX STYLES : Barre de recherche --- */
+    .search-wrapper { position: relative; margin-right: 15px; }
+    .search-wrapper i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 14px; }
+    .search-input { 
+        padding: 9px 12px 9px 35px; 
+        border: 1px solid #d1d5db; 
+        border-radius: 6px; 
+        font-size: 0.875rem; 
+        outline: none; 
+        width: 250px; 
+        transition: 0.2s;
+        font-family: inherit;
+    }
+    .search-input:focus { border-color: var(--primary-admin, #4f46e5); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
+    /* Bouton principal */
+    .btn-primary-admin { background-color: var(--primary-admin, #4f46e5); color: white; border: none; padding: 10px 16px; border-radius: 6px; font-size: 0.875rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+    .btn-primary-admin:hover { background-color: #4338ca; transform: translateY(-1px); }
+
+    /* --- Styles du tableau --- */
+    .table-container { background: white; border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; text-align: left; }
+    .admin-table th { background-color: #f9fafb; color: #6b7280; font-weight: 600; padding: 12px 16px; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-color, #e5e7eb); }
+    .admin-table td { padding: 14px 16px; border-bottom: 1px solid var(--border-color, #e5e7eb); color: #374151; vertical-align: middle; }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tbody tr:hover { background-color: #f9fafb; }
+
+    .empty-data { color: #d1d5db; font-style: italic; }
+
+    /* --- Actions --- */
+    .actions-cell { text-align: right; }
+    .btn-action { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; color: #6b7280; text-decoration: none; transition: 0.2s; background: #f3f4f6; }
+    .btn-action:hover { background: #e5e7eb; color: #111827; }
+    .btn-action.edit:hover { background: #e0e7ff; color: #4f46e5; }
+
+    .badge-warning { background: #fef3c7; color: #d97706; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 600; text-transform: uppercase; }
+    .empty-state-row { text-align: center; padding: 40px !important; color: #6b7280; background: #fafafa; }
+</style>

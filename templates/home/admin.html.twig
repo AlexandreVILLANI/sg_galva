@@ -28,6 +28,11 @@
                     <i class="fas fa-calendar-alt"></i>
                     <span>Planning</span>
                 </a>
+                {# --- NOUVEAU LIEN CLIENTS --- #}
+                <a href="#" class="nav-item" data-target="admin-cl">
+                    <i class="fas fa-building"></i>
+                    <span>Clients</span>
+                </a>
             </nav>
         </div>
 
@@ -61,13 +66,7 @@
             
             {# --- 1. SECTION BONS DE COMMANDE --- #}
             <section id="admin-bc" class="content-section active">
-                {# Décommente la ligne ci-dessous quand tu auras créé le composant #}
-                {# {{ include('components/admin/_list_bon_commande.html.twig') }} #}
-                
-                <div class="placeholder-text">
-                    <i class="fas fa-file-invoice" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i>
-                    <p>Espace Bons de Commande (Composant à intégrer)</p>
-                </div>
+                {{ include('components/admin/_list_bon_commande.html.twig') }}                
             </section>
 
             {# --- 2. SECTION FICHES DE DÉCHARGEMENT --- #}
@@ -103,6 +102,11 @@
                 </div>
             </section>
 
+            {# --- 5. SECTION CLIENTS (NOUVEAU) --- #}
+            <section id="admin-cl" class="content-section">
+                {{ include('components/admin/_list_client.html.twig') }}
+            </section>
+
         </div>
     </main>
 </div>
@@ -134,8 +138,6 @@
 
                 // 3. Sauvegarde de l'onglet actif dans le cache du navigateur
                 localStorage.setItem('adminLastTab', id);
-
-                // (Optionnel) Ici tu pourras appeler tes fonctions setupFilters() quand les composants seront prêts
             }
         }
 

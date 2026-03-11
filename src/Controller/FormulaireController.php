@@ -4,12 +4,14 @@ namespace App\Controller;
 
 use App\Entity\FicheDechargement;
 use App\Entity\PhotoDechargement;
+use App\Entity\Client; // <-- Indispensable pour créer le client
 use App\Form\FicheDechargementType;
 use App\Repository\ClientRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse; // <-- Pour les réponses AJAX
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -60,19 +62,17 @@ class FormulaireController extends AbstractController
     }
 
     #[Route('/reception/dechargement/{id}', name: 'app_dechargement_show')]
-    #[IsGranted('ROLE_RECEPTION_TERRAIN')] // Vérifie tes rôles ici si besoin
+    #[IsGranted('ROLE_RECEPTION_TERRAIN')]
     public function show(FicheDechargement $fiche, ClientRepository $clientRepo): Response
     {
-        // On récupère tous les clients triés par nom pour le menu déroulant
         $clients = $clientRepo->findBy([], ['nom' => 'ASC']);
 
         return $this->render('formulaire/show.html.twig', [
             'fiche' => $fiche,
-            'clients' => $clients // On envoie la liste à la vue
+            'clients' => $clients 
         ]);
     }
 
-    // --- NOUVELLE ROUTE : Mise à jour du client en AJAX ---
     #[Route('/reception/dechargement/{id}/update-client', name: 'app_dechargement_update_client', methods: ['POST'])]
     public function updateClient(Request $request, FicheDechargement $fiche, ClientRepository $clientRepo, EntityManagerInterface $em): Response
     {
@@ -93,5 +93,34 @@ class FormulaireController extends AbstractController
         }
 
         return $this->json(['success' => false, 'message' => 'Client introuvable'], 400);
+    }
+
+    // --- NOUVELLE ROUTE : Création rapide d'un client via AJAX ---
+    #[Route('/reception/client/new-ajax', name: 'app_client_new_ajax', methods: ['POST'])]
+    public function newClientAjax(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);        
+        $nom = $data['nom'] ?? null;
+        $tel = $data['telephone'] ?? null;
+
+        if (!$nom) {
+            return $this->json(['success' => false, 'message' => 'Le nom est obligatoire.'], 400);
+        }
+        $client = new Client();
+        $client->setNom($nom);
+        if ($tel) {
+            $client->setTelephone($tel);
+        }
+
+        $em->persist($client);
+        $em->flush();
+        
+        return $this->json([
+            'success' => true,
+            'client' => [
+                'id' => $client->getId(),
+                'nom' => $client->getNom()
+            ]
+        ]);
     }
 }

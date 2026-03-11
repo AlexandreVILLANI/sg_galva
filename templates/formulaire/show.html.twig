@@ -3,6 +3,8 @@
 {% block title %}Détail Déchargement #{{ fiche.id }}{% endblock %}
 
 {% block body %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <div class="form-container">
     {# --- HEADER --- #}
     <div class="form-header">
@@ -42,7 +44,7 @@
 
             {# --- Zone cachée par défaut (Select + Boutons) --- #}
             <div id="client-edit-area" style="display: none; margin-top: 10px;">
-                <select id="new-client-select" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px;">
+                <select id="new-client-select" placeholder="Tapez le nom d'un client..." autocomplete="off">
                     <option value="">-- Choisir le bon client --</option>
                     {% for c in clients %}
                         <option value="{{ c.id }}">{{ c.nom }}</option>
@@ -123,7 +125,7 @@
         </a>
 
         {% if is_granted('ROLE_RECEPTION_TERRAIN') %}
-            <a href="{{ path('app_bon_commande_new', {'ficheId': fiche.id}) }}" class="btn-create-bc-large" id="btn-create-bc" style="{% if fiche.client.nom|lower in ['à définir', 'a definir'] %}display: none;{% endif %}">
+            <a href="{{ path('app_bon_commande_new', {'ficheId': fiche.id}) }}" class="btn-create-bc-large" id="btn-create-bc">
                 <i class="fas fa-file-invoice"></i> Créer le Bon de Commande (REFI)
             </a>
         {% endif %}
@@ -131,6 +133,8 @@
 </div>
 
 <script>
+    let clientSelectSearch = null;
+
     // Affiche ou cache la zone de modification
     function toggleClientEdit() {
         const displayArea = document.getElementById('client-display-area');
@@ -139,6 +143,18 @@
         if (editArea.style.display === 'none') {
             displayArea.style.display = 'none';
             editArea.style.display = 'block';
+            
+            // MAGIE : On transforme le select classique en barre de recherche !
+            if (!clientSelectSearch) {
+                clientSelectSearch = new TomSelect("#new-client-select", {
+                    create: false,         // Empêche de créer un client qui n'existe pas ici
+                    sortField: {
+                        field: "text",
+                        direction: "asc"   // Trie par ordre alphabétique
+                    }
+                });
+            }
+            
         } else {
             editArea.style.display = 'none';
             displayArea.style.display = 'block';
@@ -209,7 +225,7 @@
     .btn-edit-client { background: #e0e7ff; color: #4338ca; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-edit-client:hover { background: #c7d2fe; }
 
-    .btn-save-client { background: var(--primary-green); color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    .btn-save-client { background: var(--success-green, #27ae60); color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
     .btn-save-client:hover { background: #059669; }
 
     .btn-cancel-client { background: #e5e7eb; color: #4b5563; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }

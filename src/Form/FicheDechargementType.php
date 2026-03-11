@@ -27,7 +27,7 @@ class FicheDechargementType extends AbstractType
                 'placeholder' => '--- Choisir un client ---',
                 'query_builder' => function (EntityRepository $er) {
                     return $er->createQueryBuilder('c')
-                        ->addSelect("(CASE WHEN c.nom = 'À définir' THEN 0 ELSE 1 END) AS HIDDEN sort_order")
+                        ->addSelect("(CASE WHEN UPPER(c.nom) = 'À DÉFINIR' THEN 0 ELSE 1 END) AS HIDDEN sort_order")
                         ->orderBy('sort_order', 'ASC')
                         ->addOrderBy('c.nom', 'ASC');
                 },

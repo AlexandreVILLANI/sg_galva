@@ -108,7 +108,7 @@ class AppFixtures extends Fixture
         $cariste->setPassword($this->hasher->hashPassword($cariste, 'cariste'));
         $manager->persist($cariste);
 
-        // 8. Emplacements et Clients
+        // 8. Emplacements 
         $zones = ['Zone A1', 'Zone A2', 'Quai Nord', 'Quai Sud', 'Stockage Extérieur'];
         foreach ($zones as $nomZone) {
             $emplacement = new Emplacement();
@@ -116,19 +116,11 @@ class AppFixtures extends Fixture
             $manager->persist($emplacement);
         }
 
-        $nomsClients = ['ArcelorMittal', 'Eiffage', 'Bouygues Construction', 'Vinci', 'À définir'];
-        foreach ($nomsClients as $nom) {
-            $client = new Client();
-            $client->setNom($nom);
-            $client->setAdresseFacturation('12 Rue de l\'Acier');
-            $client->setAdresseLivraison('12 Rue de l\'Acier');
-            $client->setCodePostal('57000');
-            $client->setVille('Metz');
-            $client->setTelephone('03 87 00 00 00');
-            $client->setFax('418 643-3210');
-            $manager->persist($client);
-        }
-
+        // 9. Client à définir
+        $clientInconnu = new Client();
+        $clientInconnu->setNom('À DÉFINIR'); 
+        $manager->persist($clientInconnu);
+        
         $manager->flush();
     }
 }

@@ -108,14 +108,34 @@
         <div class="form-actions">
             <button type="submit" class="btn-submit">Valider le déchargement</button>
         </div>
+        {% do form.lignes.setRendered() %}
         {{ form_rest(form) }}
     {{ form_end(form) }}
+    
+    {# --- MODALE CRÉATION RAPIDE CLIENT --- #}
+    <div id="client-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nouveau Client</h3>
+                <button type="button" class="btn-close-modal" id="btn-close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nom de la société <span style="color:red;">*</span></label>
+                    <input type="text" id="new-client-nom" class="form-control" placeholder="Ex: DUPONT METAL">
+                </div>
+                <div class="form-group">
+                    <label>Téléphone (Optionnel)</label>
+                    <input type="text" id="new-client-tel" class="form-control" placeholder="Ex: 04 72 00 00 00">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel-modal" id="btn-cancel-modal">Annuler</button>
+                <button type="button" class="btn-save-modal" id="btn-save-modal">Enregistrer</button>
+            </div>
+        </div>
+    </div>
 </div>
-
-<style>
-    /* ... Tes styles précédents ... */
-    .form-control-static { border: none; font-weight: bold; color: var(--primary-blue); width: 100px; text-align: right; }
-</style>
 
 <script>
 document.addEventListener('turbo:load', function() {
@@ -132,11 +152,14 @@ document.addEventListener('turbo:load', function() {
         document.querySelectorAll('.input-paquets').forEach(input => {
             total += parseInt(input.value) || 0;
         });
-        totalSpan.textContent = total;
-        document.getElementById('row-count').textContent = document.querySelectorAll('.data-row').length;
+        if(totalSpan) totalSpan.textContent = total;
+        
+        const rowCountElement = document.getElementById('row-count');
+        if(rowCountElement) rowCountElement.textContent = document.querySelectorAll('.data-row').length;
     }
 
     function addRow() {
+        if (!tableBody) return;
         const prototype = tableBody.dataset.prototype;
         const index = parseInt(tableBody.dataset.index);
         const newRowHtml = prototype.replace(/__name__/g, index);
@@ -150,61 +173,37 @@ document.addEventListener('turbo:load', function() {
         tableBody.dataset.index = index + 1;
         updateTotal();
     }
-    addRowBtn.addEventListener('click', addRow);
-    if (tableBody.dataset.index == "0") addRow();
+    
+    if (addRowBtn) addRowBtn.addEventListener('click', addRow);
+    if (tableBody && tableBody.dataset.index == "0") addRow();
 
-    // --- 2. Gestion du Drag & Drop ---
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
-    });
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => dropZone.classList.add('highlight'), false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => dropZone.classList.remove('highlight'), false);
-    });
-
-    dropZone.addEventListener('drop', e => {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        fileInput.files = files; // On injecte les fichiers dans l'input caché
-        handleFiles(files);
-    }, false);
-
-    fileInput.addEventListener('change', function() { handleFiles(this.files); });
-
-    // --- 3. Affichage des miniatures (Preview) ---
-    function handleFiles(files) {
-        previewContainer.innerHTML = ''; // On vide l'ancienne preview
-        
-        Array.from(files).forEach(file => {
-            if (!file.type.startsWith('image/')) return;
-
-            const reader = new FileReader();
-            const div = document.createElement('div');
-            div.className = 'preview-item';
-            
-            reader.onload = e => {
-                div.innerHTML = `
-                    <img src="${e.target.result}">
-                    <span class="file-name">${file.name.substring(0, 10)}...</span>
-                `;
-            };
-            reader.readAsDataURL(file);
-            previewContainer.appendChild(div);
-        });
-    }
-    // On déclare une variable globale pour stocker nos fichiers
+    // --- 2. Gestion du Drag & Drop et des miniatures ---
     let currentFiles = [];
 
+    if (dropZone && fileInput) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('highlight'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('highlight'), false);
+        });
+
+        dropZone.addEventListener('drop', e => {
+            handleFiles(e.dataTransfer.files);
+        }, false);
+
+        fileInput.addEventListener('change', function() { handleFiles(this.files); });
+    }
+
     function handleFiles(files) {
-        // On ajoute les nouveaux fichiers à notre liste actuelle
-        const newFiles = Array.from(files);
+        const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
         currentFiles = [...currentFiles, ...newFiles];
         
-        // On limite à 3 photos max si tu veux
         if (currentFiles.length > 3) {
             alert("Maximum 3 photos autorisées");
             currentFiles = currentFiles.slice(0, 3);
@@ -215,7 +214,7 @@ document.addEventListener('turbo:load', function() {
     }
 
     function renderPreview() {
-        const previewContainer = document.getElementById('file-preview');
+        if (!previewContainer) return;
         previewContainer.innerHTML = ''; 
 
         currentFiles.forEach((file, index) => {
@@ -230,7 +229,7 @@ document.addEventListener('turbo:load', function() {
                     </button>
                     <img src="${e.target.result}">
                     <span class="file-name" style="font-size: 11px; margin-top:5px; display:block; overflow:hidden;">
-                        ${file.name}
+                        ${file.name.substring(0, 15)}...
                     </span>
                 `;
             };
@@ -239,27 +238,116 @@ document.addEventListener('turbo:load', function() {
         });
     }
 
-    // Fonction pour supprimer un fichier de la liste
     window.removeFile = function(index) {
-        currentFiles.splice(index, 1); // On retire du tableau JS
-        renderPreview();               // On relance le dessin des images
-        updateInput();                 // On met à jour l'input réel de Symfony
+        currentFiles.splice(index, 1);
+        renderPreview();
+        updateInput();
     };
 
-    // Fonction CRUCIALE : Elle met à jour le champ file invisible
     function updateInput() {
-        const fileInput = document.querySelector('input[type="file"]');
+        if (!fileInput) return;
         const dataTransfer = new DataTransfer();
-        
-        currentFiles.forEach(file => {
-            dataTransfer.items.add(file);
-        });
-        
+        currentFiles.forEach(file => dataTransfer.items.add(file));
         fileInput.files = dataTransfer.files;
+    }
+
+    // --- 3. Gestion de la modale "Nouveau Client" ---
+    const btnAddClient = document.getElementById('btn-add-client');
+    const modalClient = document.getElementById('client-modal');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const btnCancelModal = document.getElementById('btn-cancel-modal');
+    const btnSaveModal = document.getElementById('btn-save-modal');
+    const clientSelect = document.querySelector('select[name$="[client]"]');
+
+    function openModal() { 
+        if(modalClient) {
+            modalClient.style.display = 'flex'; 
+            setTimeout(() => document.getElementById('new-client-nom').focus(), 100);
+        }
+    }
+    
+    function closeModal() { 
+        if(modalClient) {
+            modalClient.style.display = 'none'; 
+            document.getElementById('new-client-nom').value = ''; 
+            document.getElementById('new-client-tel').value = ''; 
+        }
+    }
+
+    if(btnAddClient) btnAddClient.addEventListener('click', openModal);
+    if(btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
+    if(btnCancelModal) btnCancelModal.addEventListener('click', closeModal);
+
+    if(btnSaveModal) {
+        btnSaveModal.addEventListener('click', async function() {
+            const nom = document.getElementById('new-client-nom').value.trim();
+            const tel = document.getElementById('new-client-tel').value.trim();
+
+            if (!nom) {
+                alert("Le nom de la société est obligatoire.");
+                return;
+            }
+
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...';
+            this.disabled = true;
+
+            try {
+                const response = await fetch('/reception/client/new-ajax', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ nom: nom, telephone: tel })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    if (clientSelect) {
+                        const newOption = new Option(data.client.nom, data.client.id, true, true);
+                        clientSelect.appendChild(newOption);
+                    }
+                    closeModal();
+                } else {
+                    alert("Erreur lors de la création : " + (data.message || "Erreur inconnue."));
+                }
+            } catch (error) {
+                alert("Erreur réseau. Impossible de contacter le serveur.");
+            } finally {
+                this.innerHTML = originalText;
+                this.disabled = false;
+            }
+        });
     }
 });
 </script>
 <style>
+/* --- Styles de la Modale Client --- */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background: white; border-radius: 8px; width: 100%; max-width: 400px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        animation: modalFadeIn 0.3s ease-out;
+    }
+    @keyframes modalFadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee; background: var(--primary-blue); color: white; border-radius: 8px 8px 0 0; }
+    .modal-header h3 { margin: 0; font-size: 1.1rem; }
+    .btn-close-modal { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; transition: 0.2s; }
+    .btn-close-modal:hover { transform: scale(1.1); color: #ffcccc; }
+    
+    .modal-body { padding: 20px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #eee; background: #f9f9f9; border-radius: 0 0 8px 8px; }
+    
+    .btn-cancel-modal { background: #e2e8f0; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; color: #4a5568; }
+    .btn-save-modal { background: var(--success-green); border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; display: flex; align-items: center; gap: 8px; }
+    .btn-save-modal:hover { background: #219150; }
+    /* ... Tes styles précédents ... */
+    .form-control-static { border: none; font-weight: bold; color: var(--primary-blue); width: 100px; text-align: right; }
     :root {
         --primary-blue: #2e46a6;
         --secondary-gold: #dcb35c;

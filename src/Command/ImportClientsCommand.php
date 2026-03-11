@@ -84,15 +84,32 @@ class ImportClientsCommand extends Command
         $count = 0;
 
         foreach ($records as $record) {
+            // 1. On récupère l'ID du CSV (ton numéro 933207)
+            // On cherche une colonne qui contient 'id', 'numero' ou 'code'
+            $idCsv = (int) $this->findValue($record, ['id', 'numer', 'code']);
             
-            // Recherche du NOM (Cherche une colonne contenant 'Intitul' ou 'Nom')
+            // 2. Recherche du NOM pour le nettoyage
             $nom = $this->clean($this->findValue($record, ['intitul', 'nom']));
             
-            if (empty($nom)) continue;
+            if (empty($nom) || $idCsv === 0) continue;
 
-            $client = $repo->findOneBy(['nom' => $nom]);
+            // 3. On cherche le client par son ID directement
+            $client = $repo->find($idCsv);
+
             if (!$client) {
                 $client = new Client();
+                
+                // --- ASTUCE POUR FORCER L'ID ---
+                // Comme getId() n'a pas de "setId", on utilise les métadonnées de Doctrine
+                // ou on le fait via SQL. Voici la méthode la plus propre en PHP :
+                $metadata = $this->em->getClassMetadata(Client::class);
+                $metadata->setIdGeneratorType(\Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_NONE);
+                
+                // On force l'ID manuellement
+                $reflectionProperty = $metadata->reflClass->getProperty('id');
+                $reflectionProperty->setAccessible(true);
+                $reflectionProperty->setValue($client, $idCsv);
+                
                 $client->setNom($nom);
             }
 
