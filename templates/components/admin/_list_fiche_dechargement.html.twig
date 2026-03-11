@@ -1,66 +1,88 @@
+<div class="admin-card">
+    {# --- HEADER --- #}
+    <div class="card-header-flex">
+        <div class="header-content">
+            <h2 class="admin-section-title">Historique des déchargements</h2>
+            <p class="admin-section-subtitle">Consultez et filtrez les réceptions terrain en temps réel.</p>
+        </div>
+        <div class="header-stats">
+            <span class="stat-badge">
+                <i class="fas fa-layer-group"></i> {{ fiches|length }} déchargements
+            </span>
+        </div>
+    </div>
 
-<div class="section-header">
-    <h2 class="section-title">Historique des déchargements</h2>
-</div>
-
-<div class="filter-bar">
-    <div class="filter-form">
-        <div class="filter-group">
-            <i class="fas fa-search"></i>
-            <input type="text" id="filterClientHisto" placeholder="Client...">
+    {# --- BARRE DE FILTRES --- #}
+    <div class="glass-filter-bar">
+        <div class="filter-inputs">
+            <div class="modern-input-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="filterClientHisto" placeholder="Rechercher un client...">
+            </div>
+            <div class="modern-input-group">
+                <i class="fas fa-user-tag"></i>
+                <input type="text" id="filterCaristeHisto" placeholder="Cariste...">
+            </div>
+            <div class="modern-input-group">
+                <i class="fas fa-calendar-day"></i>
+                <input type="date" id="filterDateHisto">
+            </div>
         </div>
-        <div class="filter-group">
-            <i class="fas fa-user"></i>
-            <input type="text" id="filterCaristeHisto" placeholder="Cariste...">
-        </div>
-        <div class="filter-group">
-            <i class="fas fa-calendar-alt"></i>
-            <input type="date" id="filterDateHisto">
-        </div>
-        
-        <a href="#" class="btn-reset" id="resetHistoFilters" title="Réinitialiser">
+        <button id="resetHistoFilters" class="btn-icon-reset" title="Réinitialiser les filtres">
             <i class="fas fa-sync-alt"></i>
-        </a>
+        </button>
     </div>
-</div>
+    
+    {# --- TABLEAU STYLE GRID --- #}
+    <div class="modern-table-wrapper">
+        <div class="grid-header">
+            <span>Date de réception</span>
+            <span>Opérateur</span>
+            <span>Client</span>
+            <span class="center">Flux</span>
+            <span class="right">État</span>
+        </div>
 
-<div class="table-container">
-    <div class="table-grid header histo-grid-template">
-        <span>Date</span>
-        <span>Cariste</span>
-        <span>Client</span>
-        <span>Paquets</span>
-        <span>Statut</span>
-    </div>
-
-    <div id="histoTableBody">
-        {% for fiche in fiches %}
-           <div class="table-grid row clickable-row histo-grid-template" 
-                data-client="{{ fiche.client.nom|lower }}" 
-                data-cariste="{{ fiche.cariste.prenom|default('inconnu')|lower }}" 
-                data-date="{{ fiche.date|date('Y-m-d') }}"
-                onclick="window.location='{{ path('app_dechargement_show', {'id': fiche.id}) }}'">
-                
-                <span class="date-cell">{{ fiche.date|date('d/m/Y H:i') }}</span>
-                <span class="user-cell">{{ fiche.cariste.prenom|default('Inconnu') }}</span>
-                <span class="client-cell">
-                    {% if fiche.client.nom|lower in ['à définir', 'a definir'] %}
-                        <span class="badge-at-definir">
-                            <i class="fas fa-exclamation-circle"></i> À définir
+        <div id="histoTableBody" class="grid-body">
+            {% for fiche in fiches %}
+               <div class="grid-row clickable-row" 
+                    data-client="{{ fiche.client.nom|lower }}" 
+                    data-cariste="{{ fiche.cariste.prenom|default('inconnu')|lower }}" 
+                    data-date="{{ fiche.date|date('Y-m-d') }}"
+                    onclick="window.location='{{ path('app_dechargement_show', {'id': fiche.id}) }}'">
+                    
+                    <span class="date-cell">
+                        <i class="far fa-clock"></i> {{ fiche.date|date('d/m/Y') }} <small>{{ fiche.date|date('H:i') }}</small>
+                    </span>
+                    <span class="user-cell">
+                        <div class="user-avatar">{{ fiche.cariste.prenom|slice(0, 1)|upper }}</div>
+                        {{ fiche.cariste.prenom|default('Inconnu') }}
+                    </span>
+                    <span class="client-cell">
+                        {% if fiche.client.nom|lower in ['à définir', 'a definir'] %}
+                            <span class="badge-status warning pulse">
+                                <i class="fas fa-question-circle"></i> À définir
+                            </span>
+                        {% else %}
+                            <span class="client-name">{{ fiche.client.nom }}</span>
+                        {% endif %}
+                    </span>
+                    <span class="total-cell center">
+                        <span class="paquet-chip">{{ fiche.totalPaquets }} paquets</span>
+                    </span>
+                    <span class="right">
+                        <span class="badge-status success">
+                            <i class="fas fa-check-double"></i> Validé
                         </span>
-                    {% else %}
-                        {{ fiche.client.nom }}
-                    {% endif %}
-                </span>
-                <span class="total-cell"><strong>{{ fiche.totalPaquets }}</strong></span>
-                <span><span class="badge badge-success">Validé</span></span>
-            </div>
-        {% else %}
-            <div class="no-data">
-                <i class="fas fa-history" style="font-size: 24px; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
-                <span>Aucun déchargement trouvé.</span>
-            </div>
-        {% endfor %}
+                    </span>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="fas fa-folder-open"></i></div>
+                    <p>Aucune donnée disponible dans l'historique.</p>
+                </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 
@@ -70,7 +92,7 @@
         const inputCariste = document.getElementById('filterCaristeHisto');
         const inputDate = document.getElementById('filterDateHisto');
         const btnReset = document.getElementById('resetHistoFilters');
-        const rows = document.querySelectorAll('#histoTableBody .row');
+        const rows = document.querySelectorAll('#histoTableBody .grid-row');
 
         if (!inputClient || rows.length === 0) return;
 
@@ -84,7 +106,7 @@
                 const matchesCariste = row.dataset.cariste.includes(valCariste);
                 const matchesDate = valDate === "" || row.dataset.date === valDate;
 
-                row.style.display = (matchesClient && matchesCariste && matchesDate) ? 'grid' : 'none';
+                row.classList.toggle('hidden-row', !(matchesClient && matchesCariste && matchesDate));
             });
         }
 
@@ -95,56 +117,73 @@
         if (btnReset) {
             btnReset.addEventListener('click', (e) => {
                 e.preventDefault();
-                inputClient.value = '';
-                inputCariste.value = '';
-                inputDate.value = '';
+                inputClient.value = ''; inputCariste.value = ''; inputDate.value = '';
                 filterHisto();
             });
         }
     }
 
-    // Support Turbo & Chargement initial
-    document.addEventListener('turbo:load', setupHistoFilters);
+    document.addEventListener('turbo:load', () => setTimeout(setupHistoFilters, 50));
     setupHistoFilters();
 </script>
 
 <style>
-    /* Template de grille spécifique (5 colonnes) */
-    .histo-grid-template {
-        display: grid;
-        grid-template-columns: 140px 150px 1fr 80px 100px !important;
-        align-items: center;
+    /* VARIABLES LOCALES (Indigo Harmony) */
+    :root {
+        --indigo-600: #4f46e5;
+        --indigo-50: #eef2ff;
+        --slate-500: #64748b;
+        --slate-800: #1e293b;
+        --emerald-500: #10b981;
+        --amber-500: #f59e0b;
+        --border-subtle: #f1f5f9;
     }
 
-    .badge-at-definir {
-        background: #fffbeb;
-        color: #92400e;
-        border: 1px solid #fde68a;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 600;
-    }
+    /* CARD DESIGN */
+    .admin-card { background: #fff; border-radius: 12px; }
+    .card-header-flex { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; }
+    .admin-section-title { font-size: 1.25rem; font-weight: 700; color: var(--slate-800); margin: 0; }
+    .admin-section-subtitle { font-size: 0.875rem; color: var(--slate-500); margin-top: 4px; }
+    .stat-badge { background: var(--indigo-50); color: var(--indigo-600); padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
 
-    .badge-success {
-        background: #ecfdf5;
-        color: #10b981;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 600;
-    }
+    /* FILTERS */
+    .glass-filter-bar { display: flex; gap: 12px; background: var(--bg-gray); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; align-items: center; }
+    .filter-inputs { display: flex; gap: 12px; flex-grow: 1; }
+    .modern-input-group { position: relative; flex: 1; }
+    .modern-input-group i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--slate-400); font-size: 0.8rem; }
+    .modern-input-group input { width: 100%; padding: 8px 12px 8px 34px; border: 1px solid transparent; border-radius: 6px; font-size: 0.85rem; transition: 0.2s; outline: none; background: white; }
+    .modern-input-group input:focus { border-color: var(--indigo-600); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
 
-    /* Animation rotation Reset */
-    .btn-reset:hover i {
-        transform: rotate(-180deg);
-        transition: transform 0.3s ease;
-    }
-    
-    .no-data {
-        text-align: center;
-        padding: 40px;
-        color: #9ca3af;
-        background: white;
-    }
+    .btn-icon-reset { background: white; border: 1px solid var(--border-color); width: 36px; height: 36px; border-radius: 6px; cursor: pointer; color: var(--slate-500); transition: 0.3s; }
+    .btn-icon-reset:hover { color: var(--indigo-600); border-color: var(--indigo-600); transform: rotate(180deg); }
+
+    /* MODERN GRID TABLE */
+    .modern-table-wrapper { border: 1px solid var(--border-subtle); border-radius: 8px; overflow: hidden; }
+    .grid-header { display: grid; grid-template-columns: 180px 180px 1fr 120px 110px; background: var(--bg-gray); padding: 12px 20px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--slate-500); border-bottom: 1px solid var(--border-subtle); }
+    .grid-row { display: grid; grid-template-columns: 180px 180px 1fr 120px 110px; padding: 14px 20px; align-items: center; border-bottom: 1px solid var(--border-subtle); transition: 0.2s; font-size: 0.9rem; }
+    .grid-row:last-child { border-bottom: none; }
+    .clickable-row:hover { background: #f8faff; cursor: pointer; }
+
+    /* CELLS & CONTENT */
+    .date-cell { color: var(--slate-800); font-weight: 500; }
+    .date-cell small { color: var(--slate-400); margin-left: 4px; }
+    .user-cell { display: flex; align-items: center; gap: 10px; color: var(--slate-800); }
+    .user-avatar { width: 24px; height: 24px; background: var(--indigo-600); color: white; border-radius: 6px; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+    .client-name { color: var(--indigo-600); font-weight: 600; }
+    .paquet-chip { background: #f1f5f9; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; color: var(--slate-800); }
+
+    /* BADGES STATUS */
+    .badge-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
+    .badge-status.success { background: #ecfdf5; color: var(--emerald-500); }
+    .badge-status.warning { background: #fff7ed; color: var(--amber-500); }
+
+    /* UTILS */
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .hidden-row { display: none !important; }
+    .pulse { animation: pulse-warn 2s infinite; }
+    @keyframes pulse-warn { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+    .empty-state { padding: 60px; text-align: center; color: var(--slate-400); }
+    .empty-icon { font-size: 2rem; margin-bottom: 12px; opacity: 0.3; }
 </style>
