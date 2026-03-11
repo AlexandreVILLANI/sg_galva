@@ -9,6 +9,15 @@
     --text-dark: #333;
 }
 
+.div 
+{
+    --primary-blue: #2e46a6;
+    --secondary-gold: #dcb35c;
+    --succes-green: #27ae60;
+    --danger-red: #e74c3c;
+    --light-bg: #f4f7f6;
+}
+
 body { background-color: var(--light-bg); font-family: 'Segoe UI', sans-serif; color: var(--text-dark); margin: 0; }
 
 /* Styles partagés par la fiche et le détail */

@@ -1,64 +1,258 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Accueil Admin{% endblock %}
+{% block title %}Administration - SG Galva{% endblock %}
 
 {% block body %}
-<div class="example-wrapper">
-    <div class="header-actions">
-        <h1>Hello {{ app.user.prenom|default('Admin') }}! ✅</h1>        
-        <a href="{{ path('app_logout') }}" class="btn-logout">
-            <i class="fas fa-sign-out-alt"></i> Déconnexion
-        </a>
-    </div>
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-header">
+                <div class="logo-box" style="background: var(--primary-admin);">AD</div>
+                <span class="brand-name">Administrateur</span>
+            </div>
 
-    <p>Vous êtes connecté sur l'espace<strong>{{ controller_name }}</strong>.</p>
-    
-    <div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-left: 5px solid #2e46a6;">
-        <p>This friendly message is coming from:</p>
-        <ul>
-            <li>Your controller at <code>src/Controller/HomeController.php</code></li>
-            <li>Your template at <code>templates/home/admin.html.twig</code></li>
-        </ul>
-    </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-target="admin-bc">
+                    <i class="fas fa-file-invoice"></i>
+                    <span>Bon de commande</span>
+                </a>
+                <a href="#" class="nav-item" data-target="admin-fd">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Fiche de déchargement</span>
+                </a>
+                <a href="#" class="nav-item" data-target="admin-bt">
+                    <i class="fas fa-tools"></i>
+                    <span>Bon de travail</span>
+                </a>
+                <a href="#" class="nav-item" data-target="admin-pl">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Planning</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-footer">
+            <a href="{{ path('app_logout') }}" class="logout-link">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Déconnexion</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="user-welcome-bar">
+            <div class="welcome-message">
+                Bonjour, <strong>{{ app.user.prenom|default('Administrateur') }}</strong>
+            </div>
+            <div class="current-date">
+                <i class="far fa-calendar-alt"></i>
+                {{ "now"|date('d/m/Y', 'Europe/Paris') }}
+            </div>
+        </header>
+
+        {# État vide (sécurité si aucun onglet n'est actif) #}
+        <div id="empty-state" class="empty-placeholder" style="display: none;">
+            <div class="dashed-container">
+                <p>Sélectionnez une catégorie dans le menu de gauche</p>
+            </div>
+        </div>
+
+        <div id="content-area">
+            
+            {# --- 1. SECTION BONS DE COMMANDE --- #}
+            <section id="admin-bc" class="content-section active">
+                {# Décommente la ligne ci-dessous quand tu auras créé le composant #}
+                {# {{ include('components/admin/_list_bon_commande.html.twig') }} #}
+                
+                <div class="placeholder-text">
+                    <i class="fas fa-file-invoice" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i>
+                    <p>Espace Bons de Commande (Composant à intégrer)</p>
+                </div>
+            </section>
+
+            {# --- 2. SECTION FICHES DE DÉCHARGEMENT --- #}
+            <section id="admin-fd" class="content-section">
+                {# Décommente la ligne ci-dessous quand tu auras créé le composant #}
+                {# {{ include('components/admin/_list_fiche_dechargement.html.twig') }} #}
+                
+                <div class="placeholder-text">
+                    <i class="fas fa-clipboard-check" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i>
+                    <p>Espace Fiches de Déchargement (Composant à intégrer)</p>
+                </div>
+            </section>
+
+            {# --- 3. SECTION BONS DE TRAVAIL --- #}
+            <section id="admin-bt" class="content-section">
+                {# Décommente la ligne ci-dessous quand tu auras créé le composant #}
+                {# {{ include('components/admin/_list_bon_travail.html.twig') }} #}
+                
+                <div class="placeholder-text">
+                    <i class="fas fa-tools" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i>
+                    <p>Espace Bons de Travail (Composant à intégrer)</p>
+                </div>
+            </section>
+
+            {# --- 4. SECTION PLANNINGS --- #}
+            <section id="admin-pl" class="content-section">
+                {# Décommente la ligne ci-dessous quand tu auras créé le composant #}
+                {# {{ include('components/admin/_list_planning.html.twig') }} #}
+                
+                <div class="placeholder-text">
+                    <i class="fas fa-calendar-alt" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i>
+                    <p>Espace Plannings (Composant à intégrer)</p>
+                </div>
+            </section>
+
+        </div>
+    </main>
 </div>
+
+<script>
+    function initAdminDashboard() {
+        const navItems = document.querySelectorAll('.nav-item');
+        const emptyState = document.getElementById('empty-state');
+        const sections = document.querySelectorAll('.content-section');
+
+        function showSection(id) {            
+            const target = document.getElementById(id);
+            const nav = document.querySelector(`[data-target="${id}"]`);
+
+            if (target && nav) {
+                if (emptyState) emptyState.style.display = 'none';
+                
+                // 1. Cacher toutes les sections
+                sections.forEach(s => { 
+                    s.style.display = 'none'; 
+                    s.classList.remove('active'); 
+                });
+                navItems.forEach(i => i.classList.remove('active'));
+
+                // 2. Afficher la cible
+                target.style.display = 'block';
+                target.classList.add('active');
+                nav.classList.add('active');
+
+                // 3. Sauvegarde de l'onglet actif dans le cache du navigateur
+                localStorage.setItem('adminLastTab', id);
+
+                // (Optionnel) Ici tu pourras appeler tes fonctions setupFilters() quand les composants seront prêts
+            }
+        }
+
+        // Clic sur le menu
+        navItems.forEach(item => {
+            item.onclick = function(e) {
+                e.preventDefault();
+                showSection(this.getAttribute('data-target'));
+            };
+        });
+
+        // Restauration du dernier onglet visité au rechargement de la page
+        const urlParams = new URLSearchParams(window.location.search);
+        const sectionParam = urlParams.get('section');
+        const storedTab = localStorage.getItem('adminLastTab');
+
+        if (sectionParam) {
+            showSection(sectionParam);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (storedTab) {
+            showSection(storedTab);
+        } else {
+            showSection('admin-bc'); // Onglet par défaut
+        }
+    }
+
+    // Gestion propre avec Symfony Turbo
+    document.addEventListener('turbo:load', initAdminDashboard);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAdminDashboard);
+    } else {
+        initAdminDashboard();
+    }
+</script>
+
 <style>
-    .example-wrapper { 
-        margin: 2em auto; 
-        max-width: 800px; 
-        width: 95%; 
-        font: 18px/1.5 sans-serif; 
-        background: #fff; 
-        padding: 20px; 
-        border-radius: 8px; 
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+    :root {
+        --sidebar-width: 260px;
+        --primary-admin: #4f46e5; /* Indigo : Couleur spécifique à l'admin */
+        --text-gray: #6b7280;
+        --bg-gray: #f9fafb;
+        --border-color: #f3f4f6;
     }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
+
+    body, html { margin: 0; padding: 0; height: 100vh; font-family: 'Inter', sans-serif; background: white; }
+    .dashboard-container { display: flex; height: 100vh; }
+
+    /* Sidebar */
+    .sidebar { 
+        width: var(--sidebar-width); 
+        border-right: 1px solid var(--border-color); 
+        display: flex; flex-direction: column; justify-content: space-between; background: white;
+    }
+    .sidebar-header { display: flex; align-items: center; padding: 25px 20px; gap: 10px; }
+    .logo-box { 
+        color: white; width: 32px; height: 32px; 
+        display: flex; align-items: center; justify-content: center; 
+        border-radius: 6px; font-weight: 800; font-size: 13px; 
+    }
+    .brand-name { font-weight: 700; color: #111827; font-size: 15px; letter-spacing: -0.3px; }
+
+    .nav-item { 
+        display: flex; align-items: center; gap: 12px; padding: 12px 20px; 
+        text-decoration: none; color: #4b5563; font-size: 13px; transition: 0.2s;
+    }
+    .nav-item i { font-size: 14px; width: 20px; text-align: center; }
+    .nav-item:hover { background: var(--bg-gray); }
     
-    .header-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #eee;
-        padding-bottom: 10px;
+    .nav-item.active { 
+        color: var(--primary-admin); 
+        font-weight: 600; 
+        background: #eef2ff; /* Fond légèrement teinté de la couleur admin */
+        border-right: 3px solid var(--primary-admin); 
     }
 
-    .btn-logout {
-        background-color: #e74c3c;
-        color: white;
-        text-decoration: none;
-        padding: 10px 20px;
-        border-radius: 5px;
-        font-weight: bold;
-        font-size: 0.9rem;
-        transition: background 0.3s;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+    .sidebar-footer { padding: 15px 20px; border-top: 1px solid var(--border-color); }
+    .logout-link { color: #ef4444; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; }
+
+    /* Main Content */
+    .main-content { flex-grow: 1; background: white; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
+    
+    .user-welcome-bar {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 20px 25px 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px;
     }
 
-    .btn-logout:hover {
-        background-color: #c0392b;
+    .welcome-message { font-size: 18px; color: #111827; }
+    .welcome-message strong { color: var(--primary-admin); font-weight: 700; text-transform: capitalize; }
+
+    .current-date {
+        font-size: 13px; color: var(--text-gray); display: flex; align-items: center; gap: 8px;
+        background: var(--bg-gray); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border-color);
+    }
+
+    .content-section { display: none; }
+    .content-section.active { display: block; animation: fadeIn 0.3s ease; }
+
+    /* Espaces réservés visuels en attendant tes composants */
+    .placeholder-text {
+        text-align: center;
+        padding: 50px;
+        color: #9ca3af;
+        border: 2px dashed #e5e7eb;
+        border-radius: 8px;
+        background: #fafafa;
+    }
+
+    .empty-placeholder { flex-grow: 1; display: flex; padding: 10px; }
+    .dashed-container { 
+        flex-grow: 1; border: 2px dashed #e5e7eb; border-radius: 12px; 
+        display: flex; align-items: center; justify-content: center; 
+        color: #9ca3af; font-size: 14px; background: #fafafa;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 </style>
 {% endblock %}

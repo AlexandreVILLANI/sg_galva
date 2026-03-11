@@ -92,4 +92,17 @@ class BonTravailController extends AbstractController
             'commande' => $bt->getBonCommande(),
         ]);
     }
+
+    /**
+     * ROUTE 3 : Vue 100% LECTURE SEULE pour le Chef d'Équipe (Atelier)
+     */
+    #[Route('/bon-travail/consulter/{id}', name: 'app_bon_travail_view', methods: ['GET'])]
+    public function view(BonTravail $bt): Response
+    {
+        // On n'autorise aucune modification ici, c'est juste de l'affichage
+        return $this->render('bon_travail/view.html.twig', [
+            'bt' => $bt,
+            'commande' => $bt->getBonCommande(),
+        ]);
+    }
 }

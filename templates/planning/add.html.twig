@@ -116,8 +116,13 @@
                 <tbody id="planning-body">
                     {% for ligne in planning.lignes %}
                     <tr class="planning-row" data-ligne-id="{{ ligne.id }}" style="{% if ligne.avancement %}background: #ecfdf5;{% endif %}">
-                        
-                        <td class="p-0 locked-cell"><input type="text" class="cell-input center-text locked-text" title="{{ ligne.bonTravail.bonCommande.refi }}" value="{{ ligne.bonTravail.bonCommande.refi }}" readonly></td>
+                        <td class="p-0 locked-cell" style="text-align: center;"> 
+                            {# Lien vers la NOUVELLE route view #}
+                            <a href="{{ path('app_bon_travail_view', {'id': ligne.bonTravail.id}) }}" target="_blank" class="refi-link" title="Consulter le Bon de Travail">
+                                {{ ligne.bonTravail.bonCommande.refi }}
+                                <i class="fas fa-external-link-alt" style="font-size: 9px; margin-left: 3px;"></i>
+                            </a>
+                        </td>
                         <td class="p-0 locked-cell"><input type="text" class="cell-input locked-text client-name-compact" title="{{ ligne.bonTravail.bonCommande.client.nom }}" value="{{ ligne.bonTravail.bonCommande.client.nom }}" readonly></td>
                         <td class="center-content locked-cell"><input type="checkbox" class="important-check" {% if ligne.importance %}checked{% endif %} disabled></td>
                         <td class="p-0 locked-cell"><input type="datetime-local" class="cell-input center-text dt-input locked-text {% if ligne.importance %}is-important{% endif %}" value="{{ ligne.heureMiseADisposition ? ligne.heureMiseADisposition|date('Y-m-d\\TH:i', 'UTC') : '' }}" readonly></td>
@@ -187,6 +192,13 @@
 </div>
 
 <style>
+    .refi-link {
+        display: block; width: 100%; height: 100%; line-height: 35px;
+        color: var(--primary-blue); font-weight: 900; text-decoration: none;
+        font-size: 11px; transition: 0.2s;
+    }
+    .refi-link:hover { background: #e0f2fe; text-decoration: underline; }
+
     :root { 
         --primary-green: #10b981; 
         --primary-red: #dc2626; 
