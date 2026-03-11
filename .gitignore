@@ -12,3 +12,23 @@
 /.vscode/
 .DS_Store
 /node_modules/
+
+# --- SÉCURITÉ ET DONNÉES SENSIBLES ---
+# On bloque spécifiquement le fichier d'import pour éviter toute fuite RGPD
+/public/uploads/import_clients.csv
+# On bloque le contenu des dossiers d'images (on garde les dossiers, pas les photos)
+/public/uploads/fiches/*
+/public/uploads/bons/*
+
+# --- FICHIERS D'ENVIRONNEMENT ---
+# On bloque tous les fichiers .env qui ne sont pas le .env par défaut
+.env.*
+!.env.dist
+!.env
+
+# --- SYSTÈME ET DIVERS ---
+/public/storage/
+/.phpunit.result.cache
+.phpunit.cache/
+/tests/_output/
+/tests/_support/_generated/
