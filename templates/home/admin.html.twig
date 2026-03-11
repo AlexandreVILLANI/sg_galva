@@ -12,13 +12,17 @@
             </div>
 
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-target="admin-bc">
-                    <i class="fas fa-file-invoice"></i>
-                    <span>Bon de commande</span>
+                <a href="#" class="nav-item" data-target="admin-cl">
+                    <i class="fas fa-building"></i>
+                    <span>Clients</span>
                 </a>
                 <a href="#" class="nav-item" data-target="admin-fd">
                     <i class="fas fa-clipboard-check"></i>
                     <span>Fiche de déchargement</span>
+                </a>
+                <a href="#" class="nav-item active" data-target="admin-bc">
+                    <i class="fas fa-file-invoice"></i>
+                    <span>Bon de commande</span>
                 </a>
                 <a href="#" class="nav-item" data-target="admin-bt">
                     <i class="fas fa-tools"></i>
@@ -27,12 +31,7 @@
                 <a href="#" class="nav-item" data-target="admin-pl">
                     <i class="fas fa-calendar-alt"></i>
                     <span>Planning</span>
-                </a>
-                {# --- NOUVEAU LIEN CLIENTS --- #}
-                <a href="#" class="nav-item" data-target="admin-cl">
-                    <i class="fas fa-building"></i>
-                    <span>Clients</span>
-                </a>
+                </a>                
             </nav>
         </div>
 
@@ -71,20 +70,11 @@
 
             {# --- 2. SECTION FICHES DE DÉCHARGEMENT --- #}
             <section id="admin-fd" class="content-section">
-                {# Décommente la ligne ci-dessous quand tu auras créé le composant #}
-                {# {{ include('components/admin/_list_fiche_dechargement.html.twig') }} #}
-                
-                <div class="placeholder-text">
-                    <i class="fas fa-clipboard-check" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i>
-                    <p>Espace Fiches de Déchargement (Composant à intégrer)</p>
-                </div>
+                {{ include('components/admin/_list_fiche_dechargement.html.twig') }} 
             </section>
 
             {# --- 3. SECTION BONS DE TRAVAIL --- #}
             <section id="admin-bt" class="content-section">
-                {# Décommente la ligne ci-dessous quand tu auras créé le composant #}
-                {# {{ include('components/admin/_list_bon_travail.html.twig') }} #}
-                
                 <div class="placeholder-text">
                     <i class="fas fa-tools" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i>
                     <p>Espace Bons de Travail (Composant à intégrer)</p>
@@ -93,9 +83,6 @@
 
             {# --- 4. SECTION PLANNINGS --- #}
             <section id="admin-pl" class="content-section">
-                {# Décommente la ligne ci-dessous quand tu auras créé le composant #}
-                {# {{ include('components/admin/_list_planning.html.twig') }} #}
-                
                 <div class="placeholder-text">
                     <i class="fas fa-calendar-alt" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i>
                     <p>Espace Plannings (Composant à intégrer)</p>

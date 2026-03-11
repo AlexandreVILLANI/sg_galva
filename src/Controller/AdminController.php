@@ -4,17 +4,24 @@ namespace App\Controller;
 
 use App\Entity\Client;
 use App\Entity\BonDeCommande;
+use App\Entity\FicheDechargement;
+
 use App\Form\BonDeCommandeType;
 use App\Form\ClientType;
+
 use App\Repository\BonDeCommandeRepository;
 use App\Repository\LigneDechargementRepository;
 use App\Repository\ClientRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\FicheDechargementRepository;
+
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+
+use Doctrine\ORM\EntityManagerInterface;
+
 
 
 #[Route('/admin')]
@@ -25,13 +32,19 @@ class AdminController extends AbstractController
      * PAGE D'ACCUEIL ADMIN (Liste tout)
      */
     #[Route('/', name: 'app_admin_home')]
-    public function index(BonDeCommandeRepository $bcRepo): Response
-    {
-        // On récupère tous les bons de commande, triés par date décroissante
+    public function index(
+        BonDeCommandeRepository $bcRepo, 
+        FicheDechargementRepository $ficheRepo, 
+        ClientRepository $clientRepo           
+    ): Response {
         $bons = $bcRepo->findBy([], ['date' => 'DESC']);
+        $fiches = $ficheRepo->findBy([], ['date' => 'DESC']); 
+        $clients = $clientRepo->findBy([], ['nom' => 'ASC']);
 
         return $this->render('home/admin.html.twig', [
             'bons' => $bons,
+            'fiches' => $fiches,  
+            'clients' => $clients,
         ]);
     }
 
@@ -41,7 +54,7 @@ class AdminController extends AbstractController
         BonDeCommande $bon, 
         EntityManagerInterface $em,
         LigneDechargementRepository $ligneRepo,
-        ClientRepository $clientRepo // <-- Ajout de l'injection ici
+        ClientRepository $clientRepo 
     ): Response {
         $form = $this->createForm(BonDeCommandeType::class, $bon);
         $form->handleRequest($request);
@@ -146,5 +159,22 @@ class AdminController extends AbstractController
             'client' => $client,
             'form' => $form->createView(),
         ]);
+    }
+
+    /**
+     * SUPPRIMER UNE FICHE DE DECHARGEMENT
+     */
+    #[Route('/fiche/{id}/delete', name: 'app_admin_fiche_delete', methods: ['POST'])]
+    public function deleteFiche(Request $request, FicheDechargement $fiche, EntityManagerInterface $em): Response
+    {
+        if ($this->isCsrfTokenValid('delete_fiche'.$fiche->getId(), $request->request->get('_token'))) {
+            // Attention : Supprimer une fiche supprimera les photos liées si tu as mis "orphanRemoval=true"
+            $em->remove($fiche);
+            $em->flush();
+
+            $this->addFlash('success', 'La fiche n°' . $fiche->getId() . ' a été supprimée.');
+        }
+
+        return $this->redirectToRoute('app_admin_home', ['section' => 'admin-fd']);
     }
 }

@@ -6,7 +6,7 @@
     <div class="component-actions" style="display: flex; align-items: center; gap: 15px;">
         <div class="search-wrapper">
             <i class="fas fa-search"></i>
-            <input type="text" id="client-search-input" class="search-input" placeholder="Rechercher un client..." onkeyup="filterClients()">
+            <input type="text" id="client-search-input" class="search-input" placeholder="Rechercher un client, une ville..." onkeyup="filterClients()">
         </div>
 
         <form action="{{ path('app_admin_import_clients_csv') }}" method="POST" enctype="multipart/form-data" style="margin: 0;">
