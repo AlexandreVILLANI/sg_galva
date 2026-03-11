@@ -16,7 +16,9 @@
             <input type="file" id="csv-upload" name="csv_file" accept=".csv" style="display: none;" onchange="if(this.value) { this.form.submit(); }">
         </form>
 
-        <button class="btn-primary-admin"><i class="fas fa-plus"></i> Nouveau</button>
+        <a href="{{ path('app_admin_client_new') }}" class="btn-primary-admin" style="text-decoration: none;">
+            <i class="fas fa-plus"></i> Nouveau
+        </a>
     </div>
 </div>
 
@@ -44,8 +46,29 @@
                     </td>
                     <td>{{ client.telephone|default('-') }}</td>
                     <td class="col-city">{{ client.ville|default('-') }}</td>
-                    <td class="actions-cell">
-                        <a href="#" class="btn-action edit"><i class="fas fa-edit"></i></a>
+                    <td class="actions-cell" style="display: flex; justify-content: flex-end; gap: 8px; min-height: 45px;">
+                        {% if client.nom|lower not in ['à définir', 'a definir'] %}
+                            
+                            {# Bouton Modifier #}
+                            <a href="{{ path('app_admin_client_edit', {'id': client.id}) }}" class="btn-action edit" title="Modifier">
+                                <i class="fas fa-edit"></i>
+                            </a>
+
+                            {# Bouton Supprimer (Formulaire POST sécurisé) #}
+                            <form method="post" action="{{ path('app_admin_client_delete', {'id': client.id}) }}" onsubmit="return confirm('⚠️ Êtes-vous sûr de vouloir supprimer ce client ?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ client.id) }}">
+                                <button class="btn-action delete" title="Supprimer">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+
+                        {% else %}
+                            {# Optionnel : On peut mettre une petite icône de cadenas pour expliquer pourquoi c'est vide #}
+                            <span style="color: #d1d5db; font-size: 0.8rem; font-style: italic; padding-right: 10px;">
+                                <i class="fas fa-lock"></i> Système
+                            </span>
+                        {% endif %}
+
                     </td>
                 </tr>
             {% endfor %}
@@ -129,6 +152,15 @@
 </script>
 
 <style>
+    .btn-action.delete {
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-action.delete:hover {
+        background: #fee2e2; /* Fond rouge clair */
+        color: #ef4444;      /* Texte rouge */
+    }
     .sortable { cursor: pointer; transition: background 0.2s; }
     .sortable:hover { background: #f3f4f6 !important; }
     .sortable i { font-size: 10px; margin-left: 5px; color: #d1d5db; }

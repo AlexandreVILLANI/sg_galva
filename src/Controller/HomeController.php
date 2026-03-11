@@ -232,9 +232,7 @@ class HomeController extends AbstractController
 
             $adr = $this->findValue($record, ['adress', 'rue']);
             if ($adr) {
-                $adrClean = $this->clean($adr, 255);
-                $client->setAdresseFacturation($adrClean);
-                if (!$client->getAdresseLivraison()) $client->setAdresseLivraison($adrClean);
+                $client->setAdresseFacturation($this->clean($adr, 255));
             }
 
             $cp = $this->findValue($record, ['postal', 'cp']);
