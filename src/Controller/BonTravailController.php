@@ -11,6 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Repository\BonTravailRepository; 
 
 class BonTravailController extends AbstractController
@@ -104,5 +105,23 @@ class BonTravailController extends AbstractController
             'bt' => $bt,
             'commande' => $bt->getBonCommande(),
         ]);
+    }
+
+    #[Route('/reception-ordonnancement/bon-travail/supprimer/{id}', name: 'app_bon_travail_delete', methods: ['POST'])]
+    #[IsGranted('ROLE_RECEPTION_ORDONNANCEMENT')]
+    public function delete(Request $request, BonTravail $bt, EntityManagerInterface $em): Response
+    {
+        $tokenId = 'delete_bt' . $bt->getId();
+        $submittedToken = $request->request->get('_token');
+
+        if ($this->isCsrfTokenValid($tokenId, $submittedToken)) {
+            $em->remove($bt);
+            $em->flush();
+            $this->addFlash('success', 'BT supprimé.');
+        } else {
+            $this->addFlash('error', 'Jeton de sécurité invalide.');
+        }
+
+        return $this->redirectToRoute('app_reception_ordonnancement_home', ['section' => 'list-bons-travail']);
     }
 }

@@ -66,9 +66,13 @@
                         </span>
                     </span>
 
-                    <span class="actions-cell" style="display: flex; justify-content: center;" onclick="event.stopPropagation();">
-                        <a href="{{ path('app_bon_travail_new', {'id': bt.bonCommande.id}) }}" class="btn-edit-simple">
-                            <i class="fas fa-file-invoice" style="color: #dcb35c;"></i>
+                    <span class="actions-cell" style="display: flex; justify-content: center; gap: 10px;">
+
+                        <a href="{{ path('app_bon_travail_delete', {'id': bt.id}) }}" 
+                        class="btn-action-delete-bt"
+                        data-token="{{ csrf_token('delete_bt' ~ bt.id) }}"
+                        onclick="handleDeleteBT(event, this)">
+                            <i class="fas fa-trash-alt"></i>
                         </a>
                     </span>
                 </div>
@@ -83,6 +87,31 @@
 </section>
 
 <script>
+function handleDeleteBT(event, element) {
+    // 1. On empêche la ligne de se rediriger vers l'édition
+    event.preventDefault();
+    event.stopPropagation();
+
+    const token = element.getAttribute('data-token');
+    const url = element.getAttribute('href');
+    const confirmMsg = element.getAttribute('data-turbo-confirm');
+
+    if (confirm(confirmMsg)) {
+        // On crée un formulaire "fantôme" pour envoyer le POST avec le jeton CSRF
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = '_token';
+        tokenInput.value = token;
+
+        form.appendChild(tokenInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
 function setupBTFilters() {
     const inputSearch = document.getElementById('filterGeneralBT');
     const inputDate = document.getElementById('filterDateBT');
@@ -136,6 +165,24 @@ document.addEventListener('turbo:load', () => {
 </script>
 
 <style>
+.btn-action-delete-bt {
+        background: none;
+        border: none;
+        color: #9ca3af; /* Gris par défaut */
+        cursor: pointer;
+        padding: 0;
+        transition: 0.2s;
+    }
+
+    .btn-action-delete-bt:hover {
+        color: #ef4444; /* Rouge au survol */
+        transform: scale(1.2);
+    }
+
+    /* Optionnel : ajuster la largeur de la colonne action si besoin */
+    .bt-grid-template { 
+        grid-template-columns: 160px 140px 1fr 140px 100px !important; 
+    }
     /* Template de grille spécifique pour le BT */
     .bt-grid-template { 
         grid-template-columns: 160px 140px 1fr 140px 80px !important; 
