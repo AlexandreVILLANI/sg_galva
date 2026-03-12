@@ -1,0 +1,253 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bon de Travail - {{ bt.numero }}{% endblock %}
+
+{% block body %}
+<div class="bc-wrapper view-mode">
+    
+    <div class="bc-paper">
+        
+        {# --- ENTÊTE --- #}
+        <div class="bc-header theme-border">
+            <div class="bc-logo-container">
+                <img src="{{ asset('images/sg-galva-logo.png') }}" alt="Logo" class="bc-logo">
+            </div>
+            <div class="bc-title-container">
+                <h1 style="color: var(--theme-color);">BON DE TRAVAIL</h1>
+                <span class="theme-badge">MODE CONSULTATION</span>
+            </div>
+            <div class="bc-refi-container">
+                <label>N° BT -</label>
+                <input type="text" class="refi-input-ghost" value="{{ bt.numero }}" readonly>
+            </div>
+        </div>
+
+        {# --- GRILLE HAUTE --- #}
+        <div class="bc-top-grid">
+            <div class="bc-box treatment-box">
+                <p class="box-label">TRAITEMENT :</p>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" checked disabled> Galvanisation</label>
+                    <label><input type="checkbox" disabled> Cataphorèse</label>
+                </div>
+            </div>
+            <div class="bc-box summary-box">
+                <div class="summary-line"><span>Ref. Interne :</span> <strong>{{ commande.refi }}</strong></div>
+                <div class="summary-line"><span>Date Création :</span> <strong>{{ bt.dateCreation|date('d/m/Y') }}</strong></div>
+                <div class="summary-line"><span>Nb PAQ total :</span> <strong>{{ commande.fiche.totalPaquets }}</strong></div>
+                <div class="summary-line"><span>Client :</span> <strong>{{ commande.fiche.client.nom }}</strong></div>
+            </div>
+        </div>
+
+        {# --- GRILLE MILIEU : ADRESSES --- #}
+        <div class="bc-middle-grid">
+            <div class="bc-box client-box">
+                <p class="box-label">ADRESSE DE FACTURATION</p>
+                <div class="frame-content">
+                    <strong>{{ commande.fiche.client.nom }}</strong><br>
+                    {{ commande.fiche.client.adresseFacturation|nl2br }}<br>
+                    {{ commande.fiche.client.codePostal }} {{ commande.fiche.client.ville }}
+                </div>
+            </div>
+            <div class="bc-box driver-box">
+                <p class="box-label">ADRESSE DE LIVRAISON</p>
+                <div class="frame-content">
+                    <strong>{{ commande.fiche.client.nom }}</strong><br>
+                    {{ commande.fiche.client.adresseLivraison|default(commande.fiche.client.adresseFacturation)|nl2br }}<br>
+                    {{ commande.fiche.client.codePostal }} {{ commande.fiche.client.ville }}
+                </div>
+            </div>
+        </div>
+
+        {# --- ZONE TECHNIQUE (VERROUILLÉE) --- #}
+        <div class="bc-box theme-highlight">
+            <p class="box-label" style="color: var(--theme-color);">Informations Techniques</p>
+            <div class="tech-grid">
+                <div class="tech-col">
+                    <span class="label">EXIGENCE PARTICULIÈRE :</span>
+                    <input type="text" class="ghost-input full-width" value="{{ bt.exigenceParticuliere }}" readonly>
+                </div>
+                <div class="tech-col">
+                    <span class="label">REPRISE USINAGE :</span>
+                    <input type="text" class="ghost-input full-width" value="{{ bt.repriseUsinage }}" readonly>
+                </div>
+                <div class="tech-col">
+                    <span class="label">DÉLAI CLIENT :</span>
+                    <input type="text" class="ghost-input full-width" value="{{ bt.delaiClient ? bt.delaiClient|date('d/m/Y') : 'Non précisé' }}" readonly>
+                </div>
+            </div>
+        </div>
+
+        {# --- TABLEAU TECHNIQUE (VERROUILLÉ) --- #}
+        <div class="bc-box description-box table-wrapper">
+            <table class="bc-table view-table">
+                <thead>
+                    <tr>
+                        <th width="5%">Qté</th>
+                        <th width="30%">Désignation</th>
+                        <th width="5%">U</th>
+                        <th width="15%">Référence</th>
+                        <th width="15%">Trav. Annexes</th>
+                        <th width="10%">Poids Kg</th>
+                        <th width="20%">Observations</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ligne in bt.lignes %}
+                        <tr>
+                            <td class="center bold">{{ ligne.nbPaquets }}</td>
+                            <td class="designation">
+                                <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
+                                <div class="sub-info">Emp: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }}</div>
+                            </td>
+                            <td class="p-0"><input type="text" class="cell-input center" value="{{ ligne.u }}" readonly></td>
+                            <td class="p-0"><input type="text" class="cell-input" value="{{ ligne.reference }}" readonly></td>
+                            <td class="p-0"><input type="text" class="cell-input" value="{{ ligne.travauxAnnexes }}" readonly></td>
+                            <td class="p-0"><input type="text" class="cell-input right" value="{{ ligne.poids }}" readonly></td>
+                            <td class="p-0"><input type="text" class="cell-input" value="{{ ligne.observations }}" readonly></td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="7" class="center muted">Aucune ligne trouvée.</td></tr>
+                    {% endfor %}
+
+                    {# Lignes vides pour compléter #}
+                    {% for i in 1..5 %}
+                    <tr><td colspan="7" style="height: 35px; border-bottom: 1px solid #eee; border-right: 1px solid #eee;"></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# --- PIED DE PAGE : OBSERVATIONS --- #}
+        <div class="bc-box comment-box theme-highlight">
+            <span class="label" style="color: var(--theme-color);">Observations générales de l'Atelier :</span>
+            <div class="mt-2">
+                <textarea class="w-100 ghost-textarea" rows="3" readonly>{{ bt.observations }}</textarea>
+            </div>
+        </div>
+
+        <div class="bc-footer-info">
+            <div><strong>Mise à dispo. atelier :</strong> {{ bt.dateCreation|date('d/m/Y H:i') }}</div>
+            <div><strong>Règlement :</strong> SOUP.RGT.CPT.</div>
+        </div>
+
+       <div class="bc-actions no-print">
+            <a href="javascript:history.back();" class="btn-close">
+                <i class="fas fa-arrow-left"></i> RETOUR
+            </a>
+            
+            <button type="button" class="btn-print-modern" onclick="window.print()">
+                <i class="fas fa-print"></i> IMPRIMER LE BON
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    /* --- HARMONISATION STYLE "CONSULTATION" (Vert Emeraude) --- */
+    :root {
+        --theme-color: #10b981; 
+        --theme-bg: #f0fdf4;
+    }
+
+    .bc-wrapper { background: #f3f4f6; min-height: 100vh; padding: 40px 20px; font-family: 'Inter', Arial, sans-serif; color: #1f2937; }
+    .bc-paper { max-width: 900px; margin: 0 auto; background: white; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: block; border-top: 8px solid var(--theme-color); border-radius: 4px; }
+    .bc-box { border: 1px solid #e5e7eb; padding: 15px; margin-bottom: 20px; border-radius: 6px; }
+
+    /* Header */
+    .theme-border { border-bottom: 2px solid var(--theme-color) !important; }
+    .bc-header { display: grid; grid-template-columns: 1fr 2fr 1.5fr; align-items: center; padding-bottom: 15px; margin-bottom: 25px; }
+    .bc-logo { max-width: 120px; }
+    .bc-title-container { text-align: center; }
+    .bc-title-container h1 { font-size: 22px; font-weight: 800; margin: 0; margin-bottom: 5px; }
+    
+    .theme-badge {
+        background: var(--theme-color);
+        color: white;
+        font-size: 10px;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+
+    .bc-refi-container { text-align: right; font-size: 18px; font-weight: bold; color: #4b5563; }
+    .refi-input-ghost { border: none; font-weight: bold; font-size: 18px; width: 140px; text-align: right; outline: none; background: transparent; color: #111827; }
+
+    /* Grilles */
+    .bc-top-grid, .bc-middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+    .box-label { font-weight: bold; font-size: 11px; color: #6b7280; border-bottom: 1px solid #f3f4f6; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; }
+    .checkbox-group { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+    .summary-line { display: flex; justify-content: space-between; border-bottom: 1px solid #f9fafb; padding: 4px 0; font-size: 13px; }
+    .frame-content { font-size: 13px; line-height: 1.5; color: #374151; }
+
+    /* Zone Technique Highlight */
+    .theme-highlight { border: 1px solid #d1fae5; background: var(--theme-bg); }
+    .tech-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+    .label { font-weight: bold; font-size: 11px; text-transform: uppercase; margin-right: 5px; color: #4b5563; display: block; margin-bottom: 5px; }
+    
+    /* Inputs en mode consultation (sans bordure) */
+    .ghost-input { border: none; font-family: inherit; font-size: 13px; font-weight: 600; padding: 4px 0; background: transparent; width: 100%; color: #111827; outline: none; }
+    .ghost-textarea { border: none; font-family: inherit; font-size: 13px; font-weight: 600; padding: 4px 0; background: transparent; width: 100%; color: #111827; outline: none; resize: none; }
+
+    /* Tableau */
+    .table-wrapper { padding: 0; border: 1px solid #e5e7eb; overflow: hidden; }
+    .bc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .bc-table th { background: #f9fafb; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; color: #4b5563; }
+    .bc-table th:last-child { border-right: none; }
+    .bc-table td { border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; height: 35px; vertical-align: middle; color: #111827; }
+    .bc-table td:last-child { border-right: none; }
+    .bc-table tr:last-child td { border-bottom: none; }
+
+    /* Inputs dans tableau */
+    .cell-input { width: 100%; height: 100%; border: none; background: transparent; padding: 0 5px; box-sizing: border-box; font-family: inherit; font-size: 13px; font-weight: 500; color: #111827; outline: none; }
+    .center { text-align: center; } .right { text-align: right; }
+    .designation { padding: 0 8px; }
+    .sub-info { font-size: 10px; color: #6b7280; margin-top: 2px; }
+    .p-0 { padding: 0 !important; }
+
+    /* Footer & Actions */
+    .bc-footer-info { display: flex; justify-content: space-between; font-size: 12px; margin-top: 15px; padding: 0 5px; color: #6b7280; }
+    .bc-actions { display: flex; gap: 15px; margin-top: 30px; }
+    
+    .btn-close {
+        flex: 1;
+        background: #f3f4f6;
+        color: #4b5563;
+        padding: 16px;
+        text-align: center;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 800;
+        transition: 0.2s;
+    }
+    .btn-close:hover { background: #e5e7eb; }
+
+    .btn-print-modern {
+        flex: 2;
+        background: #1f2937;
+        color: white;
+        border: none;
+        padding: 16px;
+        border-radius: 6px;
+        font-weight: 800;
+        cursor: pointer;
+        font-size: 15px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: 0.2s;
+    }
+    .btn-print-modern:hover { background: #111827; transform: translateY(-1px); }
+
+    @media print { 
+        .no-print { display: none !important; }
+        .bc-wrapper { padding: 0; background: white; }
+        .bc-paper { box-shadow: none; border: none; padding: 0; margin: 0; max-width: 100%; }
+        .theme-highlight { border: 1px solid #000; background: transparent; }
+        .bc-box, .table-wrapper { border: 1px solid #000; }
+        .bc-table th, .bc-table td { border-color: #000; }
+        .theme-border { border-color: #000 !important; }
+        .theme-badge { border: 1px solid #000; color: #000; background: transparent; }
+    }
+</style>
+{% endblock %}

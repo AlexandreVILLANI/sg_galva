@@ -15,7 +15,12 @@
         </thead>
         <tbody>
             {% for bon in bons %}
-                <tr style="border-bottom: 1px solid #f3f4f6; transition: 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
+                {# On ajoute le curseur pointer et l'événement onclick pour rediriger vers la page d'édition #}
+                <tr style="border-bottom: 1px solid #f3f4f6; transition: 0.2s; cursor: pointer;" 
+                    onmouseover="this.style.background='#f9fafb'" 
+                    onmouseout="this.style.background='transparent'"
+                    onclick="window.location.href='{{ path('app_admin_bc_edit', {'id': bon.id}) }}'">
+                    
                     <td style="padding: 15px; font-size: 13px;">{{ bon.date|date('d/m/Y') }}</td>
                     <td style="padding: 15px; font-weight: bold; color: var(--primary-admin);">{{ bon.refi }}</td>
                     <td style="padding: 15px; font-size: 13px;">{{ bon.fiche.client.nom }}</td>
@@ -24,11 +29,9 @@
                             {{ bon.forfait|default('Aucun') }}
                         </span>
                     </td>
-                    <td style="padding: 15px; text-align: right;">
-                        {# --- LE LIEN VERS LA PAGE D'ÉDITION --- #}
-                        <a href="{{ path('app_admin_bc_edit', {'id': bon.id}) }}" style="background: var(--primary-admin); color: white; padding: 8px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; transition: 0.2s;">
-                            <i class="fas fa-edit"></i> Modifier
-                        </a>
+                    <td style="padding: 15px; text-align: right; color: #cbd5e1;">
+                        {# Bouton supprimé, on laisse juste une petite flèche discrète pour le visuel #}
+                        <i class="fas fa-chevron-right"></i>
                     </td>
                 </tr>
             {% else %}

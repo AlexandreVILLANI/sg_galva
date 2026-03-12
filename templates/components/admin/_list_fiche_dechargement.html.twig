@@ -34,7 +34,7 @@
     </div>
     
     {# --- TABLEAU STYLE GRID --- #}
-    <div class="modern-table-wrapper">
+    <div class="modern-table-wrapper ">
         <div class="grid-header">
             <span>Date de réception</span>
             <span>Opérateur</span>
@@ -49,7 +49,7 @@
                     data-client="{{ fiche.client.nom|lower }}" 
                     data-cariste="{{ fiche.cariste.prenom|default('inconnu')|lower }}" 
                     data-date="{{ fiche.date|date('Y-m-d') }}"
-                    onclick="window.location='{{ path('app_dechargement_show', {'id': fiche.id}) }}'">
+                    onclick="window.location='{{ path('app_dechargement_admin', {'id': fiche.id}) }}'">
                     
                     <span class="date-cell">
                         <i class="far fa-clock"></i> {{ fiche.date|date('d/m/Y') }} <small>{{ fiche.date|date('H:i') }}</small>
@@ -96,7 +96,7 @@
 
         if (!inputClient || rows.length === 0) return;
 
-        function filterHisto() {
+            function filterHisto() {
             const valClient = inputClient.value.toLowerCase().trim();
             const valCariste = inputCariste.value.toLowerCase().trim();
             const valDate = inputDate.value;

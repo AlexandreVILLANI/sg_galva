@@ -171,28 +171,7 @@ class HomeController extends AbstractController
         ]);
     }
 
-    /**
-     * Espace ADMIN
-     */
-    #[Route('/admin', name: 'app_admin_home')]
-    #[IsGranted('ROLE_ADMIN')]
-    public function adminIndex(
-        BonDeCommandeRepository $bcRepository, 
-        ClientRepository $clientRepo,
-        FicheDechargementRepository $ficheRepo // 1. On injecte le repository des fiches
-    ): Response {
-        $bons = $bcRepository->findBy([], ['date' => 'DESC']);
-        $clients = $clientRepo->findBy([], ['nom' => 'ASC']);
-        
-        // 2. On récupère les fiches de déchargement
-        $fiches = $ficheRepo->findBy([], ['date' => 'DESC']); 
-
-        return $this->render('home/admin.html.twig', [
-            'bons' => $bons,
-            'clients' => $clients,
-            'fiches' => $fiches, // 3. ON AJOUTE LA VARIABLE ICI
-        ]);
-    }
+    
 
     // --- NOUVELLE ROUTE : IMPORT CSV DEPUIS L'ADMIN ---
     #[Route('/admin/import-clients', name: 'app_admin_import_clients_csv', methods: ['POST'])]

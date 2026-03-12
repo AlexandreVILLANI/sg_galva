@@ -1,0 +1,117 @@
+<div class="admin-table-container">
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0; font-size: 1.2rem; color: #111827;">Suivi des Bons de Travail</h2>
+    </div>
+
+    {# --- BARRE DE FILTRES --- #}
+    <div class="filter-bar" style="background: white; padding: 15px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+        <div class="filter-form" style="display: flex; gap: 10px; align-items: center;">
+            <div class="filter-group" style="display: flex; align-items: center; background: #f9fafb; border: 1px solid #e5e7eb; padding: 8px 12px; border-radius: 6px; flex: 1;">
+                <i class="fas fa-search" style="color: #9ca3af; margin-right: 10px;"></i>
+                <input type="text" id="filterGeneralAdminBT" placeholder="N° BT, REFI, Client..." style="border: none; background: transparent; font-size: 13px; outline: none; width: 100%;">
+            </div>
+
+            <div class="filter-group" style="display: flex; align-items: center; background: #f9fafb; border: 1px solid #e5e7eb; padding: 8px 12px; border-radius: 6px; width: 180px;">
+                <select id="filterUrgenceAdminBT" style="border: none; background: transparent; font-size: 13px; outline: none; width: 100%; cursor: pointer;">
+                    <option value="">Tous les délais</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="normal">Normal</option>
+                </select>
+            </div>
+
+            <a href="#" class="btn-reset" id="resetAdminBTFilters" style="color: #6b7280; background: #f3f4f6; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #e5e7eb; text-decoration: none;">
+                <i class="fas fa-sync-alt"></i>
+            </a>
+        </div>
+    </div>
+
+    {# --- TABLEAU STYLE GRID --- #}
+    <div class="table-container" style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+        <div class="table-grid header admin-bt-grid" style="background: #f3f4f6; color: #6b7280; font-weight: 600; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; display: grid; grid-template-columns: 160px 140px 1fr 140px 60px; padding: 15px 20px;">
+            <span>N° BT</span>
+            <span>REFI</span>
+            <span>Client</span>
+            <span>Délai Prévu</span>
+            <span style="text-align: right;"></span>
+        </div>
+
+        <div id="adminBtTableBody">
+            {% for bt in bons_travail|default([]) %}
+                {% set isUrgent = bt.delaiClient and bt.delaiClient|date('Y-m-d') <= "now"|date_modify("+1 day")|date('Y-m-d') %}
+                
+                <div class="table-grid row admin-bt-grid" 
+                    style="display: grid; grid-template-columns: 160px 140px 1fr 140px 60px; padding: 15px 20px; align-items: center; border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: 0.2s;"
+                    data-btnum="{{ bt.numero|lower }}"
+                    data-refi="{{ bt.bonCommande.refi|lower }}" 
+                    data-client="{{ bt.bonCommande.client.nom|lower }}" 
+                    data-urgence="{{ isUrgent ? 'urgent' : 'normal' }}"
+                    onmouseover="this.style.background='#f9fafb'" 
+                    onmouseout="this.style.background='transparent'"
+                    onclick="window.location.href='{{ path('app_admin_bt_edit', {'id': bt.id}) }}'"                     
+                    <span style="font-weight: bold; color: var(--primary-admin);">
+                        {{ bt.numero }}
+                        {% if isUrgent %}
+                            <span style="background: #fee2e2; color: #dc2626; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-left: 5px;">!</span>
+                        {% endif %}
+                    </span>
+
+                    <span style="font-size: 13px;">{{ bt.bonCommande.refi }}</span>
+
+                    <span style="font-size: 13px; font-weight: 500;">{{ bt.bonCommande.client.nom }}</span>
+
+                    <span>
+                        <span style="background: {{ isUrgent ? '#fef2f2' : '#f0f9ff' }}; color: {{ isUrgent ? '#dc2626' : '#0369a1' }}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                            <i class="far fa-clock"></i> {{ bt.delaiClient ? bt.delaiClient|date('d/m/Y') : 'N/C' }}
+                        </span>
+                    </span>
+
+                    <span style="text-align: right; color: #cbd5e1;">
+                        <i class="fas fa-chevron-right"></i>
+                    </span>
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 40px; color: #9ca3af;">
+                    <i class="fas fa-clipboard-list" style="font-size: 30px; margin-bottom: 10px;"></i><br>
+                    Aucun bon de travail en cours.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+function setupAdminBTFilters() {
+    const inputSearch = document.getElementById('filterGeneralAdminBT');
+    const selectUrgence = document.getElementById('filterUrgenceAdminBT');
+    const btnReset = document.getElementById('resetAdminBTFilters');
+    const rows = document.querySelectorAll('#adminBtTableBody .admin-bt-grid');
+
+    if (!inputSearch || rows.length === 0) return;
+
+    function filter() {
+        const valSearch = inputSearch.value.toLowerCase().trim();
+        const valUrgence = selectUrgence.value;
+
+        rows.forEach(row => {
+            const matchesSearch = row.dataset.btnum.includes(valSearch) || 
+                                row.dataset.refi.includes(valSearch) || 
+                                row.dataset.client.includes(valSearch);
+            const matchesUrgence = valUrgence === "" || row.dataset.urgence === valUrgence;
+
+            row.style.display = (matchesSearch && matchesUrgence) ? 'grid' : 'none';
+        });
+    }
+
+    inputSearch.addEventListener('input', filter);
+    selectUrgence.addEventListener('change', filter);
+    
+    btnReset.addEventListener('click', (e) => {
+        e.preventDefault();
+        inputSearch.value = ''; selectUrgence.value = '';
+        filter();
+    });
+}
+
+document.addEventListener('turbo:load', setupAdminBTFilters);
+setupAdminBTFilters();
+</script>

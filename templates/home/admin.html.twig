@@ -53,8 +53,6 @@
                 {{ "now"|date('d/m/Y', 'Europe/Paris') }}
             </div>
         </header>
-
-        {# État vide (sécurité si aucun onglet n'est actif) #}
         <div id="empty-state" class="empty-placeholder" style="display: none;">
             <div class="dashed-container">
                 <p>Sélectionnez une catégorie dans le menu de gauche</p>
@@ -75,10 +73,7 @@
 
             {# --- 3. SECTION BONS DE TRAVAIL --- #}
             <section id="admin-bt" class="content-section">
-                <div class="placeholder-text">
-                    <i class="fas fa-tools" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i>
-                    <p>Espace Bons de Travail (Composant à intégrer)</p>
-                </div>
+                {{ include('components/admin/_list_bon_travail.html.twig') }}
             </section>
 
             {# --- 4. SECTION PLANNINGS --- #}

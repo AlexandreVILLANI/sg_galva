@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Client;
 use App\Entity\BonDeCommande;
 use App\Entity\FicheDechargement;
+use App\Entity\BonTravail;
 
 use App\Form\BonDeCommandeType;
 use App\Form\ClientType;
@@ -13,8 +14,10 @@ use App\Repository\BonDeCommandeRepository;
 use App\Repository\LigneDechargementRepository;
 use App\Repository\ClientRepository;
 use App\Repository\FicheDechargementRepository;
+use App\Repository\BonTravailRepository;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -22,29 +25,25 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 use Doctrine\ORM\EntityManagerInterface;
 
-
-
 #[Route('/admin')]
 #[IsGranted('ROLE_ADMIN')]
 class AdminController extends AbstractController
 {
     /**
-     * PAGE D'ACCUEIL ADMIN (Liste tout)
+     * PAGE D'ACCUEIL ADMIN (Centralise toutes les listes)
      */
     #[Route('/', name: 'app_admin_home')]
     public function index(
         BonDeCommandeRepository $bcRepo, 
         FicheDechargementRepository $ficheRepo, 
-        ClientRepository $clientRepo           
+        ClientRepository $clientRepo,
+        BonTravailRepository $btRepo          
     ): Response {
-        $bons = $bcRepo->findBy([], ['date' => 'DESC']);
-        $fiches = $ficheRepo->findBy([], ['date' => 'DESC']); 
-        $clients = $clientRepo->findBy([], ['nom' => 'ASC']);
-
         return $this->render('home/admin.html.twig', [
-            'bons' => $bons,
-            'fiches' => $fiches,  
-            'clients' => $clients,
+            'bons' => $bcRepo->findBy([], ['date' => 'DESC']),
+            'fiches' => $ficheRepo->findBy([], ['date' => 'DESC']), 
+            'clients' => $clientRepo->findBy([], ['nom' => 'ASC']),
+            'bons_travail' => $btRepo->findAll(), // <--- Envoie ENFIN les BT !
         ]);
     }
 
@@ -60,17 +59,14 @@ class AdminController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            
-            // --- GESTION DU CHANGEMENT DE CLIENT ---
+            // ... gestion changement client ...
             $nouveauClientId = $request->request->get('nouveau_client');
             if ($nouveauClientId) {
                 $nouveauClient = $clientRepo->find($nouveauClientId);
-                if ($nouveauClient) {
-                    $bon->getFiche()->setClient($nouveauClient);
-                }
+                if ($nouveauClient) $bon->getFiche()->setClient($nouveauClient);
             }
 
-            // --- SAUVEGARDE DES LIGNES DU TABLEAU ---
+            // ... gestion lignes ...
             $lignesData = $request->request->all('lignes');
             if (!empty($lignesData)) {
                 $nouveauTotal = 0;
@@ -86,8 +82,7 @@ class AdminController extends AbstractController
             }
 
             $em->flush();
-            $this->addFlash('success', 'Bon de commande mis à jour avec succès.');
-            
+            $this->addFlash('success', 'Mise à jour réussie.');
             return $this->redirectToRoute('app_admin_home', ['section' => 'admin-bc']);
         }
 
@@ -95,7 +90,7 @@ class AdminController extends AbstractController
             'form' => $form->createView(),
             'bon' => $bon,
             'fiche' => $bon->getFiche(),
-            'clients' => $clientRepo->findBy([], ['nom' => 'ASC']), // <-- On envoie la liste des clients triée
+            'clients' => $clientRepo->findBy([], ['nom' => 'ASC']),
         ]);
     }
 
@@ -176,5 +171,64 @@ class AdminController extends AbstractController
         }
 
         return $this->redirectToRoute('app_admin_home', ['section' => 'admin-fd']);
+    }
+
+    /**
+     * PAGE D'ÉDITION DU BON DE TRAVAIL (Vue Admin)
+     */
+    #[Route('/bon-travail/{id}/edit', name: 'app_admin_bt_edit', methods: ['GET'])]
+    public function editBonTravail(BonTravail $bt): Response 
+    {
+        return $this->render('bon_travail/admin.html.twig', [
+            'bt' => $bt,
+            'commande' => $bt->getBonCommande(),
+        ]);
+    }
+
+    /**
+     * SAUVEGARDE DES MODIFICATIONS DU BON DE TRAVAIL
+     */
+    #[Route('/bon-travail/{id}/update', name: 'app_admin_bt_update', methods: ['POST'])]
+    public function updateBT(Request $request, BonTravail $bt, EntityManagerInterface $em): Response
+    {
+        // 1. Mise à jour des infos générales
+        $bt->setNumero($request->request->get('numero'));
+        $bt->setExigenceParticuliere($request->request->get('exigence_particuliere'));
+        $bt->setRepriseUsinage($request->request->get('reprise_usinage'));
+        $bt->setObservations($request->request->get('observations'));
+        
+        // Gestion du délai
+        $delai = $request->request->get('delai_client');
+        if ($delai) {
+            $bt->setDelaiClient(new \DateTime($delai));
+        } else {
+            $bt->setDelaiClient(null);
+        }
+
+        // 2. Mise à jour des lignes du tableau (Qté, Ref, etc.)
+        $lignesData = $request->request->all('lignes');
+        
+        if (!empty($lignesData)) {
+            foreach ($bt->getLignes() as $ligne) {
+                $ligneId = $ligne->getId();
+                
+                // Si on a des données pour cette ligne précise
+                if (isset($lignesData[$ligneId])) {
+                    $data = $lignesData[$ligneId];
+                    $ligne->setU($data['u'] ?? '');
+                    $ligne->setReference($data['reference'] ?? '');
+                    $ligne->setTravauxAnnexes($data['travauxAnnexes'] ?? '');
+                    $ligne->setPoids((float) ($data['poids'] ?? 0));
+                    $ligne->setObservations($data['observations'] ?? '');
+                }
+            }
+        }
+
+        // 3. On sauvegarde tout en base de données
+        $em->flush();
+        $this->addFlash('success', 'Toutes les modifications du Bon de Travail ont été enregistrées.');
+
+        // 4. Redirection vers l'accueil Admin, sur l'onglet Bon de Travail
+        return $this->redirectToRoute('app_admin_home', ['section' => 'admin-bt']);
     }
 }

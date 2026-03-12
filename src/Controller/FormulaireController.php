@@ -73,6 +73,18 @@ class FormulaireController extends AbstractController
         ]);
     }
 
+    #[Route('/admin/dechargement/{id}', name: 'app_dechargement_admin')]
+    #[IsGranted('ROLE_ADMIN')]
+    public function showFicheAdmin(FicheDechargement $fiche, ClientRepository $clientRepo): Response
+    {
+        $clients = $clientRepo->findBy([], ['nom' => 'ASC']);
+
+        return $this->render('formulaire/admin.html.twig', [
+            'fiche' => $fiche,
+            'clients' => $clients 
+        ]);
+    }
+
     #[Route('/reception/dechargement/{id}/update-client', name: 'app_dechargement_update_client', methods: ['POST'])]
     public function updateClient(Request $request, FicheDechargement $fiche, ClientRepository $clientRepo, EntityManagerInterface $em): Response
     {
