@@ -39,6 +39,11 @@ class ClientType extends AbstractType
             ->add('categorieComptable', TextType::class, ['label' => 'Catégorie Comptable', 'required' => false])
             ->add('encoursAutorise', TextType::class, ['label' => 'Encours Autorisé (€)', 'required' => false])
             
+            // ---> LES 3 NOUVEAUX CHAMPS AJOUTÉS ICI <---
+            ->add('portefeuilleBlFa', TextType::class, ['label' => 'Portefeuille BL et FA', 'required' => false])
+            ->add('payeur', TextType::class, ['label' => 'Payeur', 'required' => false])
+            ->add('assuranceCredit', TextType::class, ['label' => 'Assurance Crédit (€)', 'required' => false])
+            
             // --- ALERTES ---
             ->add('messageAlerte', TextareaType::class, [
                 'label' => 'Message d\'Alerte (S\'affichera sur les fiches)',

@@ -3,7 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\LigneDechargementRepository;
-use Doctrine\DBAL\Types\Types; // Nécessaire pour le type TEXT
+use Doctrine\DBAL\Types\Types; 
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: LigneDechargementRepository::class)]
@@ -27,8 +27,6 @@ class LigneDechargement
     #[ORM\ManyToOne(inversedBy: 'lignes')]
     #[ORM\JoinColumn(nullable: false)]
     private ?FicheDechargement $fiche = null;
-
-    // --- NOUVEAUX CHAMPS (Pour le Bon de Travail) ---
 
     #[ORM\Column(type: Types::FLOAT, nullable: true)]
     private ?float $poids = null; // Poids en KG
@@ -60,8 +58,6 @@ class LigneDechargement
 
     public function getFiche(): ?FicheDechargement { return $this->fiche; }
     public function setFiche(?FicheDechargement $fiche): self { $this->fiche = $fiche; return $this; }
-
-    // --- NOUVEAUX GETTERS ET SETTERS ---
 
     public function getPoids(): ?float { return $this->poids; }
     public function setPoids(?float $poids): self { $this->poids = $poids; return $this; }

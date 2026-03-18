@@ -77,11 +77,8 @@
             </section>
 
             {# --- 4. SECTION PLANNINGS --- #}
-            <section id="admin-pl" class="content-section">
-                <div class="placeholder-text">
-                    <i class="fas fa-calendar-alt" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i>
-                    <p>Espace Plannings (Composant à intégrer)</p>
-                </div>
+            <section id="admin-bt" class="content-section">
+                {{ include('components/admin/_list_planning.html.twig') }}
             </section>
 
             {# --- 5. SECTION CLIENTS (NOUVEAU) --- #}

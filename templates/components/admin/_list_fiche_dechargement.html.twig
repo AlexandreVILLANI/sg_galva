@@ -49,7 +49,7 @@
                     data-client="{{ fiche.client.nom|lower }}" 
                     data-cariste="{{ fiche.cariste.prenom|default('inconnu')|lower }}" 
                     data-date="{{ fiche.date|date('Y-m-d') }}"
-                    onclick="window.location='{{ path('app_dechargement_admin', {'id': fiche.id}) }}'">
+                    onclick="window.location='{{ path('app_admin_dechargement_edit', {'id': fiche.id}) }}'">
                     
                     <span class="date-cell">
                         <i class="far fa-clock"></i> {{ fiche.date|date('d/m/Y') }} <small>{{ fiche.date|date('H:i') }}</small>

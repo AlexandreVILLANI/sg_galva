@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Modification Bon de commande - {{ fiche.client.nom }}{% endblock %}
+{% block title %}Modification  Bon de commande - {{ fiche.client.nom }}{% endblock %}
 
 {% block body %}
 <div class="bc-wrapper">
@@ -157,8 +157,6 @@
             
             <button type="submit" class="btn-confirm"><i class="fas fa-save"></i> METTRE À JOUR LE BON</button>
         </div>
-        
-        {# On masque le champ photo s'il traîne encore dans le formulaire Symfony #}
         <div style="display:none;">{{ form_rest(form) }}</div>
     {{ form_end(form) }}
 </div>

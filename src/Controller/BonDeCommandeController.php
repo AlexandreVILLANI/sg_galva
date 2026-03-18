@@ -4,11 +4,15 @@ namespace App\Controller;
 
 use App\Entity\BonDeCommande;
 use App\Entity\PhotoBonCommande;
+
 use App\Form\BonDeCommandeType;
+
 use App\Repository\BonDeCommandeRepository;
 use App\Repository\FicheDechargementRepository;
-use App\Repository\ClientRepository; // 1. On ajoute le repository des clients
+use App\Repository\ClientRepository; 
+
 use Doctrine\ORM\EntityManagerInterface;
+
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,7 +27,7 @@ class BonDeCommandeController extends AbstractController
         int $ficheId,
         FicheDechargementRepository $ficheRepo,
         BonDeCommandeRepository $bcRepo,
-        ClientRepository $clientRepo, // 2. On injecte ici
+        ClientRepository $clientRepo,
         Request $request,
         EntityManagerInterface $em
     ): Response {
@@ -105,7 +109,7 @@ class BonDeCommandeController extends AbstractController
         if ($client) {
             $fiche->setClient($client);
             $em->flush();
-            return new JsonResponse(['success' => true]);
+            return new JsonResponse(['succes' => true]);
         }
 
         return new JsonResponse(['success' => false, 'message' => 'Client non trouvé.'], 404);
@@ -143,8 +147,8 @@ class BonDeCommandeController extends AbstractController
                 $newFilename = uniqid().'.'.$imageFile->guessExtension();
                 try {
                     $imageFile->move(
-                        $this->getParameter('kernel.project_dir').'/public/uploads/bons',
-                        $newFilename
+                        $this->getParameter('kernel.projectf_dir').'/public/uploads/bons',
+                        $newFileName
                     );
                     $photo = new PhotoBonCommande();
                     $photo->setNomFichier($newFilename);

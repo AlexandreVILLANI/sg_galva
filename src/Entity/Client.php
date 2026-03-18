@@ -69,6 +69,15 @@ class Client
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $categorieComptable = null; // Correspond à "Catégorie comptable"
 
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $portefeuilleBlFa = null; // Correspond à "Portefeuille BL et FA"
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $payeur = null; // Correspond à "Payeur"
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    private ?string $assuranceCredit = null; // Correspond à "Assurance crédit"
+
     public function getId(): ?int { return $this->id; }
 
     public function getNom(): ?string { return $this->nom; }
@@ -121,4 +130,13 @@ class Client
 
     public function getCategorieComptable(): ?string { return $this->categorieComptable; }
     public function setCategorieComptable(?string $categorieComptable): static { $this->categorieComptable = $categorieComptable; return $this; }
+
+    public function getPortefeuilleBlFa(): ?string { return $this->portefeuilleBlFa; }
+    public function setPortefeuilleBlFa(?string $portefeuilleBlFa): static { $this->portefeuilleBlFa = $portefeuilleBlFa; return $this; }
+
+    public function getPayeur(): ?string { return $this->payeur; }
+    public function setPayeur(?string $payeur): static { $this->payeur = $payeur; return $this; }
+
+    public function getAssuranceCredit(): ?string { return $this->assuranceCredit; }
+    public function setAssuranceCredit(?string $assuranceCredit): static { $this->assuranceCredit = $assuranceCredit; return $this; }
 }

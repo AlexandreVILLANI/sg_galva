@@ -1,86 +1,79 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Bon de Travail - {{ bt.numero }}{% endblock %}
+{% block title %}Édition Bon de Travail - {{ bt.numero }}{% endblock %}
 
 {% block body %}
-<div class="bc-wrapper view-mode">
+<div class="bc-wrapper edit-mode">
     
-    <div class="bc-paper">
+    {# --- LE FORMULAIRE ENGLOBE TOUT --- #}
+    <form action="{{ path('app_admin_bt_update', {'id': bt.id}) }}" method="POST" class="bc-paper">
         
         {# --- ENTÊTE --- #}
-        <div class="bc-header theme-border">
+        <div class="bc-header">
             <div class="bc-logo-container">
                 <img src="{{ asset('images/sg-galva-logo.png') }}" alt="Logo" class="bc-logo">
             </div>
             <div class="bc-title-container">
-                <h1 style="color: var(--theme-color);">BON DE TRAVAIL</h1>
-                <span class="theme-badge">MODE CONSULTATION</span>
+                <h1>BON DE TRAVAIL</h1>
+                <span class="mode-badge">MODE ÉDITION</span>
             </div>
             <div class="bc-refi-container">
                 <label>N° BT -</label>
-                <input type="text" class="refi-input-ghost" value="{{ bt.numero }}" readonly>
+                {# MODIFIABLE #}
+                <input type="text" name="numero" class="refi-input-editable" value="{{ bt.numero }}">
             </div>
         </div>
 
         {# --- GRILLE HAUTE --- #}
         <div class="bc-top-grid">
-            <div class="bc-box treatment-box">
+           <div class="bc-box treatment-box">
                 <p class="box-label">TRAITEMENT :</p>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" checked disabled> Galvanisation</label>
-                    <label><input type="checkbox" disabled> Cataphorèse</label>
+                <div class="radio-group" style="display: flex; gap: 20px;">
+                    
+                    <label style="cursor: pointer;">
+                        <input type="radio" name="is_cataphorese" value="0" 
+                            {% if commande.isGalvanisation %}checked{% endif %}> 
+                        <strong>Galvanisation</strong>
+                    </label>
+
+                    <label style="cursor: pointer;">
+                        <input type="radio" name="is_cataphorese" value="1" 
+                            {% if commande.isCataphorese %}checked{% endif %}> 
+                        <strong>Cataphorèse</strong>
+                    </label>
+
                 </div>
             </div>
-            <div class="bc-box summary-box">
+            <div class="bc-box summary-box readonly-box">
                 <div class="summary-line"><span>Ref. Interne :</span> <strong>{{ commande.refi }}</strong></div>
-                <div class="summary-line"><span>Date Création :</span> <strong>{{ bt.dateCreation|date('d/m/Y') }}</strong></div>
-                <div class="summary-line"><span>Nb PAQ total :</span> <strong>{{ commande.fiche.totalPaquets }}</strong></div>
+                <div class="summary-line"><span>Date :</span> <strong>{{ bt.dateCreation|date('d/m/Y') }}</strong></div>
+                <div class="summary-line"><span>Nb PAQ :</span> <strong>{{ commande.fiche.totalPaquets }}</strong></div>
                 <div class="summary-line"><span>Client :</span> <strong>{{ commande.fiche.client.nom }}</strong></div>
             </div>
         </div>
 
-        {# --- GRILLE MILIEU : ADRESSES --- #}
-        <div class="bc-middle-grid">
-            <div class="bc-box client-box">
-                <p class="box-label">ADRESSE DE FACTURATION</p>
-                <div class="frame-content">
-                    <strong>{{ commande.fiche.client.nom }}</strong><br>
-                    {{ commande.fiche.client.adresseFacturation|nl2br }}<br>
-                    {{ commande.fiche.client.codePostal }} {{ commande.fiche.client.ville }}
-                </div>
-            </div>
-            <div class="bc-box driver-box">
-                <p class="box-label">ADRESSE DE LIVRAISON</p>
-                <div class="frame-content">
-                    <strong>{{ commande.fiche.client.nom }}</strong><br>
-                    {{ commande.fiche.client.adresseLivraison|default(commande.fiche.client.adresseFacturation)|nl2br }}<br>
-                    {{ commande.fiche.client.codePostal }} {{ commande.fiche.client.ville }}
-                </div>
-            </div>
-        </div>
-
-        {# --- ZONE TECHNIQUE (VERROUILLÉE) --- #}
-        <div class="bc-box theme-highlight">
-            <p class="box-label" style="color: var(--theme-color);">Informations Techniques</p>
+        {# --- ZONE TECHNIQUE (TOUT MODIFIABLE) --- #}
+        <div class="bc-box tech-box-edit">
+            <p class="box-label">Informations Techniques</p>
             <div class="tech-grid">
                 <div class="tech-col">
                     <span class="label">EXIGENCE PARTICULIÈRE :</span>
-                    <input type="text" class="ghost-input full-width" value="{{ bt.exigenceParticuliere }}" readonly>
+                    <input type="text" name="exigence_particuliere" class="ghost-input editable" value="{{ bt.exigenceParticuliere }}">
                 </div>
                 <div class="tech-col">
                     <span class="label">REPRISE USINAGE :</span>
-                    <input type="text" class="ghost-input full-width" value="{{ bt.repriseUsinage }}" readonly>
+                    <input type="text" name="reprise_usinage" class="ghost-input editable" value="{{ bt.repriseUsinage }}">
                 </div>
                 <div class="tech-col">
-                    <span class="label">DÉLAI CLIENT :</span>
-                    <input type="text" class="ghost-input full-width" value="{{ bt.delaiClient ? bt.delaiClient|date('d/m/Y') : 'Non précisé' }}" readonly>
+                    <span class="label" style="color: #10b981;">DÉLAI CLIENT :</span>
+                    <input type="date" name="delai_client" class="ghost-input editable date-field" value="{{ bt.delaiClient ? bt.delaiClient|date('Y-m-d') : '' }}">
                 </div>
             </div>
         </div>
 
-        {# --- TABLEAU TECHNIQUE (VERROUILLÉ) --- #}
+        {# --- TABLEAU TECHNIQUE (TOUT MODIFIABLE) --- #}
         <div class="bc-box description-box table-wrapper">
-            <table class="bc-table view-table">
+            <table class="bc-table">
                 <thead>
                     <tr>
                         <th width="5%">Qté</th>
@@ -95,159 +88,101 @@
                 <tbody>
                     {% for ligne in bt.lignes %}
                         <tr>
-                            <td class="center bold">{{ ligne.nbPaquets }}</td>
-                            <td class="designation">
+                            <td class="center bold bg-gray">{{ ligne.nbPaquets }}</td>
+                            <td class="designation bg-gray">
                                 <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
                                 <div class="sub-info">Emp: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }}</div>
                             </td>
-                            <td class="p-0"><input type="text" class="cell-input center" value="{{ ligne.u }}" readonly></td>
-                            <td class="p-0"><input type="text" class="cell-input" value="{{ ligne.reference }}" readonly></td>
-                            <td class="p-0"><input type="text" class="cell-input" value="{{ ligne.travauxAnnexes }}" readonly></td>
-                            <td class="p-0"><input type="text" class="cell-input right" value="{{ ligne.poids }}" readonly></td>
-                            <td class="p-0"><input type="text" class="cell-input" value="{{ ligne.observations }}" readonly></td>
+                            
+                            {# Champs éditables avec l'ID de la ligne pour le contrôleur #}
+                            <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][u]" class="cell-input center" value="{{ ligne.u }}"></td>
+                            <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][reference]" class="cell-input" value="{{ ligne.reference }}"></td>
+                            <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][travauxAnnexes]" class="cell-input" value="{{ ligne.travauxAnnexes }}"></td>
+                            <td class="p-0"><input type="number" step="0.01" name="lignes[{{ ligne.id }}][poids]" class="cell-input right" value="{{ ligne.poids }}"></td>
+                            <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][observations]" class="cell-input" value="{{ ligne.observations }}"></td>
                         </tr>
-                    {% else %}
-                        <tr><td colspan="7" class="center muted">Aucune ligne trouvée.</td></tr>
-                    {% endfor %}
-
-                    {# Lignes vides pour compléter #}
-                    {% for i in 1..5 %}
-                    <tr><td colspan="7" style="height: 35px; border-bottom: 1px solid #eee; border-right: 1px solid #eee;"></td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
 
-        {# --- PIED DE PAGE : OBSERVATIONS --- #}
-        <div class="bc-box comment-box theme-highlight">
-            <span class="label" style="color: var(--theme-color);">Observations générales de l'Atelier :</span>
+        {# --- OBSERVATIONS GÉNÉRALES --- #}
+        <div class="bc-box comment-box">
+            <span class="label">Observations générales de l'Atelier :</span>
             <div class="mt-2">
-                <textarea class="w-100 ghost-textarea" rows="3" readonly>{{ bt.observations }}</textarea>
+                <textarea name="observations" class="w-100 ghost-textarea editable" rows="3">{{ bt.observations }}</textarea>
             </div>
         </div>
 
-        <div class="bc-footer-info">
-            <div><strong>Mise à dispo. atelier :</strong> {{ bt.dateCreation|date('d/m/Y H:i') }}</div>
-            <div><strong>Règlement :</strong> SOUP.RGT.CPT.</div>
-        </div>
-
-       <div class="bc-actions no-print">
-            <a href="javascript:history.back();" class="btn-close">
-                <i class="fas fa-arrow-left"></i> RETOUR
+        <div class="bc-actions no-print">
+            <a href="{{ path('app_admin_home', {'section': 'admin-bt'}) }}" class="btn-cancel">
+                <i class="fas fa-times"></i> ANNULER
             </a>
             
-            <button type="button" class="btn-print-modern" onclick="window.print()">
-                <i class="fas fa-print"></i> IMPRIMER LE BON
+            <button type="submit" class="btn-confirm">
+                <i class="fas fa-save"></i> ENREGISTRER TOUT LE BON
             </button>
         </div>
 
-    </div>
+    </form>
 </div>
 
 <style>
-    /* --- HARMONISATION STYLE "CONSULTATION" (Vert Emeraude) --- */
-    :root {
-        --theme-color: #10b981; 
-        --theme-bg: #f0fdf4;
-    }
-
-    .bc-wrapper { background: #f3f4f6; min-height: 100vh; padding: 40px 20px; font-family: 'Inter', Arial, sans-serif; color: #1f2937; }
-    .bc-paper { max-width: 900px; margin: 0 auto; background: white; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: block; border-top: 8px solid var(--theme-color); border-radius: 4px; }
-    .bc-box { border: 1px solid #e5e7eb; padding: 15px; margin-bottom: 20px; border-radius: 6px; }
-
-    /* Header */
-    .theme-border { border-bottom: 2px solid var(--theme-color) !important; }
-    .bc-header { display: grid; grid-template-columns: 1fr 2fr 1.5fr; align-items: center; padding-bottom: 15px; margin-bottom: 25px; }
+    /* --- STYLE REPRIS DE TON FICHIER --- */
+    .bc-wrapper { background: #f0f0f0; min-height: 100vh; padding: 40px 20px; font-family: Arial, sans-serif; color: #1a1a1a; }
+    .bc-paper { max-width: 950px; margin: 0 auto; background: white; padding: 40px; box-shadow: 0 0 20px rgba(0,0,0,0.1); border-top: 5px solid #10b981; }
+    .bc-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; }
+    
+    .bc-header { display: grid; grid-template-columns: 1fr 2fr 1.5fr; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
     .bc-logo { max-width: 120px; }
-    .bc-title-container { text-align: center; }
-    .bc-title-container h1 { font-size: 22px; font-weight: 800; margin: 0; margin-bottom: 5px; }
+    .bc-title-container h1 { font-size: 22px; font-weight: 800; text-align: center; margin: 0; }
     
-    .theme-badge {
-        background: var(--theme-color);
-        color: white;
-        font-size: 10px;
-        padding: 3px 10px;
-        border-radius: 12px;
-        font-weight: bold;
-        letter-spacing: 1px;
-    }
+    .mode-badge { display: block; text-align: center; font-size: 10px; color: #10b981; font-weight: bold; letter-spacing: 1px; margin-top: 5px; }
+    
+    /* Inputs Éditables (Refi / N° BT) */
+    .refi-input-editable { border: 1px solid #10b981; font-weight: bold; font-size: 20px; width: 140px; text-align: right; background: #f0fdf4; padding: 2px 5px; outline: none; }
 
-    .bc-refi-container { text-align: right; font-size: 18px; font-weight: bold; color: #4b5563; }
-    .refi-input-ghost { border: none; font-weight: bold; font-size: 18px; width: 140px; text-align: right; outline: none; background: transparent; color: #111827; }
-
-    /* Grilles */
-    .bc-top-grid, .bc-middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-    .box-label { font-weight: bold; font-size: 11px; color: #6b7280; border-bottom: 1px solid #f3f4f6; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; }
-    .checkbox-group { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
-    .summary-line { display: flex; justify-content: space-between; border-bottom: 1px solid #f9fafb; padding: 4px 0; font-size: 13px; }
-    .frame-content { font-size: 13px; line-height: 1.5; color: #374151; }
-
-    /* Zone Technique Highlight */
-    .theme-highlight { border: 1px solid #d1fae5; background: var(--theme-bg); }
+    /* Zone Technique */
     .tech-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
-    .label { font-weight: bold; font-size: 11px; text-transform: uppercase; margin-right: 5px; color: #4b5563; display: block; margin-bottom: 5px; }
-    
-    /* Inputs en mode consultation (sans bordure) */
-    .ghost-input { border: none; font-family: inherit; font-size: 13px; font-weight: 600; padding: 4px 0; background: transparent; width: 100%; color: #111827; outline: none; }
-    .ghost-textarea { border: none; font-family: inherit; font-size: 13px; font-weight: 600; padding: 4px 0; background: transparent; width: 100%; color: #111827; outline: none; resize: none; }
+    .label { font-weight: bold; font-size: 11px; text-transform: uppercase; margin-bottom: 5px; color: #444; display: block; }
+    .readonly-box { background: #f9fafb; color: #666; }
+
+    /* Style Ghost Editable */
+    .ghost-input.editable, .ghost-textarea.editable { 
+        border: none; 
+        border-bottom: 1px dashed #10b981; 
+        background: #f0fdf4; 
+        font-family: inherit; 
+        font-size: 13px; 
+        padding: 5px; 
+        width: 100%; 
+        box-sizing: border-box;
+        outline: none;
+    }
+    .ghost-input.editable:focus { border-bottom-style: solid; background: #d1fae5; }
 
     /* Tableau */
-    .table-wrapper { padding: 0; border: 1px solid #e5e7eb; overflow: hidden; }
+    .table-wrapper { padding: 0; border: 1px solid #000; overflow: hidden; }
     .bc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .bc-table th { background: #f9fafb; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; color: #4b5563; }
-    .bc-table th:last-child { border-right: none; }
-    .bc-table td { border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; height: 35px; vertical-align: middle; color: #111827; }
-    .bc-table td:last-child { border-right: none; }
-    .bc-table tr:last-child td { border-bottom: none; }
+    .bc-table th { background: #f0f0f0; border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 8px 5px; text-align: left; font-size: 11px; text-transform: uppercase; }
+    .bc-table td { border-bottom: 1px solid #000; border-right: 1px solid #000; height: 35px; vertical-align: middle; }
+    .bg-gray { background: #f9fafb; }
 
     /* Inputs dans tableau */
-    .cell-input { width: 100%; height: 100%; border: none; background: transparent; padding: 0 5px; box-sizing: border-box; font-family: inherit; font-size: 13px; font-weight: 500; color: #111827; outline: none; }
+    .cell-input { width: 100%; height: 100%; border: none; background: transparent; padding: 0 5px; box-sizing: border-box; font-family: inherit; font-size: 13px; }
+    .cell-input:focus { background: #f0fdf4; outline: 1px solid #10b981; }
+    
     .center { text-align: center; } .right { text-align: right; }
     .designation { padding: 0 8px; }
-    .sub-info { font-size: 10px; color: #6b7280; margin-top: 2px; }
+    .sub-info { font-size: 10px; color: #666; margin-top: 2px; }
     .p-0 { padding: 0 !important; }
 
-    /* Footer & Actions */
-    .bc-footer-info { display: flex; justify-content: space-between; font-size: 12px; margin-top: 15px; padding: 0 5px; color: #6b7280; }
+    /* Actions */
     .bc-actions { display: flex; gap: 15px; margin-top: 30px; }
-    
-    .btn-close {
-        flex: 1;
-        background: #f3f4f6;
-        color: #4b5563;
-        padding: 16px;
-        text-align: center;
-        border-radius: 6px;
-        text-decoration: none;
-        font-weight: 800;
-        transition: 0.2s;
-    }
-    .btn-close:hover { background: #e5e7eb; }
+    .btn-cancel { flex: 1; background: #6b7280; color: white; padding: 15px; text-align: center; border-radius: 5px; text-decoration: none; font-weight: bold; }
+    .btn-confirm { flex: 3; background: #10b981; color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
+    .btn-confirm:hover { background: #059669; transform: translateY(-1px); }
 
-    .btn-print-modern {
-        flex: 2;
-        background: #1f2937;
-        color: white;
-        border: none;
-        padding: 16px;
-        border-radius: 6px;
-        font-weight: 800;
-        cursor: pointer;
-        font-size: 15px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        transition: 0.2s;
-    }
-    .btn-print-modern:hover { background: #111827; transform: translateY(-1px); }
-
-    @media print { 
-        .no-print { display: none !important; }
-        .bc-wrapper { padding: 0; background: white; }
-        .bc-paper { box-shadow: none; border: none; padding: 0; margin: 0; max-width: 100%; }
-        .theme-highlight { border: 1px solid #000; background: transparent; }
-        .bc-box, .table-wrapper { border: 1px solid #000; }
-        .bc-table th, .bc-table td { border-color: #000; }
-        .theme-border { border-color: #000 !important; }
-        .theme-badge { border: 1px solid #000; color: #000; background: transparent; }
-    }
+    .w-100 { width: 100%; } .mt-2 { margin-top: 10px; } .bold { font-weight: bold; }
 </style>
 {% endblock %}

@@ -15,6 +15,9 @@ use App\Repository\LigneDechargementRepository;
 use App\Repository\ClientRepository;
 use App\Repository\FicheDechargementRepository;
 use App\Repository\BonTravailRepository;
+use App\Repository\UserRepository;
+use App\Repository\EmplacementRepository;
+use App\Repository\PlanningRepository;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
@@ -37,13 +40,15 @@ class AdminController extends AbstractController
         BonDeCommandeRepository $bcRepo, 
         FicheDechargementRepository $ficheRepo, 
         ClientRepository $clientRepo,
-        BonTravailRepository $btRepo          
+        BonTravailRepository $btRepo,
+        PlanningRepository $planningRepo        
     ): Response {
         return $this->render('home/admin.html.twig', [
             'bons' => $bcRepo->findBy([], ['date' => 'DESC']),
             'fiches' => $ficheRepo->findBy([], ['date' => 'DESC']), 
             'clients' => $clientRepo->findBy([], ['nom' => 'ASC']),
-            'bons_travail' => $btRepo->findAll(), // <--- Envoie ENFIN les BT !
+            'bons_travail' => $btRepo->findAll(),
+            'plannings' => $planningRepo->findBy([], ['datePlanning' => 'DESC']), 
         ]);
     }
 
@@ -121,12 +126,18 @@ class AdminController extends AbstractController
     #[IsGranted('ROLE_ADMIN')]
     public function deleteClient(Request $request, Client $client, EntityManagerInterface $em): Response
     {
-        // On vérifie le jeton CSRF pour être sûr que la demande vient bien de ton site
         if ($this->isCsrfTokenValid('delete'.$client->getId(), $request->request->get('_token'))) {
-            $em->remove($client);
-            $em->flush();
-
-            $this->addFlash('success', 'Le client "' . $client->getNom() . '" a été supprimé.');
+            
+            try {
+                // On essaie de supprimer le client
+                $em->remove($client);
+                $em->flush();
+                $this->addFlash('success', 'Le client "' . $client->getNom() . '" a été supprimé.');
+                
+            } catch (\Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException $e) {
+                // Si la base de données bloque à cause de l'historique, on attrape l'erreur !
+                $this->addFlash('error', '🛑 Impossible de supprimer ce client : il possède déjà des Fiches de Déchargement ou des Bons de Commande dans l\'historique.');
+            }
         }
 
         return $this->redirectToRoute('app_admin_home', ['section' => 'admin-cl']);
@@ -191,28 +202,41 @@ class AdminController extends AbstractController
     #[Route('/bon-travail/{id}/update', name: 'app_admin_bt_update', methods: ['POST'])]
     public function updateBT(Request $request, BonTravail $bt, EntityManagerInterface $em): Response
     {
-        // 1. Mise à jour des infos générales
+        // 1. SAUVEGARDE DU TRAITEMENT
+        $isCataRequest = $request->request->get('is_cataphorese');
+        
+        // Si l'info arrive bien du formulaire (n'est pas nulle)
+        if ($isCataRequest !== null) {
+            $isCata = ($isCataRequest === '1'); 
+            
+            $commande = $bt->getBonCommande();
+            if ($commande) {
+                // On met à jour selon les setters de ton fichier BonDeCommande.php
+                $commande->setIsCataphorese($isCata);
+                $commande->setIsGalvanisation(!$isCata); // Si l'un est vrai, l'autre est faux
+                
+                $em->persist($commande); 
+            }
+        }
+
+        // 2. INFOS GÉNÉRALES
         $bt->setNumero($request->request->get('numero'));
         $bt->setExigenceParticuliere($request->request->get('exigence_particuliere'));
         $bt->setRepriseUsinage($request->request->get('reprise_usinage'));
         $bt->setObservations($request->request->get('observations'));
         
-        // Gestion du délai
         $delai = $request->request->get('delai_client');
         if ($delai) {
-            $bt->setDelaiClient(new \DateTime($delai));
+            $bt->setDelaiClient(new \DateTimeImmutable($delai));
         } else {
             $bt->setDelaiClient(null);
         }
-
-        // 2. Mise à jour des lignes du tableau (Qté, Ref, etc.)
-        $lignesData = $request->request->all('lignes');
         
+        // 3. LIGNES DU BT
+        $lignesData = $request->request->all('lignes');
         if (!empty($lignesData)) {
             foreach ($bt->getLignes() as $ligne) {
                 $ligneId = $ligne->getId();
-                
-                // Si on a des données pour cette ligne précise
                 if (isset($lignesData[$ligneId])) {
                     $data = $lignesData[$ligneId];
                     $ligne->setU($data['u'] ?? '');
@@ -224,11 +248,61 @@ class AdminController extends AbstractController
             }
         }
 
-        // 3. On sauvegarde tout en base de données
-        $em->flush();
-        $this->addFlash('success', 'Toutes les modifications du Bon de Travail ont été enregistrées.');
-
-        // 4. Redirection vers l'accueil Admin, sur l'onglet Bon de Travail
+        // 4. SAUVEGARDE FINALE
+        $em->flush(); 
+        
+        $this->addFlash('success', 'Mise à jour réussie. Le traitement a été synchronisé !');
         return $this->redirectToRoute('app_admin_home', ['section' => 'admin-bt']);
+    }
+
+    #[Route('/dechargement/{id}', name: 'app_admin_dechargement_edit', methods: ['GET', 'POST'])]
+    public function editDechargement(
+        Request $request, 
+        FicheDechargement $fiche, 
+        EntityManagerInterface $em,
+        ClientRepository $clientRepo,
+        EmplacementRepository $empRepo
+    ): Response {
+        
+        if ($request->isMethod('POST')) {
+            // 1. Date et Observations
+            $fiche->setObservations($request->request->get('observations'));
+            
+            // 2. Client
+            if ($clientId = $request->request->get('client_id')) {
+                $fiche->setClient($clientRepo->find($clientId));
+            }
+
+            // 3. Lignes (Paquets, description, emplacement)
+            $lignesData = $request->request->all('lignes');
+            if (!empty($lignesData)) {
+                $nouveauTotal = 0;
+                foreach ($fiche->getLignes() as $ligne) {
+                    $ligneId = $ligne->getId();
+                    if (isset($lignesData[$ligneId])) {
+                        $data = $lignesData[$ligneId];
+                        $ligne->setNbPaquets((int) $data['qte']);
+                        $ligne->setDescription($data['desc']);
+                        
+                        if (!empty($data['emplacement'])) {
+                            $ligne->setEmplacement($empRepo->find($data['emplacement']));
+                        }
+                        $nouveauTotal += (int) $data['qte'];
+                    }
+                }
+                $fiche->setTotalPaquets($nouveauTotal);
+            }
+
+            $em->flush();
+            $this->addFlash('success', 'Fiche mise à jour avec succès.');
+            return $this->redirectToRoute('app_admin_home', ['section' => 'admin-fd']);
+        }
+
+        // ON NE CHARGE PLUS LES CARISTES ICI POUR EVITER L'ERREUR SQL
+        return $this->render('formulaire/admin.html.twig', [
+            'fiche' => $fiche,
+            'clients' => $clientRepo->findBy([], ['nom' => 'ASC']),
+            'emplacements' => $empRepo->findAll() 
+        ]);
     }
 }

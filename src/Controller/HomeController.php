@@ -173,9 +173,8 @@ class HomeController extends AbstractController
 
     
 
-    // --- NOUVELLE ROUTE : IMPORT CSV DEPUIS L'ADMIN ---
+    // --- NOUVELLE ROUTE : IMPORT CSV DEPUIS L'ADMIN (ALGORITHME AGRESSIF) ---
     #[Route('/admin/import-clients', name: 'app_admin_import_clients_csv', methods: ['POST'])]
-    #[IsGranted('ROLE_ADMIN')]
     public function importClientsCsv(Request $request, EntityManagerInterface $em): Response
     {
         $file = $request->files->get('csv_file');
@@ -185,13 +184,16 @@ class HomeController extends AbstractController
             return $this->redirectToRoute('app_admin_home', ['section' => 'admin-cl']);
         }
 
-        // 1. Lecture et conversion en UTF-8 (Comme dans ta commande)
+        // 1. Lecture et conversion intelligente
         $content = file_get_contents($file->getPathname());
-        $content = mb_convert_encoding($content, 'UTF-8', 'Windows-1252');
+        if (mb_detect_encoding($content, 'UTF-8', true) === false) {
+            $content = mb_convert_encoding($content, 'UTF-8', 'Windows-1252');
+        }
 
-        // 2. Création du lecteur CSV
-        $csv = Reader::createFromString($content);
-        $csv->setDelimiter(','); // Ajuste si ton CSV utilise des points-virgules ';'
+        // 2. Création du lecteur CSV avec détection du délimiteur
+        $csv = \League\Csv\Reader::createFromString($content);
+        $delimiter = strpos($content, ';') !== false ? ';' : ',';
+        $csv->setDelimiter($delimiter); 
         $csv->setHeaderOffset(0);
 
         $records = $csv->getRecords();
@@ -199,68 +201,98 @@ class HomeController extends AbstractController
         $count = 0;
 
         foreach ($records as $record) {
+            
+            // 1. On récupère le Nom et la Référence
             $nom = $this->clean($this->findValue($record, ['intitul', 'nom']));
+            $ref = $this->clean($this->findValue($record, ['numer', 'code']), 50);
             
             if (empty($nom)) continue;
 
-            $client = $repo->findOneBy(['nom' => $nom]);
+            $client = null;
+
+            // 2. On cherche le client par sa Référence Interne d'abord
+            if ($ref !== null && $ref !== '') {
+                $client = $repo->findOneBy(['refInterne' => $ref]);
+            }
+            
+            // 3. Sinon, on essaie de le trouver par son Nom
+            if (!$client) {
+                $client = $repo->findOneBy(['nom' => $nom]);
+            }
+
+            // 4. S'il n'existe toujours pas, on le crée
             if (!$client) {
                 $client = new Client();
-                $client->setNom($nom);
             }
 
-            // --- REPRISE EXACTE DE TON MAPPING ---
-            $ref = $this->findValue($record, ['numer', 'code']);
-            if ($ref) $client->setRefInterne($this->clean($ref, 50));
+            // --- ON REMPLIT LES INFOS ---
+            
+            $client->setNom($nom);
+            if ($ref !== null && $ref !== '') $client->setRefInterne($ref);
 
             $abrege = $this->findValue($record, ['abreg']);
-            if ($abrege) $client->setAbrege($this->clean($abrege, 50));
+            if ($abrege !== null && $abrege !== '') $client->setAbrege($this->clean($abrege, 50));
 
+            // Adresse mise dans Livraison
             $adr = $this->findValue($record, ['adress', 'rue']);
-            if ($adr) {
-                $client->setAdresseFacturation($this->clean($adr, 255));
-            }
+            if ($adr !== null && $adr !== '') $client->setAdresseLivraison($this->clean($adr, 255));
 
             $cp = $this->findValue($record, ['postal', 'cp']);
-            if ($cp) $client->setCodePostal($this->clean($cp, 10));
+            if ($cp !== null && $cp !== '') $client->setCodePostal($this->clean($cp, 10));
 
             $ville = $this->findValue($record, ['ville']);
-            if ($ville) $client->setVille($this->clean($ville, 150));
+            if ($ville !== null && $ville !== '') $client->setVille($this->clean($ville, 150));
 
             $pays = $this->findValue($record, ['pays']);
-            if ($pays) $client->setPays($this->clean($pays, 100));
+            if ($pays !== null && $pays !== '') $client->setPays($this->clean($pays, 100));
 
             $fax = $this->findValue($record, ['copie', 'fax']);
-            if ($fax) $client->setFax($this->clean($fax, 50));
+            if ($fax !== null && $fax !== '') $client->setFax($this->clean($fax, 50));
 
             $tel = $this->findValue($record, ['phon', 'tel']);
-            if ($tel && $tel !== $fax) {
-                 $client->setTelephone($this->clean($tel, 50));
-            }
+            if ($tel !== null && $tel !== '' && $tel !== $fax) $client->setTelephone($this->clean($tel, 50));
 
             $email = $this->findValue($record, ['mail']);
-            if ($email) $client->setEmail($this->clean($email, 255));
+            if ($email !== null && $email !== '') $client->setEmail($this->clean($email, 255));
 
             $contact = $this->findValue($record, ['contact']);
-            if ($contact) $client->setContact($this->clean($contact, 255));
+            if ($contact !== null && $contact !== '') $client->setContact($this->clean($contact, 255));
 
             $siret = $this->findValue($record, ['siret']);
-            if ($siret) $client->setSiret($this->clean($siret, 50));
+            if ($siret !== null && $siret !== '') $client->setSiret($this->clean($siret, 50));
 
             $tva = $this->findValue($record, ['identifiant', 'tva']);
-            if ($tva) $client->setTvaIntra($this->clean($tva, 50));
+            if ($tva !== null && $tva !== '') $client->setTvaIntra($this->clean($tva, 50));
 
             $msg = $this->findValue($record, ['alert', 'message']);
-            if ($msg) $client->setMessageAlerte($this->clean($msg, 2000));
+            if ($msg !== null && $msg !== '') $client->setMessageAlerte($this->clean($msg, 2000));
 
             $cat = $this->findValue($record, ['comptable', 'categ']);
-            if ($cat) $client->setCategorieComptable($this->clean($cat, 50));
+            if ($cat !== null && $cat !== '') $client->setCategorieComptable($this->clean($cat, 50));
 
             $encoursRaw = $this->findValue($record, ['encours']);
-            if ($encoursRaw) {
-                $enc = str_replace(',', '.', $encoursRaw);
-                $enc = preg_replace('/[^0-9.]/', '', $enc);
-                $client->setEncoursAutorise(substr($enc, 0, 12));
+            if ($encoursRaw !== null && $encoursRaw !== '') {
+                $enc = preg_replace('/[^0-9.]/', '', str_replace(',', '.', $encoursRaw));
+                if ($enc !== '') $client->setEncoursAutorise(substr($enc, 0, 12));
+            }
+
+            // Portefeuille BL et FA
+            $portefeuille = $this->findValue($record, ['portefeuille']);
+            if ($portefeuille !== null && $portefeuille !== '') {
+                $client->setPortefeuilleBlFa($this->clean($portefeuille, 50));
+            }
+
+            // Payeur
+            $payeur = $this->findValue($record, ['payeur']);
+            if ($payeur !== null && $payeur !== '') {
+                $client->setPayeur($this->clean($payeur, 50));
+            }
+
+            // Assurance Crédit
+            $assuCreditRaw = $this->findValue($record, ['assurance', 'credit']);
+            if ($assuCreditRaw !== null && $assuCreditRaw !== '') {
+                $assu = preg_replace('/[^0-9.]/', '', str_replace(',', '.', $assuCreditRaw));
+                if ($assu !== '') $client->setAssuranceCredit(substr($assu, 0, 12));
             }
             
             $em->persist($client);
@@ -269,28 +301,41 @@ class HomeController extends AbstractController
 
         $em->flush();
         
-        $this->addFlash('success', "$count clients ont été importés ou mis à jour avec succès !");
+        $this->addFlash('success', "$count clients ont été importés et mis à jour avec succès (Mode web) !");
         
-        // On redirige vers l'onglet des clients
         return $this->redirectToRoute('app_admin_home', ['section' => 'admin-cl']);
     }
 
-    // --- HELPER METHODS REPRISES DE TA COMMANDE ---
+   // --- HELPER METHODS (ALGORITHME AGRESSIF) ---
     private function clean(?string $text, int $limit = 255): ?string
     {
         if ($text === null || $text === '') return null;
-        $clean = iconv('UTF-8', 'UTF-8//IGNORE', $text);
-        $clean = trim($clean);
+        $clean = trim($text);
         return mb_substr($clean, 0, $limit, 'UTF-8');
     }
 
     private function findValue(array $record, array $keywords): ?string
     {
         foreach ($record as $key => $value) {
-            $normalizedKey = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT', $key));
+            // 1. Minuscules
+            $normalizedKey = mb_strtolower($key, 'UTF-8');
+            
+            // 2. On écrase manuellement tous les accents (y compris les bugs d'encodage Excel)
+            $accents = [
+                'é'=>'e', 'è'=>'e', 'ê'=>'e', 'ë'=>'e', 
+                'à'=>'a', 'â'=>'a', 'ç'=>'c', 'î'=>'i', 
+                'ï'=>'i', 'ô'=>'o', 'ö'=>'o', 'ù'=>'u', 
+                'û'=>'u', 'ã©'=>'e', 'ã'=>'a'
+            ];
+            $normalizedKey = strtr($normalizedKey, $accents);
+            
+            // 3. On supprime tout ce qui n'est pas une lettre ou un chiffre
+            $normalizedKey = preg_replace('/[^a-z0-9]/', '', $normalizedKey);
+
             foreach ($keywords as $keyword) {
-                if (str_contains($normalizedKey, $keyword)) {
-                    return $value;
+                $cleanKeyword = preg_replace('/[^a-z0-9]/', '', strtolower($keyword));
+                if (str_contains($normalizedKey, $cleanKeyword)) {
+                    return trim($value); 
                 }
             }
         }

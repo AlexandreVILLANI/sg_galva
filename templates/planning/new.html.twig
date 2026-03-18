@@ -82,7 +82,7 @@
                         <td class="p-0">
                             <input type="text" class="cell-input avancement-code center-text bold" maxlength="3" placeholder="---">
                         </td>
-                        <td class="center-content"><input type="checkbox" disabled class="avancement-check"></td>
+                        <td class="center-content"><input type="checkbox" disabled class="avancement-check"></td>                        
                         <td class="center-content no-print">
                             <button type="button" class="btn-del-row" onclick="removeRow(this)" title="Supprimer">×</button>
                         </td>
@@ -302,17 +302,26 @@ function removeRow(btn) {
 
 function updateStats() {
     const rows = document.querySelectorAll('.planning-row');
-    let coded = 0; let empty = 0;
+    let fait = 0; 
+    let aFaire = 0;
+
     rows.forEach(row => {
         const client = row.querySelector('.client-name').value;
-        const code = row.querySelector('.avancement-code').value.trim();
+        const isChecked = row.querySelector('.avancement-check').checked; // On regarde la checkbox
+
+        // On ne compte que les lignes qui ont un REFI/Client valide
         if (client && client !== "..." && client !== "NON TROUVÉ") {
-            if (code !== "") coded++;
-            else empty++;
+            if (isChecked) {
+                fait++;
+            } else {
+                aFaire++;
+            }
         }
     });
-    document.getElementById('count-coded').textContent = coded;
-    document.getElementById('count-empty').textContent = empty;
+
+    // Mise à jour des chiffres en haut de page
+    document.getElementById('count-coded').textContent = fait;   // Commandes Fait (Dans les temps)
+    document.getElementById('count-empty').textContent = aFaire; // Commandes Non fait (En retard/À faire)
 }
 
 function initPlanning() {

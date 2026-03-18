@@ -25,15 +25,22 @@
         <div class="bc-box treatment-box">
             <p class="box-label">TRAITEMENT :</p>
             <div class="checkbox-group">
-                <label><input type="checkbox" checked disabled> (Galvanisation)</label>
-                <label><input type="checkbox" disabled> (Cataphorèse)</label>
+                
+                {# Case Galvanisation : cochée si isCataphorese est FAUX #}
+                <label>
+                    <input type="checkbox" 
+                        {% if not commande.isCataphorese %}checked="checked"{% endif %} 
+                        disabled> Galvanisation
+                </label>
+
+                {# Case Cataphorèse : cochée si isCataphorese est VRAI #}
+                <label>
+                    <input type="checkbox" 
+                        {% if commande.isCataphorese %}checked="checked"{% endif %} 
+                        disabled> Cataphorèse
+                </label>
+                
             </div>
-        </div>
-        <div class="bc-box summary-box">
-            <div class="summary-line"><span>Ref. Interne :</span> <strong>{{ commande.refi }}</strong></div>
-            <div class="summary-line"><span>Date :</span> <strong>{{ "now"|date('d/m/Y') }}</strong></div>
-            <div class="summary-line"><span>Nb PAQ :</span> <strong>{{ commande.fiche.totalPaquets }}</strong></div>
-            <div class="summary-line"><span>Client :</span> <strong>{{ commande.fiche.client.nom }}</strong></div>
         </div>
     </div>
 

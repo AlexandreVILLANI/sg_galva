@@ -34,6 +34,15 @@ class BonTravailController extends AbstractController
             $bt = new BonTravail();
             $bt->setBonCommande($commande);
 
+            // --- NOUVEAU : SYNCHRONISATION DU TRAITEMENT ---
+            // On s'assure que si l'un est vrai, l'autre est faux dans la commande
+            if ($commande->getIsCataphorese()) {
+                $commande->setIsGalvanisation(false);
+            } elseif ($commande->getIsGalvanisation()) {
+                $commande->setIsCataphorese(false);
+            }
+            // ----------------------------------------------
+
             $lastNumero = $btRepo->findLastNumero();
             $currentYear = date('y'); 
             $nextSequence = 1;
@@ -49,13 +58,12 @@ class BonTravailController extends AbstractController
             }
 
             $newNumero = sprintf('BT-%s-%s', $currentYear, str_pad($nextSequence, 4, '0', STR_PAD_LEFT));
-            
             $bt->setNumero($newNumero);
             
             $em->persist($bt);
             $em->flush();
         }
-
+        
         $form = $this->createForm(BonTravailType::class, $bt);
         $form->handleRequest($request);
 

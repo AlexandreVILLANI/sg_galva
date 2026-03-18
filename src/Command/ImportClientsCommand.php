@@ -14,7 +14,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
 
 #[AsCommand(
     name: 'app:import-clients',
-    description: 'Importe les clients avec recherche intelligente des colonnes',
+    description: 'Importe les clients avec recherche intelligente et agressive des colonnes',
 )]
 class ImportClientsCommand extends Command
 {
@@ -25,31 +25,29 @@ class ImportClientsCommand extends Command
         parent::__construct();
     }
 
-    // Nettoyage standard des valeurs
+    // Nettoyage standard (sans iconv qui bug sur certains serveurs)
     private function clean(?string $text, int $limit = 255): ?string
     {
         if ($text === null || $text === '') return null;
-        $clean = iconv('UTF-8', 'UTF-8//IGNORE', $text);
-        $clean = trim($clean);
+        $clean = trim($text);
         return mb_substr($clean, 0, $limit, 'UTF-8');
     }
 
     /**
-     * Cherche une valeur dans la ligne en utilisant des mots-clés.
-     * Ex: Si on cherche ['phono', 'teleph'], il trouvera la colonne "Téléphone"
+     * Recherche "Agressive" : Écrase les accents, supprime les espaces, compare le texte pur.
      */
     private function findValue(array $record, array $keywords): ?string
     {
-        // On parcourt toutes les colonnes du fichier CSV
         foreach ($record as $key => $value) {
-            // On convertit le nom de la colonne en minuscule sans accents pour comparer
-            // Ex: "N° Siret" devient "n siret", "Téléphone" devient "telephone"
-            $normalizedKey = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT', $key));
-            
+            $normalizedKey = mb_strtolower($key, 'UTF-8');
+            $accents = ['é'=>'e', 'è'=>'e', 'ê'=>'e', 'ë'=>'e', 'à'=>'a', 'â'=>'a', 'ç'=>'c', 'î'=>'i', 'ï'=>'i', 'ô'=>'o', 'ö'=>'o', 'ù'=>'u', 'û'=>'u', 'ã©'=>'e'];
+            $normalizedKey = strtr($normalizedKey, $accents);
+            $normalizedKey = preg_replace('/[^a-z0-9]/', '', $normalizedKey);
+
             foreach ($keywords as $keyword) {
-                // Si le nom de la colonne contient le mot clé...
-                if (str_contains($normalizedKey, $keyword)) {
-                    return $value; // ... on retourne la valeur !
+                $cleanKeyword = preg_replace('/[^a-z0-9]/', '', strtolower($keyword));
+                if (str_contains($normalizedKey, $cleanKeyword)) {
+                    return trim($value); 
                 }
             }
         }
@@ -66,123 +64,118 @@ class ImportClientsCommand extends Command
             return Command::FAILURE;
         }
 
-        // 1. Lecture et conversion FORCEE en UTF-8
         $content = file_get_contents($csvPath);
-        $content = mb_convert_encoding($content, 'UTF-8', 'Windows-1252');
+        
+        if (mb_detect_encoding($content, 'UTF-8', true) === false) {
+            $content = mb_convert_encoding($content, 'UTF-8', 'Windows-1252');
+        }
 
-        // 2. Création du lecteur CSV
         $csv = Reader::createFromString($content);
-        $csv->setDelimiter(','); 
+        
+        $delimiter = strpos($content, ';') !== false ? ';' : ',';
+        $csv->setDelimiter($delimiter); 
         $csv->setHeaderOffset(0);
 
         $records = $csv->getRecords();
         $repo = $this->em->getRepository(Client::class);
         
-        $io->title("Importation des clients (Mode Recherche)...");
+        $io->title("Importation des clients (Correction PostgreSQL)...");
         $io->progressStart(iterator_count($records));
 
         $count = 0;
 
         foreach ($records as $record) {
-            // 1. On récupère l'ID du CSV (ton numéro 933207)
-            // On cherche une colonne qui contient 'id', 'numero' ou 'code'
-            $idCsv = (int) $this->findValue($record, ['id', 'numer', 'code']);
             
-            // 2. Recherche du NOM pour le nettoyage
+            // 1. On récupère le Nom et la Référence
             $nom = $this->clean($this->findValue($record, ['intitul', 'nom']));
+            $ref = $this->clean($this->findValue($record, ['numer', 'code']), 50);
             
-            if (empty($nom) || $idCsv === 0) continue;
+            if (empty($nom)) continue;
 
-            // 3. On cherche le client par son ID directement
-            $client = $repo->find($idCsv);
+            $client = null;
 
+            // 2. On cherche le client par sa Référence Interne d'abord
+            if ($ref !== null && $ref !== '') {
+                $client = $repo->findOneBy(['refInterne' => $ref]);
+            }
+            
+            // 3. Sinon, on essaie de le trouver par son Nom
+            if (!$client) {
+                $client = $repo->findOneBy(['nom' => $nom]);
+            }
+
+            // 4. S'il n'existe toujours pas, on le crée
             if (!$client) {
                 $client = new Client();
-                
-                // --- ASTUCE POUR FORCER L'ID ---
-                // Comme getId() n'a pas de "setId", on utilise les métadonnées de Doctrine
-                // ou on le fait via SQL. Voici la méthode la plus propre en PHP :
-                $metadata = $this->em->getClassMetadata(Client::class);
-                $metadata->setIdGeneratorType(\Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_NONE);
-                
-                // On force l'ID manuellement
-                $reflectionProperty = $metadata->reflClass->getProperty('id');
-                $reflectionProperty->setAccessible(true);
-                $reflectionProperty->setValue($client, $idCsv);
-                
-                $client->setNom($nom);
             }
 
-            // --- MAPPING PAR MOTS-CLÉS (Plus robuste) ---
+            // --- ON REMPLIT LES INFOS ---
+            
+            $client->setNom($nom);
+            if ($ref !== null && $ref !== '') $client->setRefInterne($ref);
 
-            // Numéro / Ref Interne (Cherche 'numer' ou 'code')
-            $ref = $this->findValue($record, ['numer', 'code']);
-            if ($ref) $client->setRefInterne($this->clean($ref, 50));
-
-            // Abrégé (Cherche 'abrege')
             $abrege = $this->findValue($record, ['abreg']);
-            if ($abrege) $client->setAbrege($this->clean($abrege, 50));
+            if ($abrege !== null && $abrege !== '') $client->setAbrege($this->clean($abrege, 50));
 
-            // Adresse
             $adr = $this->findValue($record, ['adress', 'rue']);
-            if ($adr) {
-                $client->setAdresseFacturation($this->clean($adr, 255));
-            }
+            if ($adr !== null && $adr !== '') $client->setAdresseLivraison($this->clean($adr, 255));
 
-            // Code Postal (Cherche 'postal' ou 'cp')
             $cp = $this->findValue($record, ['postal', 'cp']);
-            if ($cp) $client->setCodePostal($this->clean($cp, 10));
+            if ($cp !== null && $cp !== '') $client->setCodePostal($this->clean($cp, 10));
 
-            // Ville
             $ville = $this->findValue($record, ['ville']);
-            if ($ville) $client->setVille($this->clean($ville, 150));
+            if ($ville !== null && $ville !== '') $client->setVille($this->clean($ville, 150));
 
-            // Pays
             $pays = $this->findValue($record, ['pays']);
-            if ($pays) $client->setPays($this->clean($pays, 100));
+            if ($pays !== null && $pays !== '') $client->setPays($this->clean($pays, 100));
 
-            // TÉLÉCOPIE (FAX) -> Attention, chercher 'copie' ou 'fax' AVANT téléphone
             $fax = $this->findValue($record, ['copie', 'fax']);
-            if ($fax) $client->setFax($this->clean($fax, 50));
+            if ($fax !== null && $fax !== '') $client->setFax($this->clean($fax, 50));
 
-            // TÉLÉPHONE -> Cherche 'phon' ou 'tel' (mais on exclut fax car on l'a déjà géré ?)
-            // On utilise findValue qui prendra la colonne "Téléphone" car elle contient "phon"
             $tel = $this->findValue($record, ['phon', 'tel']);
-            // Petite sécurité : si on a pris le fax par erreur (rare car 'copie' vs 'phon')
-            if ($tel && $tel !== $fax) {
-                 $client->setTelephone($this->clean($tel, 50));
+            if ($tel !== null && $tel !== '' && $tel !== $fax) $client->setTelephone($this->clean($tel, 50));
+
+            $email = $this->findValue($record, ['mail']);
+            if ($email !== null && $email !== '') $client->setEmail($this->clean($email, 255));
+
+            $contact = $this->findValue($record, ['contact']);
+            if ($contact !== null && $contact !== '') $client->setContact($this->clean($contact, 255));
+
+            $siret = $this->findValue($record, ['siret']);
+            if ($siret !== null && $siret !== '') $client->setSiret($this->clean($siret, 50));
+
+            $tva = $this->findValue($record, ['identifiant', 'tva']);
+            if ($tva !== null && $tva !== '') $client->setTvaIntra($this->clean($tva, 50));
+
+            $msg = $this->findValue($record, ['alert', 'message']);
+            if ($msg !== null && $msg !== '') $client->setMessageAlerte($this->clean($msg, 2000));
+
+            $cat = $this->findValue($record, ['comptable', 'categ']);
+            if ($cat !== null && $cat !== '') $client->setCategorieComptable($this->clean($cat, 50));
+
+            $encoursRaw = $this->findValue($record, ['encours']);
+            if ($encoursRaw !== null && $encoursRaw !== '') {
+                $enc = preg_replace('/[^0-9.]/', '', str_replace(',', '.', $encoursRaw));
+                if ($enc !== '') $client->setEncoursAutorise(substr($enc, 0, 12));
             }
 
-            // Email (Cherche 'mail')
-            $email = $this->findValue($record, ['mail']);
-            if ($email) $client->setEmail($this->clean($email, 255));
+            // Portefeuille BL et FA
+            $portefeuille = $this->findValue($record, ['portefeuille']);
+            if ($portefeuille !== null && $portefeuille !== '') {
+                $client->setPortefeuilleBlFa($this->clean($portefeuille, 50));
+            }
 
-            // Contact
-            $contact = $this->findValue($record, ['contact']);
-            if ($contact) $client->setContact($this->clean($contact, 255));
+            // Payeur
+            $payeur = $this->findValue($record, ['payeur']);
+            if ($payeur !== null && $payeur !== '') {
+                $client->setPayeur($this->clean($payeur, 50));
+            }
 
-            // SIRET (Cherche 'siret')
-            $siret = $this->findValue($record, ['siret']);
-            if ($siret) $client->setSiret($this->clean($siret, 50));
-
-            // TVA Intra (Cherche 'identifiant' ou 'tva')
-            $tva = $this->findValue($record, ['identifiant', 'tva']);
-            if ($tva) $client->setTvaIntra($this->clean($tva, 50));
-
-            // Message Alerte (Cherche 'alerte' ou 'message')
-            $msg = $this->findValue($record, ['alert', 'message']);
-            if ($msg) $client->setMessageAlerte($this->clean($msg, 2000));
-
-            // Catégorie comptable (Cherche 'comptable' ou 'categorie')
-            $cat = $this->findValue($record, ['comptable', 'categ']);
-            if ($cat) $client->setCategorieComptable($this->clean($cat, 50));
-
-            // Encours (Cherche 'encours')
-            $encoursRaw = $this->findValue($record, ['encours']);
-            if ($encoursRaw) {
-                $enc = str_replace(',', '.', $encoursRaw);
-                $enc = preg_replace('/[^0-9.]/', '', $enc);
-                $client->setEncoursAutorise(substr($enc, 0, 12));
+            // Assurance Crédit
+            $assuCreditRaw = $this->findValue($record, ['assurance', 'credit']);
+            if ($assuCreditRaw !== null && $assuCreditRaw !== '') {
+                $assu = preg_replace('/[^0-9.]/', '', str_replace(',', '.', $assuCreditRaw));
+                if ($assu !== '') $client->setAssuranceCredit(substr($assu, 0, 12));
             }
             
             $this->em->persist($client);
@@ -192,8 +185,9 @@ class ImportClientsCommand extends Command
 
         $this->em->flush();
         $io->progressFinish();
-        $io->success("$count clients traités !");
+        $io->success("$count clients importés et mis à jour avec succès !");
 
         return Command::SUCCESS;
     }
 }
+//php bin/console app:import-clients                                                   
