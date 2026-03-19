@@ -1,0 +1,276 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Espace Colisage - SG Galva{% endblock %}
+
+{% block body %}
+<div class="colisage-wrapper">
+    
+    {# --- EN-TÊTE --- #}
+    <div class="colisage-header">
+        <div class="header-content">
+            <h1>Équipe Colisage</h1>
+            <p>Entrez le REFI pour voir les instructions et photos.</p>
+        </div>
+        
+        {# Bouton de déconnexion rapide pour les tablettes partagées #}
+        <a href="{{ path('app_logout') }}" class="btn-logout" title="Déconnexion">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+    </div>
+
+    {# --- BARRE DE RECHERCHE --- #}
+    <div class="search-card">
+        <form method="GET" action="{{ path('app_colisage_home') }}" class="search-form">
+            <input type="text" name="refi" class="search-input" placeholder="Ex: C000000" value="{{ refi_recherche }}" autofocus autocomplete="off" required>
+            <button type="submit" class="btn-search">
+                <i class="fas fa-search"></i> CHERCHER
+            </button>
+        </form>
+        
+        {% if erreur %}
+            <div class="alert-error">
+                <i class="fas fa-exclamation-circle"></i> {{ erreur }}
+            </div>
+        {% endif %}
+    </div>
+
+    {# --- RÉSULTAT DE LA RECHERCHE --- #}
+    {% if commande %}
+        <div class="result-card">
+            
+            <div class="result-header">
+                <h2>Commande : <span class="highlight">{{ commande.refi }}</span></h2>
+                <div class="client-badge">{{ commande.client.nom }}</div>
+            </div>
+
+            {# 1. DÉTAILS TECHNIQUES #}
+            <div class="info-box">
+                <h3><i class="fas fa-clipboard-list"></i> Détails Techniques</h3>
+                <div class="details-grid">
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">Traitement</span>
+                        <span class="detail-value highlight-traitement">
+                            {% if commande.isGalvanisation %}
+                                Galvanisation
+                            {% elseif commande.isCataphorese %}
+                                Cataphorèse
+                            {% else %}
+                                Non défini
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="detail-label">Nb Paquets</span>
+                        <span class="detail-value">{{ commande.fiche.totalPaquets|default('?') }}</span>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="detail-label">Forfait</span>
+                        <span class="detail-value">{{ commande.forfait|default('Aucun') }}</span>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="detail-label">Stockage</span>
+                        <span class="detail-value">{{ commande.stockage|default('Non précisé') }}</span>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="detail-label">Type Galva</span>
+                        <span class="detail-value">{{ commande.typeGalva|default('Non précisé') }}</span>
+                    </div>
+
+                </div>
+            </div>
+
+            {# 2. COMMENTAIRE #}
+            <div class="info-box">
+                <h3><i class="fas fa-comment-dots"></i> Commentaire / Instructions</h3>
+                <div class="commentaire-content">
+                    {% if commande.commentaire %}
+                        {{ commande.commentaire|nl2br }}
+                    {% else %}
+                        <em class="empty-text">Aucune instruction particulière pour cette commande.</em>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# 3. PHOTOS #}
+            <div class="info-box">
+                <h3><i class="fas fa-camera"></i> Photos liées ({{ commande.photos|length }})</h3>
+                
+                {% if commande.photos|length > 0 %}
+                    <div class="photos-container">
+                        {% for photo in commande.photos %}
+                            <div class="photo-card">
+                                <img src="{{ asset('uploads/bons/' ~ photo.nomFichier) }}" alt="Photo commande {{ commande.refi }}" loading="lazy">
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-text text-center mt-4">Aucune photo n'a été prise pour cette commande.</p>
+                {% endif %}
+            </div>
+
+        </div>
+    {% endif %}
+
+</div>
+
+<style>
+    /* =========================================
+       VARIABLES & BASE
+       ========================================= */
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --text-dark: #1f2937;
+        --text-muted: #6b7280;
+        --bg-gray: #f3f4f6;
+        --border-color: #e5e7eb;
+        --white: #ffffff;
+    }
+
+    body { background-color: var(--bg-gray); margin: 0; font-family: 'Inter', sans-serif; }
+    .colisage-wrapper { max-width: 800px; margin: 0 auto; padding: 20px; }
+    
+    .empty-text { color: #9ca3af; }
+    .text-center { text-align: center; }
+    .mt-4 { margin-top: 20px; }
+
+    /* =========================================
+       EN-TÊTE
+       ========================================= */
+    .colisage-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 30px; 
+    }
+    
+    .header-content h1 { color: var(--text-dark); margin: 0; font-size: 28px; font-weight: 900; }
+    .header-content p { color: var(--text-muted); font-size: 15px; margin-top: 5px; }
+
+    .btn-logout {
+        background: #fee2e2; color: #ef4444; width: 45px; height: 45px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 50%; text-decoration: none; font-size: 18px;
+        transition: 0.2s;
+    }
+    .btn-logout:hover { background: #fca5a5; color: #b91c1c; transform: scale(1.05); }
+
+    /* =========================================
+       CARTE DE RECHERCHE
+       ========================================= */
+    .search-card { 
+        background: var(--white); padding: 25px; border-radius: 12px; 
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 25px; 
+    }
+    
+    .search-form { display: flex; gap: 10px; }
+    .search-input { 
+        flex-grow: 1; padding: 15px 20px; font-size: 18px; font-weight: bold;
+        border: 2px solid var(--border-color); border-radius: 8px; 
+        text-transform: uppercase; outline: none; transition: 0.2s; 
+    }
+    .search-input:focus { 
+        border-color: var(--primary); 
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); 
+    }
+    
+    .btn-search { 
+        background: var(--primary); color: var(--white); border: none; 
+        padding: 0 25px; font-size: 16px; font-weight: bold; 
+        border-radius: 8px; cursor: pointer; transition: 0.2s; 
+    }
+    .btn-search:hover { background: var(--primary-hover); }
+
+    .alert-error { 
+        background: #fee2e2; color: #b91c1c; padding: 12px; border-radius: 8px; 
+        margin-top: 15px; font-weight: bold; font-size: 14px; 
+        display: flex; align-items: center; gap: 8px; 
+    }
+
+    /* =========================================
+       CARTE RÉSULTAT & SECTIONS
+       ========================================= */
+    .result-card { 
+        background: var(--white); padding: 25px; border-radius: 12px; 
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+    }
+    
+    .result-header { 
+        display: flex; justify-content: space-between; align-items: center; 
+        border-bottom: 2px solid var(--bg-gray); padding-bottom: 15px; margin-bottom: 20px; 
+    }
+    .result-header h2 { margin: 0; font-size: 22px; color: #374151; }
+    .highlight { color: var(--primary); font-weight: 900; }
+    .client-badge { 
+        background: var(--bg-gray); color: #4b5563; padding: 6px 12px; 
+        border-radius: 20px; font-size: 14px; font-weight: bold; 
+    }
+
+    .info-box { margin-bottom: 30px; }
+    .info-box h3 { 
+        font-size: 16px; color: #4b5563; margin-bottom: 15px; 
+        display: flex; align-items: center; gap: 8px; 
+        border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;
+    }
+    
+    .commentaire-content { 
+        background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; 
+        border-radius: 4px; font-size: 15px; color: var(--text-dark); line-height: 1.5; 
+    }
+
+    /* =========================================
+       DÉTAILS TECHNIQUES
+       ========================================= */
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 15px;
+    }
+    
+    .detail-item {
+        background: #f9fafb; padding: 15px; border-radius: 8px;
+        border: 1px solid var(--border-color);
+        display: flex; flex-direction: column; gap: 5px;
+    }
+    
+    .detail-label {
+        font-size: 11px; color: var(--text-muted); text-transform: uppercase;
+        font-weight: 800; letter-spacing: 0.5px;
+    }
+    
+    .detail-value { font-size: 15px; color: var(--text-dark); font-weight: 700; }
+    .highlight-traitement { color: var(--primary); }
+
+    /* =========================================
+       PHOTOS (GRAND FORMAT)
+       ========================================= */
+    .photos-container {
+        display: flex; flex-direction: column; gap: 20px; 
+    }
+    
+    .photo-card {
+        border-radius: 8px; overflow: hidden;
+        border: 2px solid var(--border-color);
+        background: #f9fafb; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .photo-card img {
+        width: 100%; max-height: 800px; object-fit: contain; display: block;
+    }
+
+    /* =========================================
+       RESPONSIVE (SMARTPHONES)
+       ========================================= */
+    @media (max-width: 600px) {
+        .colisage-header { flex-direction: column; text-align: center; gap: 15px; }
+        .search-form { flex-direction: column; }
+        .btn-search { padding: 15px; }
+        .result-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    }
+</style>
+{% endblock %}

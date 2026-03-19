@@ -2,16 +2,20 @@
 
 namespace App\Controller;
 
+// --- AJOUT DES CLASSES DE COMPRESSION ---
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+
 use App\Entity\FicheDechargement;
 use App\Entity\PhotoDechargement;
-use App\Entity\Client; // <-- Indispensable pour créer le client
+use App\Entity\Client; 
 use App\Form\FicheDechargementType;
 use App\Repository\ClientRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse; // <-- Pour les réponses AJAX
+use Symfony\Component\HttpFoundation\JsonResponse; 
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -31,15 +35,30 @@ class FormulaireController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            
             $imageFiles = $form->get('imageFiles')->getData();
             if ($imageFiles) {
-                foreach ($imageFiles as $imageFile) {
-                    $newFilename = uniqid().'.'.$imageFile->guessExtension();
-                    $imageFile->move($this->getParameter('fiches_directory'), $newFilename);
+                // Initialisation du moteur
+                $manager = new ImageManager(new Driver());
+                $destinationFolder = $this->getParameter('fiches_directory'); // Chemin configuré dans services.yaml
 
-                    $photo = new PhotoDechargement();
-                    $photo->setNomFichier($newFilename);
-                    $fiche->addPhoto($photo);
+                foreach ($imageFiles as $imageFile) {
+                    // Forcer JPG
+                    $newFilename = uniqid().'.jpg';
+                    $destinationPath = $destinationFolder . '/' . $newFilename;
+
+                    try {
+                        // Compression et sauvegarde
+                        $image = $manager->read($imageFile->getPathname());
+                        $image->scaleDown(width: 1200);
+                        $image->save($destinationPath, quality: 75);
+
+                        $photo = new PhotoDechargement();
+                        $photo->setNomFichier($newFilename);
+                        $fiche->addPhoto($photo);
+                    } catch (\Exception $e) {
+                        // Optionnel : tu pourrais logger l'erreur ici
+                    }
                 }
             }
 
@@ -95,7 +114,6 @@ class FormulaireController extends AbstractController
         return $this->json(['success' => false, 'message' => 'Client introuvable'], 400);
     }
 
-    // --- NOUVELLE ROUTE : Création rapide d'un client via AJAX ---
     #[Route('/reception/client/new-ajax', name: 'app_client_new_ajax', methods: ['POST'])]
     public function newClientAjax(Request $request, EntityManagerInterface $em): JsonResponse
     {

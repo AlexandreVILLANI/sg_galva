@@ -38,11 +38,17 @@ class SecurityController extends AbstractController
 
         if (!$user) {
             $this->addFlash('error', 'Lien invalide.');
-            return $this->redirectToRoute('app_home');
+            return $this->redirectToRoute('app_login'); // Redirige plutôt vers login que home si échec
         }
 
         $security->login($user, AppAuthenticator::class, 'main'); 
 
+        // --- NOUVEAU : REDIRECTION SELON LE RÔLE ---
+        if (in_array('ROLE_COLISAGE', $user->getRoles())) {
+            return $this->redirectToRoute('app_colisage_home');
+        }
+
+        // Par défaut (pour les caristes)
         return $this->redirectToRoute('app_fiche_dechargement');
     }
 }

@@ -2,6 +2,9 @@
 
 namespace App\Controller;
 
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+
 use App\Entity\BonDeCommande;
 use App\Entity\PhotoBonCommande;
 
@@ -62,14 +65,14 @@ class BonDeCommandeController extends AbstractController
         return $this->render('bon_commande/new.html.twig', [
             'form' => $form->createView(), 
             'fiche' => $fiche,
-            'clients' => $clientRepo->findAll() // 3. On envoie les clients
+            'clients' => $clientRepo->findAll() 
         ]);
     }
 
     #[Route('/reception-terrain/bon-commande/modifier/{id}', name: 'app_bon_commande_edit')]
     public function edit(
         BonDeCommande $bon, 
-        ClientRepository $clientRepo, // On injecte ici aussi
+        ClientRepository $clientRepo,
         Request $request, 
         EntityManagerInterface $em
     ): Response {
@@ -87,13 +90,10 @@ class BonDeCommandeController extends AbstractController
             'form' => $form->createView(), 
             'fiche' => $bon->getFiche(), 
             'bon' => $bon,
-            'clients' => $clientRepo->findAll() // On envoie les clients
+            'clients' => $clientRepo->findAll() 
         ]);
     }
 
-    /**
-     * Route API pour mettre à jour le client de la fiche (appelée par le JS)
-     */
     #[Route('/reception/dechargement/{id}/update-client', name: 'api_update_client_fiche', methods: ['POST'])]
     public function updateClientFiche(Request $request, int $id, FicheDechargementRepository $ficheRepo, ClientRepository $clientRepo, EntityManagerInterface $em): JsonResponse
     {
@@ -139,31 +139,74 @@ class BonDeCommandeController extends AbstractController
         ]);
     }
 
+    // --- LA FONCTION DE COMPRESSION EST ICI ---
     private function handlePhotosUpload($form, $bon, $em)
     {
         $imageFiles = $form->get('imageFiles')->getData();
+        
         if ($imageFiles) {
+            // Initialisation du moteur d'image
+            $manager = new ImageManager(new Driver());
+            $destinationFolder = $this->getParameter('kernel.project_dir').'/public/uploads/bons';
+
             foreach ($imageFiles as $imageFile) {
-                $newFilename = uniqid().'.'.$imageFile->guessExtension();
+                // On force l'extension JPG pour la légèreté
+                $newFilename = uniqid().'.jpg';
+                $destinationPath = $destinationFolder . '/' . $newFilename;
+                
                 try {
-                    $imageFile->move(
-                        $this->getParameter('kernel.projectf_dir').'/public/uploads/bons',
-                        $newFileName
-                    );
+                    // Lecture de l'image envoyée
+                    $image = $manager->read($imageFile->getPathname());
+                    
+                    // Redimensionnement à max 1200px de large (garde les proportions)
+                    $image->scaleDown(width: 1200);
+                    
+                    // Sauvegarde avec 75% de qualité
+                    $image->save($destinationPath, quality: 75);
+                    
                     $photo = new PhotoBonCommande();
                     $photo->setNomFichier($newFilename);
                     $bon->addPhoto($photo);
+                    
+                    $em->persist($photo); 
+                    
                 } catch (\Exception $e) {
-                    // Optionnel : logger l'erreur si le déplacement échoue
+                    dd("Erreur lors de la compression : " . $e->getMessage());
                 }
             }
+        }
+    }
+
+    // --- NOUVELLE ROUTE POUR SUPPRIMER UNE PHOTO (AJAX) ---
+    #[Route('/reception-terrain/bon-commande/photo/{id}/supprimer', name: 'app_bon_commande_photo_delete', methods: ['POST'])]
+    public function deletePhoto(int $id, EntityManagerInterface $em): JsonResponse
+    {
+        $photo = $em->getRepository(PhotoBonCommande::class)->find($id);
+
+        if (!$photo) {
+            return new JsonResponse(['success' => false, 'message' => 'Photo introuvable.'], 404);
+        }
+
+        try {
+            // Suppression du fichier physique
+            $filePath = $this->getParameter('kernel.project_dir') . '/public/uploads/bons/' . $photo->getNomFichier();
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+
+            // Suppression en base de données
+            $em->remove($photo);
+            $em->flush();
+
+            return new JsonResponse(['success' => true]);
+        } catch (\Exception $e) {
+            return new JsonResponse(['success' => false, 'message' => 'Erreur serveur lors de la suppression.'], 500);
         }
     }
 
     #[Route('/reception-terrain/bon-commande/supprimer/{id}', name: 'app_bon_commande_delete', methods: ['POST'])]
     public function delete(BonDeCommande $bon, Request $request, EntityManagerInterface $em): Response
     {
-        // Vérification du jeton CSRF pour la sécurité
         if ($this->isCsrfTokenValid('delete'.$bon->getId(), $request->request->get('_token'))) {
             $em->remove($bon);
             $em->flush();

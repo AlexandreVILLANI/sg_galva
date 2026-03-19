@@ -129,14 +129,16 @@
             {# PHOTOS DU BON DE COMMANDE (Gestion) #}
             <div class="bc-box">
                 <label class="label">Photos du Bon (Déjà enregistrées)</label>
-                <div class="photo-grid mb-4">
+                <div class="photo-grid mb-4" id="server-photos-grid">
                     {% for photo in bon.photos %}
                         <div class="photo-item" id="photo-{{ photo.id }}">
-                            <img src="{{ asset('uploads/bons/' ~ photo.nomFichier) }}">
-                            <button type="button" class="btn-remove-photo server-photo" data-id="{{ photo.id }}">
+                            <img src="{{ asset('uploads/bons/' ~ photo.nomFichier) }}" onclick="window.open(this.src)" style="cursor: pointer;">
+                            <button type="button" class="btn-remove-photo server-photo" data-id="{{ photo.id }}" title="Supprimer cette photo">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
+                    {% else %}
+                        <p class="no-data" style="font-size: 13px; color: #666; font-style: italic;">Aucune photo attachée à ce bon pour le moment.</p>
                     {% endfor %}
                 </div>
 
@@ -181,6 +183,52 @@
         dropZone.classList.remove('dragover');
         handleFiles(e.dataTransfer.files);
     });
+
+    // --- SUPPRESSION DES PHOTOS SERVEUR (Déjà enregistrées) ---
+    const serverPhotosGrid = document.getElementById('server-photos-grid');
+    if (serverPhotosGrid) {
+        serverPhotosGrid.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.server-photo');
+            if (!btn) return;
+
+            if (!confirm("Voulez-vous vraiment supprimer cette photo ? Cette action est définitive.")) {
+                return;
+            }
+
+            const photoId = btn.getAttribute('data-id');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            try {
+                // IMPORTANT : Il faudra créer cette route dans ton contrôleur !
+                const response = await fetch(`/reception-terrain/bon-commande/photo/${photoId}/supprimer`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Si succès, on retire l'image de l'écran avec une petite animation
+                    const photoItem = document.getElementById(`photo-${photoId}`);
+                    photoItem.style.transition = "opacity 0.3s";
+                    photoItem.style.opacity = "0";
+                    setTimeout(() => photoItem.remove(), 300);
+                } else {
+                    alert("Erreur lors de la suppression : " + (data.message || 'Erreur inconnue.'));
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                alert("Une erreur de communication est survenue.");
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        });
+    }
 
     function handleFiles(files) {
         Array.from(files).forEach(file => {

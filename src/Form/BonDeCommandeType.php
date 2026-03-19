@@ -43,7 +43,7 @@ class BonDeCommandeType extends AbstractType
             ->add('imageFiles', FileType::class, [
                 'label' => 'Photos complémentaires',
                 'multiple' => true,
-                'mapped' => false, // Important : ce champ n'est pas une colonne SQL du BC
+                'mapped' => false, 
                 'required' => false,
                 'attr' => ['accept' => 'image/*']
             ])

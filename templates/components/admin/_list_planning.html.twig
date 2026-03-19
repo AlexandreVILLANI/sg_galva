@@ -126,7 +126,7 @@ function setupPlanningListFilters() {
             row.style.display = (matchesDate && matchesCat) ? 'grid' : 'none';
         });
     }
-
+ 
     [inputDate, selectCat].forEach(el => el.addEventListener('change', filterPlannings));
 
     if (btnReset) {

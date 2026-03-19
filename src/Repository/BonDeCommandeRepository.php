@@ -39,4 +39,18 @@ class BonDeCommandeRepository extends ServiceEntityRepository
         // On "aplatit" le tableau car Doctrine renvoie un tableau de tableaux [['forfait' => '...'], ...]
         return array_column($results, 'forfait');
     }
+
+    /**
+     * Recherche une commande par son REFI et charge ses photos
+     */
+    public function findOneByRefiWithPhotos(string $refi): ?BonDeCommande
+    {
+        return $this->createQueryBuilder('b')
+            ->leftJoin('b.photos', 'p')
+            ->addSelect('p') // Charge les photos dans la même requête
+            ->where('b.refi = :refi')
+            ->setParameter('refi', $refi)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }

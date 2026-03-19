@@ -42,10 +42,14 @@ class AppFixtures extends Fixture
         $ordoRole->setNom('Ordonnancement Planning');
         $manager->persist($ordoRole);
 
-        // NOUVEAU : Rôle pour le Chef d'Équipe
         $chefEquipeRole = new Role();
         $chefEquipeRole->setNom("Chef d'Équipe");
         $manager->persist($chefEquipeRole);
+
+        // NOUVEAU : Rôle pour l'équipe Colisage
+        $colisageRole = new Role();
+        $colisageRole->setNom("Équipe Colisage");
+        $manager->persist($colisageRole);
 
         // 2. Création de ton compte Admin (Alex)
         $admin = new User();
@@ -87,7 +91,7 @@ class AppFixtures extends Fixture
         $userOrdo->setPassword($this->hasher->hashPassword($userOrdo, 'ordonnancement'));
         $manager->persist($userOrdo);
 
-        // 6. NOUVEAU : Création du compte CHEF D'ÉQUIPE (Patrick)
+        // 6. Création du compte CHEF D'ÉQUIPE (Jawed)
         $userChef = new User();
         $userChef->setUsername('chef'); 
         $userChef->setPrenom('Jawed');
@@ -108,7 +112,18 @@ class AppFixtures extends Fixture
         $cariste->setPassword($this->hasher->hashPassword($cariste, 'cariste'));
         $manager->persist($cariste);
 
-        // 8. Emplacements 
+        // 8. NOUVEAU : Création d'un Agent de Colisage (Marc)
+        $colisage = new User();
+        $colisage->setUsername('colisage_equipe1');
+        $colisage->setPrenom('Marc Colisage');
+        $colisage->setTypeAcces('LIEN');
+        $colisage->setRoles(['ROLE_COLISAGE']);
+        $colisage->setUserRole($colisageRole);
+        $colisage->setToken('colisage123'); // Le lien magique de connexion !
+        $colisage->setPassword($this->hasher->hashPassword($colisage, 'colisage'));
+        $manager->persist($colisage);
+
+        // 9. Emplacements 
         $zones = ['Zone A1', 'Zone A2', 'Quai Nord', 'Quai Sud', 'Stockage Extérieur'];
         foreach ($zones as $nomZone) {
             $emplacement = new Emplacement();
@@ -116,7 +131,7 @@ class AppFixtures extends Fixture
             $manager->persist($emplacement);
         }
 
-        // 9. Client à définir
+        // 10. Client à définir
         $clientInconnu = new Client();
         $clientInconnu->setNom('À DÉFINIR'); 
         $manager->persist($clientInconnu);

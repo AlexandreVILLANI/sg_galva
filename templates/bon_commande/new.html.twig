@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
 <div class="bc-wrapper">
-    {{ form_start(form, {'attr': {'class': 'bc-paper'}}) }}
+    {{ form_start(form, {'attr': {'class': 'bc-paper', 'enctype': 'multipart/form-data'}}) }}
     
         {# --- ENTÊTE --- #}
         <div class="bc-header">
@@ -171,11 +171,18 @@
             <div class="bc-box photos-container">
                 <label class="label">Photos complémentaires (Ce Bon)</label>
                 <div class="form-group mt-2">
-                    <div class="upload-zone" id="drop-zone" onclick="document.getElementById('{{ form.imageFiles.vars.id }}').click()">
-                        {{ form_widget(form.imageFiles, {'attr': {'hidden': 'hidden'}}) }}
-                        <i class="fas fa-paperclip"></i>
-                        <p>Glisser-déposer ou <span class="browse">Parcourir</span></p>
+                    
+                    {# 1. ON CACHE LE CHAMP ICI ET ON FORCE L'ATTRIBUT MULTIPLE #}
+                    <div style="display: none;">
+                        {{ form_widget(form.imageFiles, {'attr': {'multiple': 'multiple', 'accept': 'image/*'}}) }}
                     </div>
+
+                    {# 2. LA ZONE DE CLIC EST SÉPARÉE #}
+                    <div class="upload-zone" id="drop-zone" onclick="document.getElementById('{{ form.imageFiles.vars.id }}').click()">
+                        <i class="fas fa-paperclip"></i>
+                        <p>Glisser-déposer plusieurs photos ou <span class="browse">Parcourir</span></p>
+                    </div>
+                    
                     <div id="file-preview" class="photo-grid mt-3"></div>
                 </div>
             </div>
