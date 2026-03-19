@@ -32,10 +32,16 @@ class ColisageController extends AbstractController
             }
         }
 
+        // --- NOUVEAU : On récupère toutes les commandes pour la liste déroulante ---
+        // On les trie par ID décroissant pour avoir les plus récentes en haut
+        $listeCommandes = $bcRepo->findBy([], ['id' => 'DESC']);
+
         return $this->render('colisage/index.html.twig', [
             'commande' => $commande,
             'refi_recherche' => $refiRecherche,
             'erreur' => $erreur,
+            // --- NOUVEAU : On envoie la liste au template ---
+            'liste_commandes' => $listeCommandes, 
         ]);
     }
 }

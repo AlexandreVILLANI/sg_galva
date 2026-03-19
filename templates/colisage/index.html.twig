@@ -3,13 +3,17 @@
 {% block title %}Espace Colisage - SG Galva{% endblock %}
 
 {% block body %}
+{# --- DEPENDANCES RECHERCHE INTELLIGENTE --- #}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
 <div class="colisage-wrapper">
     
     {# --- EN-TÊTE --- #}
     <div class="colisage-header">
         <div class="header-content">
             <h1>Équipe Colisage</h1>
-            <p>Entrez le REFI pour voir les instructions et photos.</p>
+            <p>Cherchez un REFI ou le nom d'un client.</p>
         </div>
         
         {# Bouton de déconnexion rapide pour les tablettes partagées #}
@@ -21,7 +25,20 @@
     {# --- BARRE DE RECHERCHE --- #}
     <div class="search-card">
         <form method="GET" action="{{ path('app_colisage_home') }}" class="search-form">
-            <input type="text" name="refi" class="search-input" placeholder="Ex: C000000" value="{{ refi_recherche }}" autofocus autocomplete="off" required>
+            
+            <div style="flex-grow: 1;">
+                <select name="refi" id="refi-select" placeholder="Ex: 000001 ou NOM DU CLIENT..." autocomplete="off" required>
+                    <option value="">-- Chercher une commande --</option>
+                    {% if liste_commandes is defined %}
+                        {% for c in liste_commandes %}
+                            <option value="{{ c.refi }}" {% if refi_recherche == c.refi %}selected{% endif %}>
+                                {{ c.refi }} - {{ c.client.nom }}
+                            </option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+
             <button type="submit" class="btn-search">
                 <i class="fas fa-search"></i> CHERCHER
             </button>
@@ -104,7 +121,7 @@
                     <div class="photos-container">
                         {% for photo in commande.photos %}
                             <div class="photo-card">
-                                <img src="{{ asset('uploads/bons/' ~ photo.nomFichier) }}" alt="Photo commande {{ commande.refi }}" loading="lazy">
+                                <img src="{{ asset('uploads/bons/' ~ photo.nomFichier) }}" alt="Photo commande {{ commande.refi }}" loading="lazy" onclick="window.open(this.src)" style="cursor: zoom-in;">
                             </div>
                         {% endfor %}
                     </div>
@@ -117,6 +134,22 @@
     {% endif %}
 
 </div>
+
+<script>
+    // Initialisation de la barre de recherche intelligente TomSelect
+    document.addEventListener("DOMContentLoaded", function() {
+        new TomSelect("#refi-select", {
+            create: false,
+            sortField: {
+                field: "text",
+                direction: "asc"
+            },
+            placeholder: "Rechercher par REFI ou nom de client...",
+            // Amélioration pour mobile/tablette
+            maxOptions: 50
+        });
+    });
+</script>
 
 <style>
     /* =========================================
@@ -168,16 +201,24 @@
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 25px; 
     }
     
-    .search-form { display: flex; gap: 10px; }
-    .search-input { 
-        flex-grow: 1; padding: 15px 20px; font-size: 18px; font-weight: bold;
-        border: 2px solid var(--border-color); border-radius: 8px; 
-        text-transform: uppercase; outline: none; transition: 0.2s; 
+    .search-form { display: flex; gap: 10px; align-items: stretch; }
+    
+    /* Styles spécifiques pour écraser le défaut de TomSelect et l'adapter à ton design */
+    .ts-wrapper { flex-grow: 1; }
+    .ts-control {
+        padding: 15px 20px !important;
+        font-size: 16px !important;
+        font-weight: bold !important;
+        border: 2px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+        text-transform: uppercase;
     }
-    .search-input:focus { 
-        border-color: var(--primary); 
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); 
+    .ts-control.focus {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2) !important;
     }
+    .ts-dropdown { font-size: 16px; border-radius: 8px; border: 1px solid var(--border-color); }
     
     .btn-search { 
         background: var(--primary); color: var(--white); border: none; 
