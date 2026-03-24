@@ -135,4 +135,48 @@ class BonTravailController extends AbstractController
 
         return $this->redirectToRoute('app_reception_ordonnancement_home', ['section' => 'list-bons-travail']);
     }
+
+    /**
+     * ROUTE 4 : Saisie des POIDS et OBSERVATIONS pour l'équipe PESÉE (Nouveau !)
+     */
+    #[Route('/pesee/bt/{id}', name: 'app_pesee_bt_edit', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_PESEE')]
+    public function peseeBtEdit(BonTravail $bt, Request $request, EntityManagerInterface $em): Response
+    {
+        // Si le formulaire est soumis (Bouton Enregistrer cliqué)
+        if ($request->isMethod('POST')) {
+            // On récupère les tableaux envoyés par les input HTML
+            $poidsData = $request->request->all('poids'); 
+            $obsData = $request->request->all('observations');
+
+            // On boucle sur toutes les lignes du bon de travail
+            foreach ($bt->getLignes() as $ligne) {
+                $id = $ligne->getId();
+                
+                // Si on a tapé un poids pour cette ligne
+                if (isset($poidsData[$id]) && $poidsData[$id] !== '') {
+                    // On remplace la virgule par un point au cas où, et on force en float
+                    $poidsNettoye = str_replace(',', '.', $poidsData[$id]);
+                    $ligne->setPoids((float) $poidsNettoye);
+                }
+                
+                // Si on a tapé une observation pour cette ligne
+                if (isset($obsData[$id])) {
+                    $ligne->setObservations((string) $obsData[$id]);
+                }
+            }
+
+            $em->flush(); // On sauvegarde en base de données
+            $this->addFlash('success', 'Les poids et observations ont bien été enregistrés !');
+            
+            // On recharge la page pour voir les modifications
+            return $this->redirectToRoute('app_pesee_bt_edit', ['id' => $bt->getId()]);
+        }
+
+        // On affiche la vue (Attention au chemin de ton fichier Twig !)
+        return $this->render('bon_travail/pesee_bt_edit.html.twig', [
+            'bt' => $bt,
+            'commande' => $bt->getBonCommande(),
+        ]);
+    }
 }

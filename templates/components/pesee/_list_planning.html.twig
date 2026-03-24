@@ -1,0 +1,198 @@
+<section id="pesee-plannings" class="content-section" style="display: block;">
+    <div class="section-header">
+        <h2 class="section-title">Plannings en attente de pesée</h2>
+    </div>
+
+    {# --- BARRE DE FILTRES --- #}
+    <div class="filter-bar">
+        <div class="filter-form">
+            <div class="filter-group">
+                <i class="fas fa-calendar-alt"></i>
+                <input type="date" id="filterDatePesee" title="Filtrer par date">
+            </div>
+
+            <div class="filter-group">
+                <i class="fas fa-layer-group"></i>
+                <select id="filterCatPesee">
+                    <option value="">Toutes les catégories</option>
+                    <option value="GB">Grand Bain (GB)</option>
+                    <option value="PB">Petit Bain (PB)</option>
+                </select>
+            </div>
+            
+            <a href="#" class="btn-reset" id="resetPeseeFilters" title="Réinitialiser">
+                <i class="fas fa-sync-alt"></i>
+            </a>
+        </div>
+    </div>
+
+    {# --- TABLEAU DES PLANNINGS --- #}
+    <div class="table-container">
+        <div class="table-grid header planning-list-grid">
+            <span>Date du Planning</span>
+            <span>Catégorie</span>
+            <span style="text-align: center;">Commandes</span>
+            <span>État d'avancement Pesée</span>
+            <span style="text-align: center;">Actions</span>
+        </div>
+
+        <div id="peseeTableBody">
+            {% for planning in plannings|default([]) %}
+                
+                {# --- CALCUL DYNAMIQUE --- #}
+                {% set totalLignes = planning.lignes|length %}
+                {% set lignesPesees = 0 %}
+
+                {% for lignePlanning in planning.lignes %}
+                    {% set bt = lignePlanning.bonTravail %}
+                    
+                    {# Une ligne de planning est "pesée" si son BT existe et que TOUTES ses lignes ont un poids > 0 #}
+                    {% if bt and bt.lignes|length > 0 %}
+                        {% set btEstComplet = true %}
+                        {% for ligneBT in bt.lignes %}
+                            {% if ligneBT.poids is null or ligneBT.poids <= 0 %}
+                                {% set btEstComplet = false %}
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if btEstComplet %}
+                            {% set lignesPesees = lignesPesees + 1 %}
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+
+                {% set pourcentage = totalLignes > 0 ? (lignesPesees / totalLignes * 100)|round : 0 %}
+                
+                {# Couleur de la barre : Bleu foncé si fini, Bleu clair si en cours, Gris si vide #}
+                {% set barColor = pourcentage == 100 ? '#1e3a8a' : (pourcentage > 0 ? '#3b82f6' : '#e5e7eb') %}
+
+                {# On rend toute la ligne cliquable vers la consultation du planning #}
+                <div class="table-grid row planning-list-grid clickable-row" 
+                     style="cursor: pointer;"
+                     data-date="{{ planning.datePlanning|date('Y-m-d') }}"
+                     data-cat="{{ planning.categorie }}"
+                     onclick="window.location='{{ path('app_planning_pesee_edit', {'id': planning.id}) }}'">
+
+                    <div class="ref-cell-group">
+                        <span class="ref-cell" style="color: var(--primary-blue);">
+                            <i class="far fa-calendar-alt"></i> {{ planning.datePlanning|date('d/m/Y') }}
+                        </span>
+                    </div>
+
+                    <div class="center-content">
+                        <span class="badge-cat {{ planning.categorie|lower }}">
+                            {{ planning.categorie == 'GB' ? 'Grand Bain' : 'Petit Bain' }}
+                        </span>
+                    </div>
+
+                    <div class="center-content">
+                        <span class="count-badge">{{ totalLignes }} BT</span>
+                    </div>
+
+                    <div class="progress-container">
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: {{ pourcentage }}%; background: {{ barColor }};"></div>
+                        </div>
+                        <small class="progress-text" style="color: {{ pourcentage == 100 ? '#1e3a8a' : '#6b7280' }}; font-weight: bold;">
+                            {% if pourcentage == 100 %}
+                                <i class="fas fa-check-double"></i> Terminé (100%)
+                            {% else %}
+                                {{ lignesPesees }} / {{ totalLignes }} pesés ({{ pourcentage }}%)
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    <div class="actions-cell center-content" onclick="event.stopPropagation();">
+                        <a href="{{ path('app_planning_pesee_edit', {'id': planning.id}) }}" class="btn-action-icon" title="Ouvrir le planning">
+                            <i class="fas fa-arrow-right" style="color: var(--primary-blue);"></i>
+                        </a>
+                    </div>
+                </div>
+
+            {% else %}
+                <div class="no-data" style="text-align: center; padding: 40px; color: #9ca3af;">
+                    <i class="fas fa-clipboard-list" style="font-size: 32px; margin-bottom: 10px; opacity: 0.5;"></i>
+                    <p>Aucun planning à traiter pour le moment.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<script>
+// Scripts de filtrage (inchangés mais vérifiés)
+function setupPeseeListFilters() {
+    const inputDate = document.getElementById('filterDatePesee');
+    const selectCat = document.getElementById('filterCatPesee');
+    const btnReset = document.getElementById('resetPeseeFilters');
+    const rows = document.querySelectorAll('#peseeTableBody .row');
+
+    if (rows.length === 0) return;
+
+    function filterPlannings() {
+        const valDate = inputDate.value;
+        const valCat = selectCat.value;
+
+        rows.forEach(row => {
+            const matchesDate = valDate === "" || row.dataset.date === valDate;
+            const matchesCat = valCat === "" || row.dataset.cat === valCat;
+            row.style.display = (matchesDate && matchesCat) ? 'grid' : 'none';
+        });
+    }
+
+    [inputDate, selectCat].forEach(el => el.addEventListener('change', filterPlannings));
+
+    if (btnReset) {
+        btnReset.addEventListener('click', (e) => {
+            e.preventDefault();
+            inputDate.value = '';
+            selectCat.value = '';
+            filterPlannings();
+        });
+    }
+}
+
+document.addEventListener('turbo:load', setupPeseeListFilters);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupPeseeListFilters);
+} else {
+    setupPeseeListFilters();
+}
+</script>
+
+<style>
+    /* Tes styles existants avec une petite touche d'amélioration sur le hover */
+    .filter-bar { background: white; padding: 15px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .filter-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .filter-group { display: flex; align-items: center; background: #f9fafb; border: 1px solid #e5e7eb; padding: 8px 12px; border-radius: 6px; flex: 1; min-width: 140px; }
+    .filter-group i { color: #9ca3af; margin-right: 10px; font-size: 14px; }
+    .filter-group input, .filter-group select { border: none; background: transparent; font-size: 13px; outline: none; width: 100%; color: #374151; }
+    
+    .btn-reset { color: #6b7280; background: #f3f4f6; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #e5e7eb; }
+    .btn-reset:hover { background: #eff6ff; color: var(--primary-blue); border-color: #bfdbfe; }
+
+    .table-container { background: white; border: 1px solid #f3f4f6; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .table-grid { display: grid; align-items: center; padding: 12px 20px; font-size: 13px; }
+    .table-grid.header { background: #f9fafb; color: #6b7280; font-weight: 600; border-bottom: 1px solid #f3f4f6; text-transform: uppercase; font-size: 11px; }
+    .table-grid.row { border-bottom: 1px solid #f9fafb; color: #374151; transition: 0.2s; }
+    .table-grid.row:hover { background: #eff6ff; }
+
+    .ref-cell { font-family: 'Monaco', 'Consolas', monospace; font-weight: 600; }
+    .center-content { display: flex; align-items: center; justify-content: center; height: 100%; }
+    
+    .badge-cat { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+    .badge-cat.gb { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-cat.pb { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
+    .count-badge { background: #f3f4f6; color: #4b5563; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; border: 1px solid #e5e7eb; }
+
+    .progress-container { padding: 0 15px; }
+    .progress-bar-bg { background: #e5e7eb; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+    .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .progress-text { font-size: 10px; color: #6b7280; font-weight: bold; }
+
+    .btn-action-icon { font-size: 16px; text-decoration: none; padding: 5px; transition: 0.2s; }
+    .btn-action-icon:hover { transform: scale(1.1); color: var(--primary-blue) !important; }
+    
+    .planning-list-grid { grid-template-columns: 180px 150px 150px 1fr 80px !important; }
+</style>

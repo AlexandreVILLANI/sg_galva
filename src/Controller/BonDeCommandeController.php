@@ -109,7 +109,7 @@ class BonDeCommandeController extends AbstractController
         if ($client) {
             $fiche->setClient($client);
             $em->flush();
-            return new JsonResponse(['succes' => true]);
+            return new JsonResponse(['success' => true]);
         }
 
         return new JsonResponse(['success' => false, 'message' => 'Client non trouvé.'], 404);

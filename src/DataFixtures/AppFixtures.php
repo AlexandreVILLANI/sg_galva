@@ -46,10 +46,13 @@ class AppFixtures extends Fixture
         $chefEquipeRole->setNom("Chef d'Équipe");
         $manager->persist($chefEquipeRole);
 
-        // NOUVEAU : Rôle pour l'équipe Colisage
         $colisageRole = new Role();
         $colisageRole->setNom("Équipe Colisage");
         $manager->persist($colisageRole);
+
+        $peseeRole = new Role();
+        $peseeRole->setNom("Équipe Pesée");
+        $manager->persist($peseeRole);
 
         // 2. Création de ton compte Admin (Alex)
         $admin = new User();
@@ -122,6 +125,15 @@ class AppFixtures extends Fixture
         $colisage->setToken('colisage123'); 
         $colisage->setPassword($this->hasher->hashPassword($colisage, 'colisage'));
         $manager->persist($colisage);
+
+        $pesee = new User();
+        $pesee->setUsername('pesee');
+        $pesee->setPrenom('Paul Pesée');
+        $pesee->setTypeAcces('MDP'); 
+        $pesee->setRoles(['ROLE_PESEE']);
+        $pesee->setUserRole($peseeRole);
+        $pesee->setPassword($this->hasher->hashPassword($pesee, 'pesee'));
+        $manager->persist($pesee);
 
         // 9. Emplacements 
         $zones = ['Zone A1', 'Zone A2', 'Quai Nord', 'Quai Sud', 'Stockage Extérieur'];

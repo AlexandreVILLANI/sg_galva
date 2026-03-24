@@ -34,6 +34,7 @@ class HomeController extends AbstractController
         if ($this->isGranted('ROLE_ORDONNANCEMENT')) return $this->redirectToRoute('app_ordonnancement_home');
         if ($this->isGranted('ROLE_RECEPTION_ORDONNANCEMENT')) return $this->redirectToRoute('app_reception_ordonnancement_home');
         if ($this->isGranted('ROLE_RECEPTION_TERRAIN')) return $this->redirectToRoute('app_reception_terrain_home');
+        if ($this->isGranted('ROLE_PESEE')) return $this->redirectToRoute('app_pesee_home'); // <--- NOUVEAU
         
         return $this->redirectToRoute('app_home');
     }
@@ -49,7 +50,6 @@ class HomeController extends AbstractController
             return $this->redirectToRoute('app_admin_home');
         }
         
-        // --- NOUVEAU : Sécurité pour Ordonnancement ---
         if ($this->isGranted('ROLE_ORDONNANCEMENT')) {
             return $this->redirectToRoute('app_ordonnancement_home');
         }
@@ -60,6 +60,10 @@ class HomeController extends AbstractController
         
         if ($this->isGranted('ROLE_RECEPTION_TERRAIN')) {
             return $this->redirectToRoute('app_reception_terrain_home');
+        }
+
+        if ($this->isGranted('ROLE_PESEE')) {
+            return $this->redirectToRoute('app_pesee_home');
         }
 
         return $this->render('home/index.html.twig', [
@@ -171,6 +175,33 @@ class HomeController extends AbstractController
         ]);
     }
 
+    /**
+     * Espace ÉQUIPE PESÉE
+     */
+    #[Route('/pesee', name: 'app_pesee_home')]
+    #[IsGranted('ROLE_PESEE')]
+    public function peseeIndex(PlanningRepository $planningRepository): Response
+    {
+        // On récupère les plannings récents (exactement comme pour le Chef d'Équipe)
+        $plannings = $planningRepository->findBy([], ['datePlanning' => 'DESC'], 15);
+
+        return $this->render('home/pesee.html.twig', [
+            'plannings' => $plannings,
+        ]);
+    }
+    
+    /**
+     * Page de consultation d'un planning pour l'équipe PESÉE
+     */
+    #[Route('/pesee/planning/{id}', name: 'app_planning_pesee_edit')]
+    #[IsGranted('ROLE_PESEE')] // Sécurité : uniquement pour ce rôle
+    public function peseeEdit(\App\Entity\Planning $planning): Response
+    {
+        // On affiche la vue qu'on vient de créer, en lui passant le planning sélectionné
+        return $this->render('planning/show.html.twig', [
+            'planning' => $planning,
+        ]);
+    }
     
 
     // --- NOUVELLE ROUTE : IMPORT CSV DEPUIS L'ADMIN (ALGORITHME AGRESSIF) ---

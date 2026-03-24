@@ -36,8 +36,6 @@ class CleanPhotosCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $fs = new Filesystem();
 
-        // --- CONFIGURATION DU TEMPS ---
-        // Régler sur 30 jours
         $retentionSeconds = 30 * 24 * 60 * 60; 
         $limitTime = time() - $retentionSeconds;
 

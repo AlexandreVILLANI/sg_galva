@@ -49,8 +49,9 @@ security:
         ROLE_ORDONNANCEMENT: ROLE_USER
         ROLE_CHEF_EQUIPE: ROLE_USER
         ROLE_COLISAGE: ROLE_USER
+        ROLE_PESEE: ROLE_USER
         # L'admin a TOUS les pouvoirs des autres
-        ROLE_ADMIN: [ROLE_RECEPTION_TERRAIN, ROLE_RECEPTION_ORDONNANCEMENT, ROLE_CARISTE, ROLE_ORDONNANCEMENT, ROLE_CHEF_EQUIPE]
+        ROLE_ADMIN: [ROLE_RECEPTION_TERRAIN, ROLE_RECEPTION_ORDONNANCEMENT, ROLE_CARISTE, ROLE_ORDONNANCEMENT, ROLE_CHEF_EQUIPE,ROLE_COLISAGE,ROLE_PESEE]
 
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }
@@ -61,6 +62,7 @@ security:
         - { path: ^/cariste, roles: ROLE_CARISTE }
         - { path: ^/chef-equipe, roles: ROLE_CHEF_EQUIPE}
         - { path: ^/colisage, roles: ROLE_COLISAGE }
+        - { path: ^/pesee, roles: ROLE_PESEE } 
         
         # /home sert de "base" pour tout utilisateur connecté
         - { path: ^/home, roles: ROLE_USER }

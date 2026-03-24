@@ -172,11 +172,15 @@
         }
 
         const btnSave = document.querySelector('.btn-save-client');
+        const originalText = btnSave.innerHTML; // On sauvegarde le texte original
         btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...';
         btnSave.disabled = true;
 
         try {
-            const response = await fetch(`/reception/dechargement/${ficheId}/update-client`, {
+            const baseUrl = "{{ path('app_dechargement_update_client', {'id': 'PLACEHOLDER'}) }}";
+            const targetUrl = baseUrl.replace('PLACEHOLDER', ficheId);
+
+            const response = await fetch(targetUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -185,26 +189,40 @@
                 body: JSON.stringify({ client_id: clientId })
             });
 
-            const data = await response.json();
+            // On lit la réponse en texte brut d'abord pour pouvoir la débugger
+            const textResponse = await response.text(); 
+            let data;
+            
+            try {
+                data = JSON.parse(textResponse);
+            } catch (e) {
+                console.error("La réponse n'est pas du JSON :", textResponse);
+                alert("Erreur critique : Le serveur n'a pas renvoyé du JSON.");
+                throw e; // Arrête l'exécution
+            }
 
             if (response.ok && data.success) {
-                // Mise à jour visuelle réussie
+                // MISE À JOUR RÉUSSIE
                 document.getElementById('client-name-text').textContent = data.clientName;
-                document.querySelector('.btn-edit-client').style.display = 'none'; // On cache le bouton Attribuer
+                document.querySelector('.btn-edit-client').style.display = 'none'; 
                 
-                // On réaffiche le bouton "Créer Bon de Commande" qui était caché car le client n'était pas défini
                 const btnCreate = document.getElementById('btn-create-bc');
                 if(btnCreate) btnCreate.style.display = 'flex';
 
-                toggleClientEdit(); // Referme le menu
+                toggleClientEdit(); 
             } else {
-                alert("Erreur lors de la mise à jour : " + (data.message || "Inconnue"));
-                btnSave.innerHTML = '<i class="fas fa-check"></i> Valider';
-                btnSave.disabled = false;
+                // ERREUR SERVEUR
+                console.error("Détail de l'erreur serveur :", data);
+                // Astuce : Quand Symfony 6/7 plante, il met le message d'erreur dans 'data.detail' et non 'data.message' !
+                const vraiMessageErreur = data.message || data.detail || "Erreur silencieuse (Regarde la console F12)";
+                alert("Erreur lors de la mise à jour : " + vraiMessageErreur);
             }
+            
         } catch (error) {
-            alert("Erreur réseau.");
-            btnSave.innerHTML = '<i class="fas fa-check"></i> Valider';
+            console.error("Erreur réseau ou Javascript :", error);
+        } finally {
+            // Quoi qu'il arrive, on remet le bouton à son état normal
+            btnSave.innerHTML = originalText;
             btnSave.disabled = false;
         }
     }
