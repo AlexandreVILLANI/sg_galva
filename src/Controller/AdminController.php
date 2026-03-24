@@ -6,9 +6,12 @@ use App\Entity\Client;
 use App\Entity\BonDeCommande;
 use App\Entity\FicheDechargement;
 use App\Entity\BonTravail;
+use App\Entity\User;
 
 use App\Form\BonDeCommandeType;
 use App\Form\ClientType;
+use App\Form\UserEditType;
+use App\Form\UserType;
 
 use App\Repository\BonDeCommandeRepository;
 use App\Repository\LigneDechargementRepository;
@@ -25,6 +28,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -41,7 +45,8 @@ class AdminController extends AbstractController
         FicheDechargementRepository $ficheRepo, 
         ClientRepository $clientRepo,
         BonTravailRepository $btRepo,
-        PlanningRepository $planningRepo        
+        PlanningRepository $planningRepo,
+        UserRepository $userRepo
     ): Response {
         return $this->render('home/admin.html.twig', [
             'bons' => $bcRepo->findBy([], ['date' => 'DESC']),
@@ -49,6 +54,7 @@ class AdminController extends AbstractController
             'clients' => $clientRepo->findBy([], ['nom' => 'ASC']),
             'bons_travail' => $btRepo->findAll(),
             'plannings' => $planningRepo->findBy([], ['datePlanning' => 'DESC']), 
+            'users' => $userRepo->findBy([], ['id' => 'ASC']),
         ]);
     }
 
@@ -304,5 +310,115 @@ class AdminController extends AbstractController
             'clients' => $clientRepo->findBy([], ['nom' => 'ASC']),
             'emplacements' => $empRepo->findAll() 
         ]);
+    }
+
+    #[Route('/utilisateur/{id}/modifier', name: 'app_admin_user_edit', methods: ['GET', 'POST'])]
+    public function editUser(Request $request, User $user, EntityManagerInterface $em): Response
+    {
+        $form = $this->createForm(UserEditType::class, $user);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            
+            // --- MAGIE DE SYNCHRONISATION DES RÔLES ---
+            // On récupère le nom du rôle choisi dans le formulaire
+            $nomRole = $user->getUserRole() ? $user->getUserRole()->getNom() : '';
+            
+            // On le traduit en rôle technique pour la sécurité Symfony
+            $roleTechnique = match($nomRole) {
+                'Administrateur' => 'ROLE_ADMIN',
+                'Cariste' => 'ROLE_CARISTE',
+                'Réception Terrain' => 'ROLE_RECEPTION_TERRAIN',
+                'Réception Ordonnancement' => 'ROLE_RECEPTION_ORDONNANCEMENT',
+                'Ordonnancement Planning' => 'ROLE_ORDONNANCEMENT',
+                'Chef d\'Équipe' => 'ROLE_CHEF_EQUIPE',
+                'Équipe Colisage' => 'ROLE_COLISAGE',
+                default => 'ROLE_USER'
+            };
+            
+            // On applique le rôle technique à l'utilisateur
+            $user->setRoles([$roleTechnique]);
+
+            $em->flush();
+            $this->addFlash('success', 'Le compte de ' . $user->getPrenom() . ' a été mis à jour.');
+            
+            // On redirige vers le tableau de bord, onglet "Utilisateurs"
+            return $this->redirectToRoute('app_admin_home', ['section' => 'admin-us']);
+        }
+
+        return $this->render('user/edit.html.twig', [
+            'user' => $user,
+            'form' => $form->createView(),
+        ]);
+    }
+
+    #[Route('/utilisateur/nouveau', name: 'app_admin_user_new', methods: ['GET', 'POST'])]
+    public function newUser(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher): Response
+    {
+        $user = new User();
+        $form = $this->createForm(UserType::class, $user);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            
+            // 1. CRYPTAGE DU MOT DE PASSE
+            $hashedPassword = $passwordHasher->hashPassword(
+                $user,
+                $form->get('password')->getData()
+            );
+            $user->setPassword($hashedPassword);
+
+            // 2. SYNCHRONISATION DU RÔLE
+            $nomRole = $user->getUserRole() ? $user->getUserRole()->getNom() : '';
+            $roleTechnique = match($nomRole) {
+                'Administrateur' => 'ROLE_ADMIN',
+                'Cariste' => 'ROLE_CARISTE',
+                'Réception Terrain' => 'ROLE_RECEPTION_TERRAIN',
+                'Réception Ordonnancement' => 'ROLE_RECEPTION_ORDONNANCEMENT',
+                'Ordonnancement Planning' => 'ROLE_ORDONNANCEMENT',
+                'Chef d\'Équipe' => 'ROLE_CHEF_EQUIPE',
+                'Équipe Colisage' => 'ROLE_COLISAGE',
+                default => 'ROLE_USER'
+            };
+            $user->setRoles([$roleTechnique]);
+
+            // 3. SAUVEGARDE EN BASE DE DONNÉES
+            $em->persist($user);
+            $em->flush();
+
+            $this->addFlash('success', 'Le compte de ' . $user->getPrenom() . ' a été créé avec succès.');
+            return $this->redirectToRoute('app_admin_home', ['section' => 'admin-us']);
+        }
+
+        return $this->render('user/new.html.twig', [
+            'form' => $form->createView(),
+        ]);
+    }
+
+    #[Route('/utilisateur/{id}/supprimer', name: 'app_admin_user_delete', methods: ['POST'])]
+    public function deleteUser(Request $request, User $user, EntityManagerInterface $em): Response
+    {
+        // 1. Vérification du jeton de sécurité (CSRF)
+        if ($this->isCsrfTokenValid('delete_user'.$user->getId(), $request->request->get('_token'))) {
+            
+            // 2. Protection contre l'auto-suppression
+            if ($user->getId() === $this->getUser()->getId()) {
+                $this->addFlash('error', 'Vous ne pouvez pas supprimer votre propre compte !');
+                return $this->redirectToRoute('app_admin_home', ['section' => 'admin-us']);
+            }
+
+            try {
+                // 3. Essai de suppression
+                $em->remove($user);
+                $em->flush();
+                $this->addFlash('success', 'Le compte de ' . $user->getPrenom() . ' a été supprimé définitivement.');
+                
+            } catch (\Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException $e) {
+                // 4. Si l'utilisateur est lié à des fiches ou des bons dans l'historique
+                $this->addFlash('error', '🛑 Impossible de supprimer ce compte : ' . $user->getPrenom() . ' a déjà créé des documents (Fiches ou Bons) dans le système. Son compte doit être conservé pour l\'historique.');
+            }
+        }
+
+        return $this->redirectToRoute('app_admin_home', ['section' => 'admin-us']);
     }
 }

@@ -119,7 +119,7 @@ class AppFixtures extends Fixture
         $colisage->setTypeAcces('LIEN');
         $colisage->setRoles(['ROLE_COLISAGE']);
         $colisage->setUserRole($colisageRole);
-        $colisage->setToken('colisage123'); // Le lien magique de connexion !
+        $colisage->setToken('colisage123'); 
         $colisage->setPassword($this->hasher->hashPassword($colisage, 'colisage'));
         $manager->persist($colisage);
 

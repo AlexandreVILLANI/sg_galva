@@ -34,14 +34,11 @@ class BonTravailController extends AbstractController
             $bt = new BonTravail();
             $bt->setBonCommande($commande);
 
-            // --- NOUVEAU : SYNCHRONISATION DU TRAITEMENT ---
-            // On s'assure que si l'un est vrai, l'autre est faux dans la commande
-            if ($commande->getIsCataphorese()) {
+            if ($commande->isCataphorese()) {
                 $commande->setIsGalvanisation(false);
-            } elseif ($commande->getIsGalvanisation()) {
+            } elseif ($commande->isGalvanisation()) {
                 $commande->setIsCataphorese(false);
             }
-            // ----------------------------------------------
 
             $lastNumero = $btRepo->findLastNumero();
             $currentYear = date('y'); 

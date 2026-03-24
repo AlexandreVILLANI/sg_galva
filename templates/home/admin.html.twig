@@ -10,7 +10,10 @@
                 <div class="logo-box" style="background: var(--primary-admin);">AD</div>
                 <span class="brand-name">Administrateur</span>
             </div>
-
+            <a href="#" class="nav-item" data-target="admin-us">
+                <i class="fas fa-users"></i>
+                <span>Utilisateurs</span>
+            </a>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item" data-target="admin-cl">
                     <i class="fas fa-building"></i>
@@ -31,7 +34,7 @@
                 <a href="#" class="nav-item" data-target="admin-pl">
                     <i class="fas fa-calendar-alt"></i>
                     <span>Planning</span>
-                </a>                
+                </a>
             </nav>
         </div>
 
@@ -53,6 +56,19 @@
                 {{ "now"|date('d/m/Y', 'Europe/Paris') }}
             </div>
         </header>
+        <div style="padding: 0 20px;">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div style="padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; display: flex; align-items: center; gap: 10px; 
+                        {% if label == 'success' %}background-color: #dcfce7; color: #166534; border-left: 5px solid #22c55e;
+                        {% elseif label == 'error' %}background-color: #fee2e2; color: #991b1b; border-left: 5px solid #ef4444;{% endif %}">
+                        
+                        <i class="fas {% if label == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
         <div id="empty-state" class="empty-placeholder" style="display: none;">
             <div class="dashed-container">
                 <p>Sélectionnez une catégorie dans le menu de gauche</p>
@@ -81,9 +97,14 @@
                 {{ include('components/admin/_list_planning.html.twig') }}
             </section>
 
-            {# --- 5. SECTION CLIENTS (NOUVEAU) --- #}
+            {# --- 5. SECTION CLIENTS --- #}
             <section id="admin-cl" class="content-section">
                 {{ include('components/admin/_list_client.html.twig') }}
+            </section>
+
+            {# --- 6. SECTION UTILISATEURS (NOUVEAU) --- #}
+            <section id="admin-us" class="content-section">
+                {{ include('components/admin/_list_user.html.twig') }}
             </section>
 
         </div>

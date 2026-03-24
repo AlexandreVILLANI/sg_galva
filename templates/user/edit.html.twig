@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier Utilisateur - Admin{% endblock %}
+
+{% block body %}
+<div class="admin-wrapper" style="max-width: 600px; margin: 40px auto; padding: 20px;">
+    
+    <div style="margin-bottom: 20px;">
+        <a href="{{ path('app_admin_home', {'section': 'admin-us'}) }}" style="color: #6b7280; text-decoration: none; font-weight: bold;">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+
+    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 5px solid #4f46e5;">
+        <h1 style="margin-top: 0; font-size: 24px; color: #1f2937;">
+            <i class="fas fa-user-edit" style="color: #4f46e5;"></i> Modifier le compte
+        </h1>
+        <p style="color: #6b7280; margin-bottom: 25px;">Modifiez les informations d'accès pour <strong>{{ user.prenom }}</strong>.</p>
+
+        {{ form_start(form) }}
+            
+            <div style="margin-bottom: 20px;">
+                {{ form_label(form.username, null, {'label_attr': {'style': 'font-weight: bold; color: #374151; display: block; margin-bottom: 5px;'}}) }}
+                {{ form_widget(form.username, {'attr': {'style': 'width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;'}}) }}
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                {{ form_label(form.prenom, null, {'label_attr': {'style': 'font-weight: bold; color: #374151; display: block; margin-bottom: 5px;'}}) }}
+                {{ form_widget(form.prenom, {'attr': {'style': 'width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;'}}) }}
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                {{ form_label(form.userRole, null, {'label_attr': {'style': 'font-weight: bold; color: #374151; display: block; margin-bottom: 5px;'}}) }}
+                {{ form_widget(form.userRole, {'attr': {'style': 'width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px; background-color: #f9fafb;'}}) }}
+            </div>
+
+            <button type="submit" style="width: 100%; background: #4f46e5; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer;">
+                Enregistrer les modifications
+            </button>
+
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}
