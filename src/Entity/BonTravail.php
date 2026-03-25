@@ -2,11 +2,17 @@
 
 namespace App\Entity;
 
-use App\Repository\BonTravailRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+
+use App\Repository\BonTravailRepository;
+
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+
 use Symfony\Component\Validator\Constraints as Assert;
+
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: BonTravailRepository::class)]
 class BonTravail
@@ -38,9 +44,17 @@ class BonTravail
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $dateCreation = null;
 
+    #[ORM\Column(options: ["default" => false])]
+    private ?bool $isPeseeValidee = false;
+
+    #[ORM\OneToMany(mappedBy: 'bonTravail', targetEntity: PlanningLigne::class)]
+    private Collection $planningLignes;
+
     public function __construct()
     {
         $this->dateCreation = new \DateTime();
+        $this->isPeseeValidee = false; 
+        $this->planningLignes = new ArrayCollection(); 
     }
 
     public function getId(): ?int { return $this->id; }
@@ -75,4 +89,35 @@ class BonTravail
     public function removeLigne($ligne): self { return $this; }
     public function getObservations(): ?string{return $this->observations;}
     public function setObservations(?string $observations): self{$this->observations = $observations;return $this;}
+
+    public function isTermine(): ?bool
+    {
+        return $this->isTermine;
+    }
+
+    public function setIsTermine(bool $isTermine): static
+    {
+        $this->isTermine = $isTermine;
+
+        return $this;
+    }
+
+    public function isPeseeValidee(): ?bool
+    {
+        return $this->isPeseeValidee;
+    }
+
+    public function setIsPeseeValidee(bool $isPeseeValidee): self
+    {
+        $this->isPeseeValidee = $isPeseeValidee;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PlanningLigne>
+    */
+    public function getPlanningLignes(): Collection
+    {
+        return $this->planningLignes;
+    }
 }

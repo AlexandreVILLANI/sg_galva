@@ -126,7 +126,10 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
+        </div>        
+
+        {# Champ caché qui remplace la checkbox #}
+        <input type="hidden" name="validation_pesee" id="hidden_validation_pesee" value="0">
 
         <div class="bc-actions no-print">
             <a href="javascript:history.back()" class="btn-cancel" style="background-color: #6b7280; color: white;">
@@ -134,18 +137,65 @@
             </a>
             
             <button type="submit" class="btn-confirm" style="flex: 2; background-color: var(--primary-blue); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s;">
-                <i class="fas fa-save"></i> Enregistrer les Poids
+                <i class="fas fa-save"></i> Enregistrer
             </button>
         </div>
 
     </form>
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const poidsInputs = document.querySelectorAll('input[name^="poids["]');
+        const hiddenValidation = document.getElementById('hidden_validation_pesee');
+
+        form.addEventListener('submit', function(e) {
+            // ON BLOQUE L'ENVOI DU FORMULAIRE TEMPORAIREMENT POUR LIRE LES LOGS
+            e.preventDefault(); 
+
+            let toutesLesPeseesSontRemplies = true;
+            let aumoinsUneLigne = poidsInputs.length > 0;
+
+            console.log("--- DÉBUT DE LA VÉRIFICATION ---");
+            console.log("Nombre de cases de poids trouvées :", poidsInputs.length);
+
+            poidsInputs.forEach(function(input, index) {
+                let stringValue = input.value.trim().replace(',', '.');
+                let valeur = parseFloat(stringValue);
+                
+                let isValide = true;
+                if (stringValue === '' || isNaN(valeur) || valeur <= 0) {
+                    isValide = false;
+                    toutesLesPeseesSontRemplies = false;
+                }
+
+                // ON AFFICHE L'ÉTAT DE CHAQUE CASE DANS LA CONSOLE
+                console.log(`Case n°${index + 1} (name="${input.name}") : Valeur tapée="${input.value}" -> Valide ? ${isValide}`);
+            });
+
+            if (toutesLesPeseesSontRemplies && aumoinsUneLigne) {
+                hiddenValidation.value = 'on';
+                console.log("RÉSULTAT : TOUT EST BON ! On envoie 'on'.");
+            } else {
+                hiddenValidation.value = '0';
+                console.log("RÉSULTAT : IL MANQUE AU MOINS UN POIDS ! On envoie '0'.");
+            }
+
+            console.log("--- FIN DE LA VÉRIFICATION ---");
+            
+            // Si vous voulez que le formulaire s'envoie quand même après avoir lu les logs, 
+            // vous pouvez décommenter la ligne ci-dessous :
+            // form.submit();
+        });
+    });
+</script>
+
 <style>
+    /* ... Tes styles existants ... */
     :root {
         --primary-blue: #2e46a6;
     }
-    /* --- CSS HARMONISÉ AVEC LE BON DE COMMANDE --- */
     .bc-wrapper { background: #f0f0f0; min-height: 100vh; padding: 40px 20px; font-family: Arial, sans-serif; color: #1a1a1a; }
     .bc-paper { max-width: 1000px; margin: 0 auto; background: white; padding: 40px; box-shadow: 0 0 20px rgba(0,0,0,0.1); display: block; }
     .bc-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; position: relative; }
@@ -185,7 +235,6 @@
     .sub-info { font-size: 10px; color: #666; margin-top: 2px; }
     .p-0 { padding: 0 !important; }
 
-    /* --- STYLE SPÉCIFIQUE POUR LES CHAMPS DE PESÉE --- */
     .editable-field { 
         background-color: #eff6ff; 
         cursor: text;

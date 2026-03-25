@@ -5,20 +5,14 @@ namespace App\Controller;
 use App\Entity\BonDeCommande;
 use App\Entity\BonTravail;
 use App\Entity\LigneDechargement;
-
 use App\Form\BonTravailType;
-
 use Doctrine\ORM\EntityManagerInterface;
-
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-
 use App\Repository\BonTravailRepository; 
-
 
 class BonTravailController extends AbstractController
 {
@@ -111,13 +105,81 @@ class BonTravailController extends AbstractController
     #[Route('/bon-travail/consulter/{id}', name: 'app_bon_travail_view', methods: ['GET'])]
     public function view(BonTravail $bt): Response
     {
-        // On n'autorise aucune modification ici, c'est juste de l'affichage
         return $this->render('bon_travail/view.html.twig', [
             'bt' => $bt,
             'commande' => $bt->getBonCommande(),
         ]);
     }
 
+    /**
+     * ROUTE 4 : Saisie des POIDS et OBSERVATIONS pour l'équipe PESÉE
+     */
+    #[Route('/pesee/bt/{id}', name: 'app_pesee_bt_edit', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_PESEE')]
+    public function peseeBtEdit(BonTravail $bt, Request $request, EntityManagerInterface $em): Response
+    {
+        if ($request->isMethod('POST')) {
+            $poidsData = $request->request->all('poids'); 
+            $obsData = $request->request->all('observations');
+
+            // On part du principe que le BT est complet, et on va vérifier s'il y a une erreur
+            $estComplet = true;
+            
+            // Sécurité : S'il n'y a aucune ligne à peser, on ne peut pas valider
+            if ($bt->getLignes()->isEmpty()) {
+                $estComplet = false;
+            }
+
+            foreach ($bt->getLignes() as $ligne) {
+                $id = $ligne->getId();
+                
+                // --- 1. ENREGISTREMENT ET VÉRIFICATION DU POIDS ---
+                if (isset($poidsData[$id]) && trim($poidsData[$id]) !== '') {
+                    // On remplace la virgule par un point pour que PHP comprenne bien le chiffre
+                    $poidsNettoye = str_replace(',', '.', $poidsData[$id]);
+                    $valeurPoids = (float) $poidsNettoye;
+                    
+                    $ligne->setPoids($valeurPoids);
+                    
+                    // Si le poids saisi est de 0 (ou négatif), alors ce n'est pas fini !
+                    if ($valeurPoids <= 0) {
+                        $estComplet = false;
+                    }
+                } else {
+                    // Si la case est restée vide, ce n'est pas fini !
+                    $estComplet = false;
+                }
+                
+                // --- 2. ENREGISTREMENT DES OBSERVATIONS ---
+                if (isset($obsData[$id])) {
+                    $ligne->setObservations((string) $obsData[$id]);
+                }
+            }
+
+            // --- 3. VALIDATION AUTOMATIQUE ---
+            // Si $estComplet est resté à "true" (donc toutes les cases > 0), le BT est validé.
+            $bt->setIsPeseeValidee($estComplet);
+
+            $em->flush(); 
+            
+            if ($estComplet) {
+                $this->addFlash('success', 'Pesée terminée et validée avec succès !');
+            } else {
+                $this->addFlash('success', 'Brouillon de la pesée enregistré (il manque encore des poids).');
+            }
+            
+            return $this->redirectToRoute('app_pesee_bt_edit', ['id' => $bt->getId()]);
+        }
+
+        return $this->render('bon_travail/pesee_bt_edit.html.twig', [
+            'bt' => $bt,
+            'commande' => $bt->getBonCommande(),
+        ]);
+    }
+
+    /**
+     * ROUTE SUPPRESSION
+     */
     #[Route('/reception-ordonnancement/bon-travail/supprimer/{id}', name: 'app_bon_travail_delete', methods: ['POST'])]
     #[IsGranted('ROLE_RECEPTION_ORDONNANCEMENT')]
     public function delete(Request $request, BonTravail $bt, EntityManagerInterface $em): Response
@@ -126,57 +188,23 @@ class BonTravailController extends AbstractController
         $submittedToken = $request->request->get('_token');
 
         if ($this->isCsrfTokenValid($tokenId, $submittedToken)) {
-            $em->remove($bt);
-            $em->flush();
-            $this->addFlash('success', 'BT supprimé.');
+            
+            // --- NOUVEAU : VÉRIFICATION AVANT SUPPRESSION ---
+            // On vérifie si le Bon de Travail possède des lignes de planning
+            if (!$bt->getPlanningLignes()->isEmpty()) {
+                // S'il est dans le planning, on bloque et on avertit l'utilisateur
+                $this->addFlash('error', 'Impossible de supprimer le BT-' . $bt->getNumero() . ' car il est déjà planifié. Veuillez d\'abord le retirer du planning.');
+            } else {
+                // S'il n'est pas dans le planning, on a le droit de le supprimer
+                $em->remove($bt);
+                $em->flush();
+                $this->addFlash('success', 'Bon de Travail supprimé avec succès.');
+            }
+            
         } else {
             $this->addFlash('error', 'Jeton de sécurité invalide.');
         }
 
         return $this->redirectToRoute('app_reception_ordonnancement_home', ['section' => 'list-bons-travail']);
-    }
-
-    /**
-     * ROUTE 4 : Saisie des POIDS et OBSERVATIONS pour l'équipe PESÉE (Nouveau !)
-     */
-    #[Route('/pesee/bt/{id}', name: 'app_pesee_bt_edit', methods: ['GET', 'POST'])]
-    #[IsGranted('ROLE_PESEE')]
-    public function peseeBtEdit(BonTravail $bt, Request $request, EntityManagerInterface $em): Response
-    {
-        // Si le formulaire est soumis (Bouton Enregistrer cliqué)
-        if ($request->isMethod('POST')) {
-            // On récupère les tableaux envoyés par les input HTML
-            $poidsData = $request->request->all('poids'); 
-            $obsData = $request->request->all('observations');
-
-            // On boucle sur toutes les lignes du bon de travail
-            foreach ($bt->getLignes() as $ligne) {
-                $id = $ligne->getId();
-                
-                // Si on a tapé un poids pour cette ligne
-                if (isset($poidsData[$id]) && $poidsData[$id] !== '') {
-                    // On remplace la virgule par un point au cas où, et on force en float
-                    $poidsNettoye = str_replace(',', '.', $poidsData[$id]);
-                    $ligne->setPoids((float) $poidsNettoye);
-                }
-                
-                // Si on a tapé une observation pour cette ligne
-                if (isset($obsData[$id])) {
-                    $ligne->setObservations((string) $obsData[$id]);
-                }
-            }
-
-            $em->flush(); // On sauvegarde en base de données
-            $this->addFlash('success', 'Les poids et observations ont bien été enregistrés !');
-            
-            // On recharge la page pour voir les modifications
-            return $this->redirectToRoute('app_pesee_bt_edit', ['id' => $bt->getId()]);
-        }
-
-        // On affiche la vue (Attention au chemin de ton fichier Twig !)
-        return $this->render('bon_travail/pesee_bt_edit.html.twig', [
-            'bt' => $bt,
-            'commande' => $bt->getBonCommande(),
-        ]);
     }
 }

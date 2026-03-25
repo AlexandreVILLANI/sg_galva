@@ -3,6 +3,19 @@
 {% block title %}Bon de Travail - {{ bt.numero }}{% endblock %}
 
 {% block body %}
+    {% set isTermineAtelier = false %}
+    {% if bt.planningLignes is defined and bt.planningLignes|length > 0 %}
+        {% for lignePlanning in bt.planningLignes %}
+            {% if lignePlanning.avancement == true %}
+                {% set isTermineAtelier = true %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    
+    {% set isPretPourLivraison = false %}
+    {% if bt.isPeseeValidee and isTermineAtelier %}
+        {% set isPretPourLivraison = true %}
+    {% endif %}
 <div class="bc-wrapper">
     {{ form_start(form, {'attr': {'class': 'bc-paper'}}) }}
     
@@ -124,6 +137,12 @@
                 {% for i in 1..5 %}
                 <tr><td colspan="7" style="height: 35px; border-bottom: 1px solid #000; border-right: 1px solid #000;"></td></tr>
                 {% endfor %}
+
+                <tr style="background-color: #f8faff; font-weight: bold;">
+                    <td colspan="5" style="text-align: right; padding-right: 15px; text-transform: uppercase;">Total Poids (Kg) :</td>
+                    <td style="text-align: right; padding-right: 5px; color: #2e46a6; font-size: 14px;" id="total-poids-display">0.00</td>
+                    <td></td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -144,9 +163,17 @@
         <a href="{{ path('app_reception_ordonnancement_home') }}" class="btn-cancel">
             <i class="fas fa-arrow-left"></i> Retour Ordonnancement
         </a>
+        
         <button type="submit" class="btn-confirm">
             <i class="fas fa-save"></i> ENREGISTRER LE BON
         </button>
+
+        {% if isPretPourLivraison %}
+            <a class ="btn-create-bl" title="Générer le Bon de Livraison">
+                <i class="fas fa-truck"></i> Créer le BL
+            </a>
+        {% endif %}
+
         <button type="button" class="btn-print" onclick="window.print()">
             <i class="fas fa-print"></i>
         </button>
@@ -155,6 +182,44 @@
     {{ form_rest(form) }}
     {{ form_end(form) }}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. On sélectionne l'endroit où afficher le total
+    const displayElement = document.getElementById('total-poids-display');
+    
+    // 2. On sélectionne tous les inputs de type "number" (ou texte) qui gèrent le poids
+    // (Dans Symfony, les champs poids du form s'appellent souvent de cette façon)
+    const weightInputs = document.querySelectorAll('input[id$="_poids"]');
+
+    function calculerTotal() {
+        let total = 0;
+        
+        weightInputs.forEach(input => {
+            // On récupère la valeur, on gère la virgule, on convertit en nombre
+            let val = parseFloat(input.value.replace(',', '.'));
+            
+            // Si c'est un vrai nombre (> 0), on l'ajoute au total
+            if (!isNaN(val) && val > 0) {
+                total += val;
+            }
+        });
+
+        // On affiche le total avec 2 décimales
+        if (displayElement) {
+            displayElement.textContent = total.toFixed(2);
+        }
+    }
+
+    // 3. On lance le calcul une fois au chargement de la page (au cas où il y a déjà des poids)
+    calculerTotal();
+
+    // 4. On écoute chaque modification pour recalculer en direct
+    weightInputs.forEach(input => {
+        input.addEventListener('input', calculerTotal);
+    });
+});
+</script>
 
 <style>
     /* --- CSS HARMONISÉ AVEC LE BON DE COMMANDE --- */
@@ -212,7 +277,12 @@
     .btn-confirm { flex: 2; background: #2e46a6; color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .btn-print { flex: 0 0 auto; background: #333; color: white; border: none; padding: 15px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
 
+    .btn-create-bl { flex: 1; background: #10b981; color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; text-decoration: none; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+    .btn-create-bl:hover { background: #059669; }
+
     @media print {
+        @page { margin: 0; }
+        body { margin: 1.5cm; }
         .no-print { display: none !important; }
         .bc-wrapper { padding: 0; background: white; }
         .bc-paper { box-shadow: none; border: none; padding: 0; margin: 0; max-width: 100%; }

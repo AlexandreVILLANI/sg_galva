@@ -3,6 +3,13 @@
         <h2 class="section-title">Bons de Travail</h2>
     </div>
 
+    {# --- AFFICHAGE DES MESSAGES D'ERREUR (Remonté ici pour être bien visible) --- #}
+    {% for message in app.flashes('error') %}
+        <div style="background: #fee2e2; color: #991b1b; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #f87171; text-align: center; font-weight: bold;">
+            <i class="fas fa-exclamation-triangle"></i> {{ message }}
+        </div>
+    {% endfor %}
+
     {# --- BARRE DE FILTRES BT --- #}
     <div class="filter-bar">
         <div class="filter-form">
@@ -38,6 +45,7 @@
             <span>REFI Associé</span>
             <span>Client</span>
             <span>Délai Client</span>
+            <span style="text-align: center;">Avancement</span>
             <span style="text-align: center;">Actions</span>
         </div>
 
@@ -66,11 +74,43 @@
                         </span>
                     </span>
 
-                    <span class="actions-cell" style="display: flex; justify-content: center; gap: 10px;">
+                    {# --- CELLULE : AVANCEMENT --- #}
+                    <span class="progress-cell" style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
+                        
+                        {# 1. BADGE PESÉE #}
+                        {% if bt.isPeseeValidee %}
+                            <span class="status-badge success" title="Pesée terminée"><i class="fas fa-weight"></i> Pesée OK</span>
+                        {% else %}
+                            <span class="status-badge pending" title="Pesée en attente"><i class="fas fa-weight"></i> Pesée...</span>
+                        {% endif %}
 
+                        {# 2. BADGE PLANNING #}
+                        {% set isTermineAtelier = false %}
+                        {% set isPlanifie = false %}
+                        
+                        {% if bt.planningLignes is defined and bt.planningLignes|length > 0 %}
+                            {% set isPlanifie = true %}
+                            {% for lignePlanning in bt.planningLignes %}
+                                {% if lignePlanning.avancement == true %}
+                                    {% set isTermineAtelier = true %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+
+                        {% if isTermineAtelier %}
+                            <span class="status-badge success" title="Terminé dans l'atelier"><i class="fas fa-check-double"></i> Fait (Atelier)</span>
+                        {% elseif isPlanifie %}
+                            <span class="status-badge warning" title="Dans le planning, en attente de réalisation"><i class="fas fa-calendar-check"></i> Planifié</span>
+                        {% else %}
+                            <span class="status-badge pending" title="Non planifié"><i class="fas fa-calendar-alt"></i> À planifier</span>
+                        {% endif %}
+                    </span>
+
+                    <span class="actions-cell" style="display: flex; justify-content: center; gap: 10px;">
                         <a href="{{ path('app_bon_travail_delete', {'id': bt.id}) }}" 
                         class="btn-action-delete-bt"
                         data-token="{{ csrf_token('delete_bt' ~ bt.id) }}"
+                        data-turbo-confirm="Voulez-vous vraiment supprimer ce Bon de Travail ?"
                         onclick="handleDeleteBT(event, this)">
                             <i class="fas fa-trash-alt"></i>
                         </a>
@@ -94,7 +134,8 @@ function handleDeleteBT(event, element) {
 
     const token = element.getAttribute('data-token');
     const url = element.getAttribute('href');
-    const confirmMsg = element.getAttribute('data-turbo-confirm');
+    // On sécurise la récupération du message (anti-null)
+    const confirmMsg = element.getAttribute('data-turbo-confirm') || "Voulez-vous supprimer cet élément ?";
 
     if (confirm(confirmMsg)) {
         // On crée un formulaire "fantôme" pour envoyer le POST avec le jeton CSRF
@@ -112,6 +153,7 @@ function handleDeleteBT(event, element) {
         form.submit();
     }
 }
+
 function setupBTFilters() {
     const inputSearch = document.getElementById('filterGeneralBT');
     const inputDate = document.getElementById('filterDateBT');
@@ -157,40 +199,65 @@ function setupBTFilters() {
     }
 }
 
-// À ajouter dans tes écouteurs d'événements existants
 document.addEventListener('turbo:load', () => {
-    setupOrdoFilters();
+    if (typeof setupOrdoFilters === 'function') setupOrdoFilters();
     setupBTFilters();
 });
 </script>
 
 <style>
-.btn-action-delete-bt {
+    .btn-action-delete-bt {
         background: none;
         border: none;
-        color: #9ca3af; /* Gris par défaut */
+        color: #9ca3af;
         cursor: pointer;
         padding: 0;
         transition: 0.2s;
     }
 
     .btn-action-delete-bt:hover {
-        color: #ef4444; /* Rouge au survol */
+        color: #ef4444; 
         transform: scale(1.2);
     }
 
-    /* Optionnel : ajuster la largeur de la colonne action si besoin */
     .bt-grid-template { 
-        grid-template-columns: 160px 140px 1fr 140px 100px !important; 
-    }
-    /* Template de grille spécifique pour le BT */
-    .bt-grid-template { 
-        grid-template-columns: 160px 140px 1fr 140px 80px !important; 
+        grid-template-columns: 160px 140px 1fr 140px 120px 80px !important; 
+        align-items: center; 
     }
 
-    /* Badge spécifique pour les délais */
     .badge-info i { margin-right: 4px; font-size: 10px; }
     
-    /* Couleur dorée pour les éléments BT */
     .btn-edit-simple .fa-file-invoice:hover { transform: scale(1.2); }
+
+    /* Styles pour les petits badges d'avancement */
+    .status-badge {
+        font-size: 10px;
+        font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 12px;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        width: 105px; 
+        justify-content: center;
+    }
+    
+    .status-badge.success {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+    
+    .status-badge.pending {
+        background-color: #f3f4f6;
+        color: #6b7280;
+        border: 1px solid #e5e7eb;
+    }
+
+    .status-badge.warning {
+        background-color: #fef08a;
+        color: #854d0e;
+        border: 1px solid #fde047;
+    }
 </style>
