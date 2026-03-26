@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -13,6 +14,8 @@ use App\Repository\BonDeCommandeRepository;
 use App\Repository\BonTravailRepository;
 use App\Repository\PlanningRepository; 
 use App\Repository\ClientRepository;
+use App\Repository\BonLivraisonRepository;
+
 use App\Entity\Client;
 
 use Doctrine\ORM\EntityManagerInterface;
@@ -126,14 +129,17 @@ class HomeController extends AbstractController
     #[IsGranted('ROLE_RECEPTION_ORDONNANCEMENT')]
     public function receptionOrdonnancementIndex(
         BonDeCommandeRepository $bcRepository,
-        BonTravailRepository $btRepository
+        BonTravailRepository $btRepository,
+        BonLivraisonRepository $blRepo
     ): Response {
         $bons = $bcRepository->findBy([], ['date' => 'DESC']);
         $bons_travail = $btRepository->findBy([], ['dateCreation' => 'DESC']);
+        $bonsLivraison = $blRepo->findBy([], ['id' => 'DESC']);
 
         return $this->render('home/reception_ordonnancement.html.twig', [
             'bons' => $bons,
             'bons_travail' => $bons_travail,
+            'bons_livraison' => $bonsLivraison,
         ]);
     }
 

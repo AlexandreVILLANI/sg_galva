@@ -21,6 +21,11 @@
                     <i class="fas fa-tools"></i>
                     <span>Bon de travail</span>
                 </a>
+                {# --- NOUVEL ONGLET BL --- #}
+                <a href="#" class="nav-item" data-target="list-bons-livraison">
+                    <i class="fas fa-truck"></i>
+                    <span>Bon de livraison</span>
+                </a>
             </nav>
         </div>
 
@@ -54,8 +59,11 @@
             {# 1. Liste des Bons de Commande (Dali) #}
             {{ include('components/reception-ordonnancement/_list_bon_commande.html.twig') }}
 
-            {# 2. Liste des Bons de Travail (Atelier) --- À CRÉER --- #}
+            {# 2. Liste des Bons de Travail (Atelier) #}
             {{ include('components/reception-ordonnancement/_list_bon_travail.html.twig') }}
+
+            {# 3. Liste des Bons de Livraison --- LE FUTUR FICHIER --- #}
+            {{ include('components/reception-ordonnancement/_list_bon_livraison.html.twig') }}
         </div>
     </main>
 </div>
@@ -90,7 +98,9 @@
 
                 // 4. Relancer les scripts de filtrage spécifiques à la section
                 if (id === 'list-bons-ordo' && typeof setupOrdoFilters === 'function') setupOrdoFilters();
-                if (id === 'list-bons-travail' && typeof setupOrdoBTFilters === 'function') setupOrdoBTFilters();            }
+                if (id === 'list-bons-travail' && typeof setupBTFilters === 'function') setupBTFilters();
+                if (id === 'list-bons-livraison' && typeof setupBLFilters === 'function') setupBLFilters(); // NOUVEAU
+            }
         }
 
         navItems.forEach(item => {
@@ -128,6 +138,7 @@
         --sidebar-width: 260px;
         --primary-blue: #2e46a6;
         --primary-gold: #dcb35c; /* Couleur pour le Bon de Travail */
+        --primary-green: #10b981; /* NOUVEAU : Couleur pour le BL */
         --text-gray: #6b7280;
         --bg-gray: #f9fafb;
         --border-color: #f3f4f6;
@@ -169,6 +180,10 @@
     .nav-item[data-target="list-bons-travail"].active { 
         color: var(--primary-gold); font-weight: 600; background: #fffdf5; border-right: 3px solid var(--primary-gold); 
     }
+    /* NOUVEAU : Style pour le BL */
+    .nav-item[data-target="list-bons-livraison"].active { 
+        color: var(--primary-green); font-weight: 600; background: #ecfdf5; border-right: 3px solid var(--primary-green); 
+    }
 
     .sidebar-footer { padding: 15px 20px; border-top: 1px solid var(--border-color); }
     .logout-link { color: #ef4444; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; }
@@ -204,6 +219,5 @@
         from { opacity: 0; transform: translateY(5px); }
         to { opacity: 1; transform: translateY(0); }
     }
-    
 </style>
 {% endblock %}

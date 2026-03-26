@@ -1,0 +1,177 @@
+<section id="list-bons-livraison" class="content-section" style="display: none;">
+    <div class="section-header">
+        <h2 class="section-title">Bons de Livraison</h2>
+    </div>
+
+    {# --- BARRE DE FILTRES BL --- #}
+    <div class="filter-bar">
+        <div class="filter-form">
+            <div class="filter-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="filterGeneralBL" placeholder="N° BL, Client ou Transporteur...">
+            </div>
+
+            <div class="filter-group">
+                <i class="fas fa-calendar-alt"></i>
+                <input type="date" id="filterDateBL">
+            </div>
+
+            <div class="filter-group">
+                <i class="fas fa-signature"></i>
+                <select id="filterStatusBL">
+                    <option value="">Tous les états</option>
+                    <option value="signe">Signé</option>
+                    <option value="attente">En attente de signature</option>
+                </select>
+            </div>
+            
+            <a href="#" class="btn-reset" id="resetBLFilters" title="Réinitialiser">
+                <i class="fas fa-sync-alt"></i>
+            </a>
+        </div>
+    </div>
+
+    {# --- TABLEAU --- #}
+    <div class="table-container">
+        <div class="table-grid header bl-grid-template">
+            <span>N° BL / Date</span>
+            <span>Origine (BT/REFI)</span>
+            <span>Client</span>
+            <span>Transporteur</span>
+            <span style="text-align: center;">Statut</span>
+            <span style="text-align: center;">Actions</span>
+        </div>
+
+        <div id="blTableBody">
+            {# Attention : assurez-vous que votre contrôleur de tableau de bord passe bien la variable 'bons_livraison' #}
+            {% for bl in bons_livraison %}
+                <div class="table-grid row clickable-row bl-grid-template" 
+                     data-blnum="{{ bl.numero|lower }}"
+                     data-client="{{ bl.bonTravail.bonCommande.client.nom|lower }}" 
+                     data-transporteur="{{ bl.transporteur|default('')|lower }}"
+                     data-date="{{ bl.dateCreation|date('Y-m-d') }}"
+                     data-status="{{ bl.signature ? 'signe' : 'attente' }}"
+                     onclick="window.location='{{ path('app_livraison_show', {'id': bl.id}) }}'">
+                    
+                    <div class="ref-cell-group">
+                        <span class="ref-cell" style="color: #10b981;">{{ bl.numero }}</span>
+                        <small class="date-subtext">Créé le {{ bl.dateCreation|date('d/m/Y') }}</small>
+                    </div>
+
+                    <div class="ref-cell-group">
+                        <span class="ref-cell" style="font-size: 12px; color: #4b5563;">{{ bl.bonTravail.numero }}</span>
+                        <small class="date-subtext">Réf: {{ bl.bonTravail.bonCommande.refi }}</small>
+                    </div>
+
+                    <span class="client-cell" style="font-weight: 500;">
+                        {{ bl.bonTravail.bonCommande.client.nom }}
+                    </span>
+
+                    <span class="transporteur-cell">
+                        {% if bl.transporteur %}
+                            <div style="font-weight: 500; font-size: 13px;">{{ bl.transporteur }}</div>
+                            {% if bl.immatriculation %}
+                                <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">
+                                    <i class="fas fa-car" style="margin-right:3px;"></i>{{ bl.immatriculation }}
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <span style="color: #9ca3af; font-style: italic;">Non renseigné</span>
+                        {% endif %}
+                    </span>
+
+                    {# CELLULE STATUT (SIGNATURE) #}
+                    <span class="progress-cell" style="display: flex; justify-content: center; align-items: center;">
+                        {% if bl.signature %}
+                            <span class="status-badge success" title="Document signé par le transporteur">
+                                <i class="fas fa-file-signature"></i> Signé
+                            </span>
+                        {% else %}
+                            <span class="status-badge pending" title="En attente de signature">
+                                <i class="fas fa-pen"></i> À signer
+                            </span>
+                        {% endif %}
+                    </span>
+
+                    <span class="actions-cell" style="display: flex; justify-content: center; gap: 10px;">
+                        <a href="{{ path('app_livraison_show', {'id': bl.id}) }}" class="btn-action-view" title="Ouvrir le BL">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </span>
+                </div>
+            {% else %}
+                <div class="no-data">
+                    <i class="fas fa-truck" style="font-size: 24px; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+                    <span>Aucun bon de livraison généré.</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<script>
+function setupBLFilters() {
+    const inputSearch = document.getElementById('filterGeneralBL');
+    const inputDate = document.getElementById('filterDateBL');
+    const selectStatus = document.getElementById('filterStatusBL');
+    const btnReset = document.getElementById('resetBLFilters');
+    
+    const rows = document.querySelectorAll('#blTableBody .row');
+
+    if (!inputSearch || rows.length === 0) return;
+
+    function filterTable() {
+        const valSearch = inputSearch.value.toLowerCase().trim();
+        const valDate = inputDate.value;
+        const valStatus = selectStatus.value;
+
+        rows.forEach(row => {
+            const rowBl = row.dataset.blnum || "";
+            const rowClient = row.dataset.client || "";
+            const rowTransp = row.dataset.transporteur || "";
+            const rowDate = row.dataset.date || "";
+            const rowStatus = row.dataset.status || "";
+
+            const matchesSearch = rowBl.includes(valSearch) || rowClient.includes(valSearch) || rowTransp.includes(valSearch);
+            const matchesDate = valDate === "" || rowDate === valDate;
+            const matchesStatus = valStatus === "" || rowStatus === valStatus;
+
+            row.style.display = (matchesSearch && matchesDate && matchesStatus) ? 'grid' : 'none';
+        });
+    }
+
+    [inputSearch, inputDate, selectStatus].forEach(el => {
+        el.addEventListener(el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input', filterTable);
+    });
+
+    if (btnReset) {
+        btnReset.addEventListener('click', (e) => {
+            e.preventDefault();
+            inputSearch.value = '';
+            inputDate.value = '';
+            selectStatus.value = '';
+            filterTable();
+        });
+    }
+}
+</script>
+
+<style>
+    /* La grille pour le BL (légèrement différente pour inclure le transporteur) */
+    .bl-grid-template { 
+        grid-template-columns: 140px 140px 1fr 180px 100px 80px !important; 
+        align-items: center; 
+    }
+
+    .btn-action-view {
+        color: #2e46a6;
+        background: #f0f4ff;
+        padding: 6px 10px;
+        border-radius: 4px;
+        transition: 0.2s;
+    }
+    .btn-action-view:hover {
+        background: #2e46a6;
+        color: white;
+    }
+</style>

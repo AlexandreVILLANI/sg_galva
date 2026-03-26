@@ -155,21 +155,21 @@
     </div>
 
     <div class="bc-footer-info">
-        <div><strong>Mise à dispo. atelier :</strong> {{ "now"|date('d/m/Y H:i') }}</div>
+        <div><strong>MSIE à dispo. atelier :</strong> {{ "now"|date('d/m/Y H:i') }}</div>
         <div><strong>Règlement :</strong> SOUP.RGT.CPT.</div>
     </div>
 
     <div class="bc-actions no-print">
         <a href="{{ path('app_reception_ordonnancement_home') }}" class="btn-cancel">
-            <i class="fas fa-arrow-left"></i> Retour Ordonnancement
+            <i class="fas fa-arrow-left"></i> Retour
         </a>
         
         <button type="submit" class="btn-confirm">
-            <i class="fas fa-save"></i> ENREGISTRER LE BON
+            <i class="fas fa-save"></i> ENREGISTRER LE BON 
         </button>
 
         {% if isPretPourLivraison %}
-            <a class ="btn-create-bl" title="Générer le Bon de Livraison">
+            <a href="{{ path('app_livraison_new', {'id': bt.id}) }}" class="btn-create-bl" title="Générer le Bon de Livraison">
                 <i class="fas fa-truck"></i> Créer le BL
             </a>
         {% endif %}

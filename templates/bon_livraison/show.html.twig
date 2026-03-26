@@ -1,0 +1,314 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bon de Livraison - {{ bl.numero }}{% endblock %}
+
+{% block body %}
+<div class="bc-wrapper">
+    {{ form_start(form, {'attr': {'class': 'bc-paper', 'id': 'form-bl'}}) }}
+    
+    {# --- AFFICHAGE DES MESSAGES DE SUCCÈS --- #}
+    {% for message in app.flashes('success') %}
+        <div style="background: #dcfce7; color: #166534; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #bbf7d0; text-align: center; font-weight: bold;">
+            <i class="fas fa-check-circle"></i> {{ message }}
+        </div>
+    {% endfor %}
+
+    {# --- ENTÊTE --- #}
+    <div class="bc-header">
+        <div class="bc-logo-container">
+            <img src="{{ asset('images/sg-galva-logo.png') }}" alt="Logo" class="bc-logo">
+        </div>
+        <div class="bc-title-container">
+            <h1>BON DE LIVRAISON</h1>
+            <p style="text-align:center; color:#2e46a6; font-weight:bold; margin-top:5px;">Réf. Commande : {{ commande.refi }}</p>
+        </div>
+        <div class="bc-refi-container">
+            <label>N° BL -</label>
+            <input type="text" class="refi-input-ghost" value="{{ bl.numero }}" readonly>
+            <div style="font-size: 12px; font-weight: normal; color: #666; margin-top: 5px;">
+                (Issu du BT : {{ bt.numero }})
+            </div>
+        </div>
+    </div>
+
+    {# --- GRILLE MILIEU : ADRESSES --- #}
+    <div class="bc-middle-grid">
+        <div class="bc-box client-box">
+            <p class="box-label">ADRESSE DE FACTURATION</p>
+            <div class="frame-content">
+                <strong>{{ commande.fiche.client.nom }}</strong><br>
+                {{ commande.fiche.client.adresseFacturation|nl2br }}<br>
+                {{ commande.fiche.client.codePostal }} {{ commande.fiche.client.ville }}
+            </div>
+        </div>
+        <div class="bc-box driver-box">
+            <p class="box-label">ADRESSE DE LIVRAISON</p>
+            <div class="frame-content">
+                <strong>{{ commande.fiche.client.nom }}</strong><br>
+                {{ commande.fiche.client.adresseLivraison|default(commande.fiche.client.adresseFacturation)|nl2br }}<br>
+                {{ commande.fiche.client.codePostal }} {{ commande.fiche.client.ville }}
+            </div>
+        </div>
+    </div>
+
+    {# --- TABLEAU DES MARCHANDISES --- #}
+    <div class="bc-box description-box table-wrapper">
+        <table class="bc-table">
+            <thead>
+                <tr>
+                    <th width="10%">Qté Paquets</th>
+                    <th width="40%">Désignation</th>
+                    <th width="20%">Référence</th>
+                    <th width="30%">Poids Net (Kg)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set totalPoids = 0 %}
+                {% for ligne in bt.lignes %}
+                    <tr>
+                        <td class="center bold">{{ ligne.nbPaquets }}</td>
+                        <td class="designation"><strong>{{ ligne.description }}</strong></td>
+                        <td class="center">{{ ligne.reference|default('-') }}</td>
+                        <td class="right" style="padding-right: 15px;">{{ ligne.poids|number_format(2, ',', ' ') }}</td>
+                    </tr>
+                    {% set totalPoids = totalPoids + (ligne.poids|default(0)) %}
+                {% else %}
+                    <tr><td colspan="4" class="center muted">Aucune marchandise trouvée.</td></tr>
+                {% endfor %}
+                
+                {# Ligne du total #}
+                <tr style="background-color: #f8faff; font-weight: bold;">
+                    <td colspan="3" style="text-align: right; padding-right: 15px; text-transform: uppercase;">Total Poids (Kg) :</td>
+                    <td style="text-align: right; padding-right: 15px; color: #2e46a6; font-size: 14px;">{{ totalPoids|number_format(2, ',', ' ') }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {# --- ZONE TRANSPORTEUR & SIGNATURE --- #}
+    <div class="bc-box">
+        <p class="box-label">INFORMATIONS DE TRANSPORT ET ENLÈVEMENT</p>
+        <div class="tech-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr;">
+            <div class="tech-col">
+                <span class="label">DATE ENLÈVEMENT :</span>
+                {{ form_widget(form.dateEnlevement) }}
+            </div>
+            <div class="tech-col">
+                <span class="label">TRANSPORTEUR :</span>
+                {{ form_widget(form.transporteur) }}
+            </div>
+            <div class="tech-col">
+                <span class="label">CHAUFFEUR :</span>
+                {{ form_widget(form.chauffeur) }}
+            </div>
+            <div class="tech-col">
+                <span class="label">IMMATRICULATION :</span>
+                {{ form_widget(form.immatriculation) }}
+            </div>
+        </div>
+
+        {# Le champ caché qui contient la signature générée par Symfony #}
+        {{ form_widget(form.signature) }}
+
+        <div style="margin-top: 20px; border-top: 1px dashed #ccc; padding-top: 15px; text-align: center;">
+            <span class="label" style="display:block; margin-bottom:10px;">SIGNATURE DU CHAUFFEUR :</span>
+            
+            {# --- LOGIQUE D'AFFICHAGE DE LA SIGNATURE --- #}
+            {% if bl.signature %}
+                {# 1. S'il y a déjà une signature, on l'affiche #}
+                <div id="existing-signature-container">
+                    <img src="{{ bl.signature }}" alt="Signature Chauffeur" style="max-height: 120px; border-bottom: 2px solid #2e46a6; padding-bottom: 5px;">
+                    <br>
+                    <button type="button" id="btn-edit-signature" class="no-print" style="margin-top: 10px; background: #6b7280; color: white; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        <i class="fas fa-pen"></i> Modifier la signature
+                    </button>
+                </div>
+                {# Le canvas est caché par défaut #}
+                <div id="canvas-container" style="display: none; position: relative;">
+                    <canvas id="signature-pad" width="500" height="200" style="border: 2px solid #2e46a6; border-radius: 8px; background: #f8faff; cursor: crosshair; touch-action: none; display: inline-block;"></canvas>
+                    <br>
+                    <button type="button" id="clear-signature" style="margin-top: 5px; background: #e06e54; color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        <i class="fas fa-eraser"></i> Effacer
+                    </button>
+                    <button type="button" id="cancel-edit-signature" style="margin-top: 5px; background: #6b7280; color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px;">
+                        Annuler
+                    </button>
+                </div>
+            {% else %}
+                {# 2. S'il n'y a PAS de signature, on affiche directement le canvas #}
+                <div id="canvas-container" style="display: inline-block; position: relative;">
+                    <canvas id="signature-pad" width="500" height="200" style="border: 2px solid #2e46a6; border-radius: 8px; background: #f8faff; cursor: crosshair; touch-action: none;"></canvas>
+                    <br>
+                    <button type="button" id="clear-signature" style="margin-top: 5px; background: #e06e54; color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        <i class="fas fa-eraser"></i> Effacer
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bc-actions no-print">
+        <a href="{{ path('app_reception_ordonnancement_home', {'section': 'list-bons-livraison'}) }}" class="btn-cancel" style="background: #6b7280;">
+            <i class="fas fa-arrow-left"></i> Retour Liste BL
+        </a>
+        <button type="button" class="btn-print" onclick="window.print()" style="background: #374151;">
+            <i class="fas fa-print"></i> Imprimer
+        </button>
+        <button type="submit" class="btn-confirm" id="btn-save-bl">
+            <i class="fas fa-check-circle"></i> ENREGISTRER LE BL
+        </button>
+    </div>
+
+    {{ form_end(form) }}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvas = document.getElementById('signature-pad');
+        const ctx = canvas ? canvas.getContext('2d') : null;
+        const form = document.getElementById('form-bl');
+        
+        // Cible le champ caché du formulaire (vérifiez l'ID si ça ne sauvegarde pas)
+        const signatureInput = document.getElementById('bon_livraison_signature'); 
+        
+        // Éléments d'interface pour la modification
+        const existingContainer = document.getElementById('existing-signature-container');
+        const canvasContainer = document.getElementById('canvas-container');
+        const btnEditSig = document.getElementById('btn-edit-signature');
+        const btnCancelEdit = document.getElementById('cancel-edit-signature');
+        const clearBtn = document.getElementById('clear-signature');
+
+        let isDrawing = false;
+        let isSignatureModified = false;
+
+        // --- GESTION DE L'AFFICHAGE DU CANVAS ---
+        if (btnEditSig) {
+            btnEditSig.addEventListener('click', () => {
+                existingContainer.style.display = 'none';
+                canvasContainer.style.display = 'inline-block';
+                isSignatureModified = true;
+                signatureInput.value = ''; // On vide l'ancienne valeur
+            });
+        }
+
+        if (btnCancelEdit) {
+            btnCancelEdit.addEventListener('click', () => {
+                existingContainer.style.display = 'block';
+                canvasContainer.style.display = 'none';
+                isSignatureModified = false;
+                // On remet l'ancienne valeur (elle était stockée dans l'attribut value d'origine)
+                signatureInput.value = signatureInput.defaultValue; 
+                if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+        }
+
+        // --- GESTION DU DESSIN ---
+        if (canvas && ctx) {
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#000000';
+
+            function startPosition(e) {
+                isDrawing = true;
+                draw(e);
+            }
+
+            function endPosition() {
+                isDrawing = false;
+                ctx.beginPath();
+            }
+
+            function draw(e) {
+                if (!isDrawing) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                let clientX, clientY;
+
+                if (e.type.includes('touch')) {
+                    e.preventDefault(); 
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+
+                ctx.lineTo(clientX - rect.left, clientY - rect.top);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(clientX - rect.left, clientY - rect.top);
+            }
+
+            canvas.addEventListener('mousedown', startPosition);
+            canvas.addEventListener('mouseup', endPosition);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseout', endPosition);
+
+            canvas.addEventListener('touchstart', startPosition, { passive: false });
+            canvas.addEventListener('touchend', endPosition);
+            canvas.addEventListener('touchmove', draw, { passive: false });
+
+            clearBtn.addEventListener('click', () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                signatureInput.value = ''; 
+            });
+        }
+
+        // --- SAUVEGARDE AU MOMENT DU SUBMIT ---
+        form.addEventListener('submit', function(e) {
+            // Si on utilise le canvas (soit parce qu'il n'y avait pas de signature, soit on a cliqué sur "Modifier")
+            if (canvas && canvasContainer.style.display !== 'none') {
+                const blank = document.createElement('canvas');
+                blank.width = canvas.width;
+                blank.height = canvas.height;
+                
+                // Si le canvas n'est pas vide, on génère l'image Base64
+                if (canvas.toDataURL() !== blank.toDataURL()) {
+                    signatureInput.value = canvas.toDataURL('image/png');
+                } else if (isSignatureModified) {
+                    // Si on a modifié mais qu'on a laissé vide, on s'assure de vider le champ
+                    signatureInput.value = '';
+                }
+            }
+        });
+    });
+</script>
+
+<style>
+    .bc-wrapper { background: #f0f0f0; min-height: 100vh; padding: 40px 20px; font-family: Arial, sans-serif; color: #1a1a1a; }
+    .bc-paper { max-width: 900px; margin: 0 auto; background: white; padding: 40px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+    .bc-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; position: relative; }
+    .bc-header { display: grid; grid-template-columns: 1fr 2fr 1.5fr; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+    .bc-logo { max-width: 120px; }
+    .bc-title-container h1 { font-size: 22px; font-weight: 800; text-align: center; margin: 0; }
+    .bc-refi-container { text-align: right; font-size: 20px; font-weight: bold; }
+    .refi-input-ghost { border: none; font-weight: bold; font-size: 20px; width: 140px; text-align: right; outline: none; background: transparent; }
+    .bc-middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 20px; }
+    .box-label { font-weight: bold; font-size: 11px; color: #666; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; }
+    .table-wrapper { padding: 0; border: 1px solid #000; overflow: hidden; }
+    .bc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .bc-table th { background: #f0f0f0; border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 8px 5px; text-align: left; font-size: 11px; text-transform: uppercase; }
+    .bc-table th:last-child { border-right: none; }
+    .bc-table td { border-bottom: 1px solid #000; border-right: 1px solid #000; height: 35px; vertical-align: middle; padding: 5px; }
+    .bc-table td:last-child { border-right: none; }
+    .tech-grid { display: grid; gap: 15px; }
+    .label { font-weight: bold; font-size: 11px; text-transform: uppercase; margin-right: 5px; color: #444; }
+    .ghost-input { border: none; border-bottom: 1px dashed #2e46a6; outline: none; font-family: inherit; font-size: 13px; padding: 2px 0; background: transparent; width: 100%; }
+    .ghost-input:focus { border-bottom: 1px solid #2e46a6; background: #f8faff; }
+    .bc-actions { display: flex; gap: 15px; margin-top: 30px; }
+    .btn-cancel { flex: 1; color: white; padding: 15px; text-align: center; border-radius: 5px; text-decoration: none; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-confirm { flex: 2; background: #10b981; color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-print { flex: 1; color: white; border: none; padding: 15px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .center { text-align: center; } .right { text-align: right; } .bold { font-weight: bold; }
+
+    @media print {
+        @page { margin: 0; }
+        body { margin: 1.5cm; }
+        .no-print { display: none !important; }
+        .bc-wrapper { padding: 0; background: white; }
+        .bc-paper { box-shadow: none; border: none; padding: 0; margin: 0; max-width: 100%; }
+        .bc-box, .table-wrapper { border: 1px solid #000; }
+        .ghost-input { border-bottom: none; }
+    }
+</style>
+{% endblock %}
