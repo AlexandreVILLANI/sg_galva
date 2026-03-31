@@ -33,6 +33,18 @@ class LigneTravailType extends AbstractType
                 'scale' => 2,
                 'attr' => ['class' => 'cell-input right', 'placeholder' => '0.00', 'step' => '0.01']
             ])
+            
+            // --- C'EST ICI QU'ON AJOUTE LE PRIX À LA TONNE ---
+            ->add('prixTonne', NumberType::class, [
+                'required' => false,
+                'scale' => 2,
+                'attr' => [
+                    'class' => 'cell-input center', 
+                    'placeholder' => '€/T', 
+                    'step' => '0.01'
+                ]
+            ])
+            
             ->add('observations', TextareaType::class, [
                 'required' => false,
                 'attr' => ['class' => 'cell-input', 'rows' => 1, 'placeholder' => '-']

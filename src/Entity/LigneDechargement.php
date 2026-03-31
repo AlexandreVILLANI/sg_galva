@@ -43,6 +43,9 @@ class LigneDechargement
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $observations = null; // Observations générales
 
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    private ?float $prixTonne = null;
+
     // --- GETTERS ET SETTERS ---
 
     public function getId(): ?int { return $this->id; }
@@ -73,4 +76,7 @@ class LigneDechargement
 
     public function getObservations(): ?string { return $this->observations; }
     public function setObservations(?string $observations): self { $this->observations = $observations; return $this; }
+
+    public function getPrixTonne(): ?float { return $this->prixTonne; }
+    public function setPrixTonne(?float $prixTonne): self { $this->prixTonne = $prixTonne; return $this; }
 }

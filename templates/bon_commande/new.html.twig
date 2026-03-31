@@ -115,21 +115,32 @@
         </div>
 
         {# --- ZONE DESCRIPTION --- #}
-        <div class="bc-box description-box">
-            <div class="desc-main">
-                <p><strong>DÉTAILS DU DÉCHARGEMENT</strong></p>
-                <ul class="bc-tech-list">
-                    {% for ligne in fiche.lignes %}
-                        <li>
-                            <strong>{{ ligne.nbPaquets }}</strong> Paquet{{ ligne.nbPaquets > 1 ? 's' : '' }} 
-                            de <strong>{{ ligne.description|default('(Produit non précisé)') }}</strong>
-                            — Situé en : <strong>{{ ligne.emplacement.nom }}</strong>
-                        </li>
+        <div class="bc-box description-box table-wrapper">
+            <p class="box-label">DÉTAILS DU DÉCHARGEMENT</p>
+            <table class="bc-table mt-2">
+                <thead>
+                    <tr>
+                        <th width="15%" class="center">Nb Paquets</th>
+                        <th width="50%">Désignation</th>
+                        <th width="35%">Emplacement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {# On boucle directement sur le sous-formulaire que l'on vient de créer #}
+                    {% for ligneForm in form.lignes %}
+                        <tr>
+                            <td class="p-0 center">{{ form_widget(ligneForm.nbPaquets, {'attr': {'class': 'cell-input center fw-bold text-blue'}}) }}</td>
+                            <td class="p-0">{{ form_widget(ligneForm.description, {'attr': {'class': 'cell-input fw-bold'}}) }}</td>
+                            <td class="p-0">{{ form_widget(ligneForm.emplacement, {'attr': {'class': 'cell-input'}}) }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="3" class="center muted py-3">Aucune ligne trouvée.</td></tr>
                     {% endfor %}
-                </ul>
-                <div class="mt-4">
-                    <p>TOTAL : {{ fiche.totalPaquets }}</p>
-                </div>
+                </tbody>
+            </table>
+            
+            <div class="mt-3 no-print alert-info-soft">
+                <i class="fas fa-info-circle"></i> Modifiez les quantités, descriptions ou emplacements directement dans le tableau. Les changements mettront à jour la fiche d'origine lors de la sauvegarde.
             </div>
         </div>
 
@@ -358,6 +369,78 @@
         .no-print, .ts-wrapper { display: none !important; } 
         .bc-wrapper { padding: 0; background: white; } 
         .bc-paper { box-shadow: none; border: none; max-width: 100%; } 
+    }
+
+    .table-wrapper { padding: 0; border: 1px solid #e5e7eb; overflow: hidden; margin-top: 10px; border-radius: 6px; }
+    .bc-table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; }
+    
+    .bc-table th { 
+        background: #f8fafc; 
+        border-bottom: 2px solid #e2e8f0; 
+        padding: 10px 8px; 
+        text-align: left; 
+        font-size: 11px; 
+        text-transform: uppercase; 
+        color: #64748b;
+        letter-spacing: 0.5px;
+    }
+    
+    .bc-table td { 
+        border-bottom: 1px solid #f1f5f9; 
+        height: 40px; 
+        vertical-align: middle; 
+        transition: background-color 0.2s;
+    }
+    
+    .bc-table tbody tr:hover td {
+        background-color: #f8fafc;
+    }
+
+    .bc-table tr:last-child td { border-bottom: none; }
+    
+    /* Inputs invisibles qui deviennent actifs au focus */
+    .p-0 { padding: 0 !important; }
+    .cell-input { 
+        width: 100%; 
+        height: 40px; /* Aligné sur la hauteur du td */
+        border: 2px solid transparent; /* Bordure transparente par défaut */
+        background: transparent; 
+        padding: 0 10px; 
+        box-sizing: border-box; 
+        font-family: inherit; 
+        font-size: 13px; 
+        color: #334155;
+        transition: all 0.2s ease;
+        border-radius: 4px;
+    }
+    
+    .cell-input:hover {
+        background: #f1f5f9;
+    }
+
+    .cell-input:focus { 
+        background: #ffffff; 
+        border: 2px solid #2e46a6; 
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 70, 166, 0.1);
+    }
+
+    /* Utilitaires de texte pour le tableau */
+    .center { text-align: center; }
+    .fw-bold { font-weight: 600; }
+    .text-blue { color: #2e46a6; }
+
+    /* Petit message d'information stylisé */
+    .alert-info-soft {
+        background-color: #f0fdf4;
+        color: #166534;
+        padding: 10px 15px;
+        border-radius: 6px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #bbf7d0;
     }
 </style>
 {% endblock %}

@@ -51,35 +51,55 @@
         </div>
     </div>
 
-    {# --- TABLEAU DES MARCHANDISES --- #}
+    {# --- TABLEAU DES MARCHANDISES (DESIGN MODERNE ET COMPLET) --- #}
     <div class="bc-box description-box table-wrapper">
-        <table class="bc-table">
+        <p class="box-label">DÉTAILS DES MARCHANDISES LIVRÉES</p>
+        <table class="bc-table mt-2">
             <thead>
                 <tr>
-                    <th width="10%">Qté Paquets</th>
-                    <th width="40%">Désignation</th>
-                    <th width="20%">Référence</th>
-                    <th width="30%">Poids Net (Kg)</th>
+                    <th width="8%" class="center">Qté</th>
+                    <th width="25%">Désignation</th>
+                    <th width="5%" class="center">U</th>
+                    <th width="12%">Référence</th>
+                    <th width="15%">Trav. Annexes</th>
+                    <th width="10%" class="right">Poids (Kg)</th>
+                    <th width="10%" class="center">Prix/T</th>
+                    <th width="15%">Observations</th>
                 </tr>
             </thead>
             <tbody>
                 {% set totalPoids = 0 %}
                 {% for ligne in bt.lignes %}
                     <tr>
-                        <td class="center bold">{{ ligne.nbPaquets }}</td>
-                        <td class="designation"><strong>{{ ligne.description }}</strong></td>
-                        <td class="center">{{ ligne.reference|default('-') }}</td>
-                        <td class="right" style="padding-right: 15px;">{{ ligne.poids|number_format(2, ',', ' ') }}</td>
+                        <td class="center fw-bold text-blue">{{ ligne.nbPaquets }}</td>
+                        <td class="designation">
+                            <strong class="fw-bold">{{ ligne.description|default('-') }}</strong>
+                            {% if ligne.emplacement %}
+                                <div class="sub-info">Emp: {{ ligne.emplacement.nom }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="center">{{ ligne.u|default('-') }}</td>
+                        <td>{{ ligne.reference|default('-') }}</td>
+                        <td>{{ ligne.travauxAnnexes|default('-') }}</td>
+                        
+                        <td class="right fw-bold">{{ ligne.poids ? ligne.poids|number_format(2, ',', ' ') : '-' }}</td>
+                        
+                        <td class="center fw-bold text-green">
+                            {{ ligne.prixTonne ? ligne.prixTonne|number_format(2, ',', ' ') ~ ' €' : '-' }}
+                        </td>
+                        
+                        <td><span style="font-size: 11px; color: #64748b;">{{ ligne.observations|default('-') }}</span></td>
                     </tr>
                     {% set totalPoids = totalPoids + (ligne.poids|default(0)) %}
                 {% else %}
-                    <tr><td colspan="4" class="center muted">Aucune marchandise trouvée.</td></tr>
+                    <tr><td colspan="8" class="center muted py-3">Aucune marchandise trouvée.</td></tr>
                 {% endfor %}
                 
                 {# Ligne du total #}
-                <tr style="background-color: #f8faff; font-weight: bold;">
-                    <td colspan="3" style="text-align: right; padding-right: 15px; text-transform: uppercase;">Total Poids (Kg) :</td>
-                    <td style="text-align: right; padding-right: 15px; color: #2e46a6; font-size: 14px;">{{ totalPoids|number_format(2, ',', ' ') }}</td>
+                <tr style="background-color: #f8faff; font-weight: bold; border-top: 2px solid #e2e8f0;">
+                    <td colspan="5" style="text-align: right; padding-right: 15px; text-transform: uppercase; color: #64748b;">Total Poids (Kg) :</td>
+                    <td style="text-align: right; color: #2e46a6; font-size: 14px;">{{ totalPoids|number_format(2, ',', ' ') }}</td>
+                    <td colspan="2"></td>
                 </tr>
             </tbody>
         </table>
@@ -167,11 +187,8 @@
         const canvas = document.getElementById('signature-pad');
         const ctx = canvas ? canvas.getContext('2d') : null;
         const form = document.getElementById('form-bl');
-        
-        // Cible le champ caché du formulaire (vérifiez l'ID si ça ne sauvegarde pas)
         const signatureInput = document.getElementById('bon_livraison_signature'); 
         
-        // Éléments d'interface pour la modification
         const existingContainer = document.getElementById('existing-signature-container');
         const canvasContainer = document.getElementById('canvas-container');
         const btnEditSig = document.getElementById('btn-edit-signature');
@@ -181,13 +198,12 @@
         let isDrawing = false;
         let isSignatureModified = false;
 
-        // --- GESTION DE L'AFFICHAGE DU CANVAS ---
         if (btnEditSig) {
             btnEditSig.addEventListener('click', () => {
                 existingContainer.style.display = 'none';
                 canvasContainer.style.display = 'inline-block';
                 isSignatureModified = true;
-                signatureInput.value = ''; // On vide l'ancienne valeur
+                signatureInput.value = ''; 
             });
         }
 
@@ -196,13 +212,11 @@
                 existingContainer.style.display = 'block';
                 canvasContainer.style.display = 'none';
                 isSignatureModified = false;
-                // On remet l'ancienne valeur (elle était stockée dans l'attribut value d'origine)
                 signatureInput.value = signatureInput.defaultValue; 
                 if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
             });
         }
 
-        // --- GESTION DU DESSIN ---
         if (canvas && ctx) {
             ctx.lineWidth = 3;
             ctx.lineCap = 'round';
@@ -254,19 +268,15 @@
             });
         }
 
-        // --- SAUVEGARDE AU MOMENT DU SUBMIT ---
         form.addEventListener('submit', function(e) {
-            // Si on utilise le canvas (soit parce qu'il n'y avait pas de signature, soit on a cliqué sur "Modifier")
             if (canvas && canvasContainer.style.display !== 'none') {
                 const blank = document.createElement('canvas');
                 blank.width = canvas.width;
                 blank.height = canvas.height;
                 
-                // Si le canvas n'est pas vide, on génère l'image Base64
                 if (canvas.toDataURL() !== blank.toDataURL()) {
                     signatureInput.value = canvas.toDataURL('image/png');
                 } else if (isSignatureModified) {
-                    // Si on a modifié mais qu'on a laissé vide, on s'assure de vider le champ
                     signatureInput.value = '';
                 }
             }
@@ -275,31 +285,71 @@
 </script>
 
 <style>
+    /* Structure de base */
     .bc-wrapper { background: #f0f0f0; min-height: 100vh; padding: 40px 20px; font-family: Arial, sans-serif; color: #1a1a1a; }
     .bc-paper { max-width: 900px; margin: 0 auto; background: white; padding: 40px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
     .bc-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; position: relative; }
+    
+    /* En-tête */
     .bc-header { display: grid; grid-template-columns: 1fr 2fr 1.5fr; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
     .bc-logo { max-width: 120px; }
     .bc-title-container h1 { font-size: 22px; font-weight: 800; text-align: center; margin: 0; }
     .bc-refi-container { text-align: right; font-size: 20px; font-weight: bold; }
     .refi-input-ghost { border: none; font-weight: bold; font-size: 20px; width: 140px; text-align: right; outline: none; background: transparent; }
+    
+    /* Grilles d'infos */
     .bc-middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 20px; }
     .box-label { font-weight: bold; font-size: 11px; color: #666; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; }
-    .table-wrapper { padding: 0; border: 1px solid #000; overflow: hidden; }
-    .bc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .bc-table th { background: #f0f0f0; border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 8px 5px; text-align: left; font-size: 11px; text-transform: uppercase; }
-    .bc-table th:last-child { border-right: none; }
-    .bc-table td { border-bottom: 1px solid #000; border-right: 1px solid #000; height: 35px; vertical-align: middle; padding: 5px; }
-    .bc-table td:last-child { border-right: none; }
     .tech-grid { display: grid; gap: 15px; }
     .label { font-weight: bold; font-size: 11px; text-transform: uppercase; margin-right: 5px; color: #444; }
+
+    /* Inputs fantômes pour les formulaires de transporteur */
     .ghost-input { border: none; border-bottom: 1px dashed #2e46a6; outline: none; font-family: inherit; font-size: 13px; padding: 2px 0; background: transparent; width: 100%; }
     .ghost-input:focus { border-bottom: 1px solid #2e46a6; background: #f8faff; }
+
+    /* --- NOUVEAUX STYLES DU TABLEAU MODERNE --- */
+    .table-wrapper { padding: 0; border: 1px solid #e5e7eb; overflow: hidden; border-radius: 6px; }
+    .bc-table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; }
+    
+    .bc-table th { 
+        background: #f8fafc; 
+        border-bottom: 2px solid #e2e8f0; 
+        padding: 10px 8px; 
+        text-align: left; 
+        font-size: 11px; 
+        text-transform: uppercase; 
+        color: #64748b;
+        letter-spacing: 0.5px;
+    }
+    
+    .bc-table td { 
+        border-bottom: 1px solid #f1f5f9; 
+        height: 40px; 
+        vertical-align: middle; 
+        padding: 0 8px; /* Padding pour le texte classique */
+        transition: background-color 0.2s;
+    }
+    
+    .bc-table tbody tr:hover td {
+        background-color: #f8fafc;
+    }
+    .bc-table tr:last-child td { border-bottom: none; }
+
+    /* Utilitaires de texte */
+    .center { text-align: center; } 
+    .right { text-align: right; }
+    .fw-bold { font-weight: 600; }
+    .text-blue { color: #2e46a6; }
+    .text-green { color: #10b981; }
+    .muted { color: #94a3b8; }
+    .sub-info { font-size: 10px; color: #64748b; margin-top: 2px; }
+
+    /* Actions en bas */
     .bc-actions { display: flex; gap: 15px; margin-top: 30px; }
     .btn-cancel { flex: 1; color: white; padding: 15px; text-align: center; border-radius: 5px; text-decoration: none; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn-confirm { flex: 2; background: #10b981; color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-confirm { flex: 2; background: #10b981; color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+    .btn-confirm:hover { background: #059669; }
     .btn-print { flex: 1; color: white; border: none; padding: 15px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .center { text-align: center; } .right { text-align: right; } .bold { font-weight: bold; }
 
     @media print {
         @page { margin: 0; }

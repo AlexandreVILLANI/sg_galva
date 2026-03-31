@@ -95,17 +95,18 @@
         </div>
     </div>
 
-    {# --- TABLEAU TECHNIQUE (AUTOMATIQUE) --- #}
+    {# --- TABLEAU TECHNIQUE (AUTOMATIQUE ) --- #}
     <div class="bc-box description-box table-wrapper">
-        <table class="bc-table">
+        <table class= "bc-table">
             <thead>
                 <tr>
                     <th width="5%">Qté</th>
-                    <th width="30%">Désignation</th>
+                    <th width="25%">Désignation</th>
                     <th width="5%">U</th>
-                    <th width="15%">Référence</th>
-                    <th width="15%">Trav. Annexes</th>
+                    <th width="12%">Référence</th>
+                    <th width="13%">Trav. Annexes</th>
                     <th width="10%">Poids Kg</th>
+                    <th width="10%" class="center">Prix/T</th> {# <-- AJOUT ICI #}
                     <th width="20%">Observations</th>
                 </tr>
             </thead>
@@ -126,28 +127,32 @@
                         <td class="p-0">{{ form_widget(ligneForm.travauxAnnexes, {'attr': {'class': 'cell-input'}}) }}</td>
                         <td class="p-0">{{ form_widget(ligneForm.poids, {'attr': {'class': 'cell-input right', 'step':'0.01'}}) }}</td>
                         
+                        <td class="p-0">
+                            {{ form_widget(ligneForm.prixTonne, {'attr': {'class': 'cell-input center', 'style': 'color: #10b981; font-weight: bold;', 'step': '0.01', 'placeholder': '€/T'}}) }}
+                        </td>
+
                         {# Observation SPÉCIFIQUE à la ligne #}
                         <td class="p-0">{{ form_widget(ligneForm.observations, {'attr': {'class': 'cell-input', 'rows':'1'}}) }}</td>
                     </tr>
                 {% else %}
-                    <tr><td colspan="7" class="center muted">Aucune ligne trouvée.</td></tr>
+                    <tr><td colspan="8" class="center muted">Aucune ligne trouvée.</td></tr>
                 {% endfor %}
 
                 {# Remplissage visuel #}
                 {% for i in 1..5 %}
-                <tr><td colspan="7" style="height: 35px; border-bottom: 1px solid #000; border-right: 1px solid #000;"></td></tr>
+                <tr><td colspan="8" style="height: 35px; border-bottom: 1px solid #000; border-right: 1px solid #000;"></td></tr>
                 {% endfor %}
 
                 <tr style="background-color: #f8faff; font-weight: bold;">
                     <td colspan="5" style="text-align: right; padding-right: 15px; text-transform: uppercase;">Total Poids (Kg) :</td>
                     <td style="text-align: right; padding-right: 5px; color: #2e46a6; font-size: 14px;" id="total-poids-display">0.00</td>
-                    <td></td>
+                    <td colspan="2"></td> {# <-- AJUSTEMENT ICI POUR ALIGNER LE RESTE DU TABLEAU #}
                 </tr>
             </tbody>
         </table>
     </div>
 
-    {# --- PIED DE PAGE : OBSERVATIONS GÉNÉRALES --- #}
+    {# --- PIED  DE PAGE : OBSERVATIONS GÉNÉRALES --- #}
     <div class="bc-box comment-box">
         <span class="label">Observations générales du Bon de Travail :</span>
         {# C'est ici que s'affichera le champ ajouté dans l'étape 1 #}
@@ -155,7 +160,7 @@
     </div>
 
     <div class="bc-footer-info">
-        <div><strong>MSIE à dispo. atelier :</strong> {{ "now"|date('d/m/Y H:i') }}</div>
+        <div><strong>Mise à dispo. atelier :</strong> {{ "now"|date('d/m/Y H:i') }}</div>
         <div><strong>Règlement :</strong> SOUP.RGT.CPT.</div>
     </div>
 
@@ -165,7 +170,7 @@
         </a>
         
         <button type="submit" class="btn-confirm">
-            <i class="fas fa-save"></i> ENREGISTRER LE BON 
+            <i class="fas fa-save"></i>ENREGISTRER LE BON
         </button>
 
         {% if isPretPourLivraison %}
@@ -189,32 +194,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const displayElement = document.getElementById('total-poids-display');
     
     // 2. On sélectionne tous les inputs de type "number" (ou texte) qui gèrent le poids
-    // (Dans Symfony, les champs poids du form s'appellent souvent de cette façon)
     const weightInputs = document.querySelectorAll('input[id$="_poids"]');
 
     function calculerTotal() {
         let total = 0;
         
         weightInputs.forEach(input => {
-            // On récupère la valeur, on gère la virgule, on convertit en nombre
             let val = parseFloat(input.value.replace(',', '.'));
-            
-            // Si c'est un vrai nombre (> 0), on l'ajoute au total
             if (!isNaN(val) && val > 0) {
                 total += val;
             }
         });
 
-        // On affiche le total avec 2 décimales
         if (displayElement) {
             displayElement.textContent = total.toFixed(2);
         }
     }
 
-    // 3. On lance le calcul une fois au chargement de la page (au cas où il y a déjà des poids)
     calculerTotal();
 
-    // 4. On écoute chaque modification pour recalculer en direct
     weightInputs.forEach(input => {
         input.addEventListener('input', calculerTotal);
     });

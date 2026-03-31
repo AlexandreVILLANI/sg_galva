@@ -4,6 +4,8 @@ namespace App\Form;
 
 use App\Entity\BonDeCommande;
 
+use App\Form\LigneDechargementType;
+
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -12,6 +14,8 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+
 
 class BonDeCommandeType extends AbstractType
 {
@@ -64,6 +68,16 @@ class BonDeCommandeType extends AbstractType
                     'Mixte' => 'Mixte (GB + PB)',
                 ],
             ])
+
+            ->add('lignes', CollectionType::class, [
+                'entry_type' => LigneDechargementType::class,
+                'property_path' => 'fiche.lignes', 
+                'entry_options' => ['label' => false],
+                'allow_add' => false,
+                'allow_delete' => false,
+                'by_reference' => false,
+            ])
+            
             ->add('commentaire', TextareaType::class, [
                 'required' => false,
                 'label' => false,

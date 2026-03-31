@@ -12,7 +12,7 @@
 
         <form method="post">
             {% if error %}
-                <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+                <div class="alert alert-danger">{{ error .messageKey|trans(error.messageData, 'security') }}</div>
             {% endif %}
 
             <div class="form-group">
@@ -23,7 +23,7 @@
             <div class="form-group">
                 <div class="d-flex justify-content-between">
                     <label for="password">Mot de passe</label>
-                    <a href="#" class="forgot-password">Oublié ?</a>
+                    <a href="#" class="forgot-pas sword">Oublié ?</a>
                 </div>
                 <input type="password" name="_password" id="password" class="form-control" placeholder="********" autocomplete="current-password" required>
             </div>

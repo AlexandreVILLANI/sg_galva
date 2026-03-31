@@ -37,6 +37,8 @@ class BonTravailType extends AbstractType
                 'required' => false,
                 'attr' => ['class' => 'w-100', 'rows' => 3]
             ])
+
+            
             
             // --- C'EST ICI QUE LA MAGIE OPÈRE ---
             ->add('lignes', CollectionType::class, [
