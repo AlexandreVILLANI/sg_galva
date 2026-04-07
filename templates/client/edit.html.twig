@@ -45,8 +45,6 @@
                     <div>{{ form_row(form.tvaIntra) }}</div>
                     <div>{{ form_row(form.categorieComptable) }}</div>
                     <div>{{ form_row(form.encoursAutorise) }}</div>
-                    
-                    {# --- LES 3 NOUVEAUX CHAMPS SONT ICI --- #}
                     <div>{{ form_row(form.portefeuilleBlFa) }}</div>
                     <div>{{ form_row(form.payeur) }}</div>
                     <div>{{ form_row(form.assuranceCredit) }}</div>
@@ -78,7 +76,6 @@
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px 25px; }
     .full-width { grid-column: 1 / -1; }
 
-    /* Style des labels et inputs de Symfony */
     label { display: block; font-size: 0.85rem; font-weight: 600; color: #4b5563; margin-bottom: 6px; }
     input, textarea { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; }
     input:focus, textarea:focus { border-color: var(--primary-admin); outline: none; ring: 2px rgba(79, 70, 229, 0.2); }

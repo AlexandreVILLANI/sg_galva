@@ -54,6 +54,11 @@ class AppFixtures extends Fixture
         $peseeRole->setNom("Équipe Pesée");
         $manager->persist($peseeRole);
 
+        // --- NOUVEAU ROLE COMMERCIAL ---
+        $commercialRole = new Role();
+        $commercialRole->setNom("Commercial");
+        $manager->persist($commercialRole);
+
         // 2. Création de ton compte Admin (Alex)
         $admin = new User();
         $admin->setUsername('alex');
@@ -115,7 +120,7 @@ class AppFixtures extends Fixture
         $cariste->setPassword($this->hasher->hashPassword($cariste, 'cariste'));
         $manager->persist($cariste);
 
-        // 8. NOUVEAU : Création d'un Agent de Colisage (Marc)
+        // 8. Création d'un Agent de Colisage (Marc)
         $colisage = new User();
         $colisage->setUsername('colisage_equipe1');
         $colisage->setPrenom('Marc Colisage');
@@ -126,6 +131,7 @@ class AppFixtures extends Fixture
         $colisage->setPassword($this->hasher->hashPassword($colisage, 'colisage'));
         $manager->persist($colisage);
 
+        // 9. Création d'un Agent de Pesée (Paul)
         $pesee = new User();
         $pesee->setUsername('pesee');
         $pesee->setPrenom('Paul Pesée');
@@ -135,7 +141,17 @@ class AppFixtures extends Fixture
         $pesee->setPassword($this->hasher->hashPassword($pesee, 'pesee'));
         $manager->persist($pesee);
 
-        // 9. Emplacements 
+        // 10. --- LE COMPTE COMMERCIAL CORRIGÉ ---
+        $commercial = new User();
+        $commercial->setUsername('commercial'); 
+        $commercial->setPrenom('Pereira');
+        $commercial->setTypeAcces('MDP');
+        $commercial->setRoles(['ROLE_COMMERCIAL']);
+        $commercial->setUserRole($commercialRole); // On lui donne bien le rôle Commercial créé plus haut
+        $commercial->setPassword($this->hasher->hashPassword($commercial, 'commercial'));
+        $manager->persist($commercial);
+
+        // 11. Emplacements 
         $zones = ['Zone A1', 'Zone A2', 'Quai Nord', 'Quai Sud', 'Stockage Extérieur'];
         foreach ($zones as $nomZone) {
             $emplacement = new Emplacement();
@@ -143,7 +159,7 @@ class AppFixtures extends Fixture
             $manager->persist($emplacement);
         }
 
-        // 10. Client à définir
+        // 12. Client à définir
         $clientInconnu = new Client();
         $clientInconnu->setNom('À DÉFINIR'); 
         $manager->persist($clientInconnu);

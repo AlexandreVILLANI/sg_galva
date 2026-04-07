@@ -122,10 +122,8 @@ class BonTravailController extends AbstractController
             $poidsData = $request->request->all('poids'); 
             $obsData = $request->request->all('observations');
 
-            // On part du principe que le BT est complet, et on va vérifier s'il y a une erreur
             $estComplet = true;
             
-            // Sécurité : S'il n'y a aucune ligne à peser, on ne peut pas valider
             if ($bt->getLignes()->isEmpty()) {
                 $estComplet = false;
             }
@@ -133,31 +131,24 @@ class BonTravailController extends AbstractController
             foreach ($bt->getLignes() as $ligne) {
                 $id = $ligne->getId();
                 
-                // --- 1. ENREGISTREMENT ET VÉRIFICATION DU POIDS ---
                 if (isset($poidsData[$id]) && trim($poidsData[$id]) !== '') {
-                    // On remplace la virgule par un point pour que PHP comprenne bien le chiffre
                     $poidsNettoye = str_replace(',', '.', $poidsData[$id]);
                     $valeurPoids = (float) $poidsNettoye;
                     
                     $ligne->setPoids($valeurPoids);
                     
-                    // Si le poids saisi est de 0 (ou négatif), alors ce n'est pas fini !
                     if ($valeurPoids <= 0) {
                         $estComplet = false;
                     }
                 } else {
-                    // Si la case est restée vide, ce n'est pas fini !
                     $estComplet = false;
                 }
                 
-                // --- 2. ENREGISTREMENT DES OBSERVATIONS ---
                 if (isset($obsData[$id])) {
                     $ligne->setObservations((string) $obsData[$id]);
                 }
             }
 
-            // --- 3. VALIDATION AUTOMATIQUE ---
-            // Si $estComplet est resté à "true" (donc toutes les cases > 0), le BT est validé.
             $bt->setIsPeseeValidee($estComplet);
 
             $em->flush(); 
@@ -177,6 +168,29 @@ class BonTravailController extends AbstractController
         ]);
     }
 
+    #[Route('/commercial/bon-travail/{id}', name: 'app_commercial_bt_show', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_COMMERCIAL')]
+    public function commercialShowBT(BonTravail $bt, Request $request, EntityManagerInterface $em): Response
+    {
+        // 1. On crée le formulaire pour pouvoir sauvegarder les prix
+        $form = $this->createForm(BonTravailType::class, $bt);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em->flush();
+            $this->addFlash('success', 'Les prix ont été enregistrés avec succès !');
+            
+            // On le redirige vers sa page d'accueil après sauvegarde
+            return $this->redirectToRoute('app_commercial_home'); 
+        }
+
+        return $this->render('bon_travail/commercial_edit.html.twig', [
+            'bt' => $bt,
+            'commande' => $bt->getBonCommande(), // <--- L'erreur venait d'ici, il manquait cette variable !
+            'form' => $form->createView(),       // <--- Et il manquait le formulaire !
+        ]);
+    }
+
     /**
      * ROUTE SUPPRESSION
      */
@@ -189,13 +203,9 @@ class BonTravailController extends AbstractController
 
         if ($this->isCsrfTokenValid($tokenId, $submittedToken)) {
             
-            // --- NOUVEAU : VÉRIFICATION AVANT SUPPRESSION ---
-            // On vérifie si le Bon de Travail possède des lignes de planning
             if (!$bt->getPlanningLignes()->isEmpty()) {
-                // S'il est dans le planning, on bloque et on avertit l'utilisateur
                 $this->addFlash('error', 'Impossible de supprimer le BT-' . $bt->getNumero() . ' car il est déjà planifié. Veuillez d\'abord le retirer du planning.');
             } else {
-                // S'il n'est pas dans le planning, on a le droit de le supprimer
                 $em->remove($bt);
                 $em->flush();
                 $this->addFlash('success', 'Bon de Travail supprimé avec succès.');

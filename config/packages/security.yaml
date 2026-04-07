@@ -31,6 +31,7 @@ security:
                 secret: '%kernel.secret%'
                 lifetime: 2592000 # 1 mois 
                 path: /
+                signature_properties: ['password'] 
                 # by default, the feature is enabled by checking a checkbox in the
                 # login form, uncomment the following line to always enable it.
                 #always_remember_me: true
@@ -50,8 +51,10 @@ security:
         ROLE_CHEF_EQUIPE: ROLE_USER
         ROLE_COLISAGE: ROLE_USER
         ROLE_PESEE: ROLE_USER
+        ROLE_COMMERCIAL: ROLE_USER
         # L'admin a TOUS les pouvoirs des autres
-        ROLE_ADMIN: [ROLE_RECEPTION_TERRAIN, ROLE_RECEPTION_ORDONNANCEMENT, ROLE_CARISTE, ROLE_ORDONNANCEMENT, ROLE_CHEF_EQUIPE,ROLE_COLISAGE,ROLE_PESEE]
+        ROLE_ADMIN: [ROLE_RECEPTION_TERRAIN, ROLE_RECEPTION_ORDONNANCEMENT, ROLE_CARISTE, 
+            ROLE_ORDONNANCEMENT, ROLE_CHEF_EQUIPE,ROLE_COLISAGE,ROLE_PESEE,ROLE_COMMERCIAL]
 
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }
@@ -63,10 +66,11 @@ security:
         - { path: ^/chef-equipe, roles: ROLE_CHEF_EQUIPE}
         - { path: ^/colisage, roles: ROLE_COLISAGE }
         - { path: ^/pesee, roles: ROLE_PESEE } 
+        - { path : ^/commercial, roles: ROLE_COMMERCIAL }
         
         # /home sert de "base" pour tout utilisateur connecté
         - { path: ^/home, roles: ROLE_USER }
-        - { path: ^/, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/, roles: IS_AUTHENTICATED_REMEMBERED }
 
 when@test:
     security:

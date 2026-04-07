@@ -1,0 +1,253 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bon de Travail - {{ bt.numero }}{% endblock %}
+
+{% block body %}
+    {% set isTermineAtelier = false %}
+    {% if bt.planningLignes is defined and bt.planningLignes|length > 0 %}
+        {% for lignePlanning in bt.planningLignes %}
+            {% if lignePlanning.avancement == true %}
+                {% set isTermineAtelier = true %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    
+<div class="bc-wrapper">
+    {{ form_start(form, {'attr': {'class': 'bc-paper'}}) }}
+    
+    {# --- ENTÊTE --- #}
+    <div class="bc-header">
+        <div class="bc-logo-container">
+            <img src="{{ asset('images/sg-galva-logo.png') }}" alt="Logo" class="bc-logo">
+        </div>
+        <div class="bc-title-container">
+            <h1 style="color: #6366f1;">BON DE TRAVAIL</h1>
+            <p style="text-align:center; color:#64748b; font-weight:bold;">Saisie des Prix</p>
+        </div>
+        <div class="bc-refi-container">
+            <label>N° BT -</label>
+            {{ form_widget(form.numero, {'attr': {'class': 'refi-input-ghost', 'readonly': 'readonly'}}) }}
+        </div>
+    </div>
+
+    {# --- GRILLE HAUTE --- #}
+    <div class="bc-top-grid">
+        <div class="bc-box treatment-box">
+            <p class="box-label">TRAITEMENT :</p>
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" {% if not commande.isCataphorese %}checked="checked"{% endif %} disabled> Galvanisation
+                </label>
+                <label>
+                    <input type="checkbox" {% if commande.isCataphorese %}checked="checked"{% endif %} disabled> Cataphorèse
+                </label>
+            </div>
+        </div>
+    </div>
+
+    {# --- GRILLE MILIEU : ADRESSES --- #}
+    <div class="bc-middle-grid">
+        <div class="bc-box client-box">
+            <p class="box-label">ADRESSE DE FACTURATION</p>
+            <div class="frame-content">
+                <strong>{{ commande.fiche.client.nom }}</strong><br>
+                {{ commande.fiche.client.adresseFacturation|nl2br }}<br>
+                {{ commande.fiche.client.codePostal }} {{ commande.fiche.client.ville }}
+            </div>
+        </div>
+        <div class="bc-box driver-box">
+            <p class="box-label">ADRESSE DE LIVRAISON</p>
+            <div class="frame-content">
+                <strong>{{ commande.fiche.client.nom }}</strong><br>
+                {{ commande.fiche.client.adresseLivraison|default(commande.fiche.client.adresseFacturation)|nl2br }}<br>
+                {{ commande.fiche.client.codePostal }} {{ commande.fiche.client.ville }}
+            </div>
+        </div>
+    </div>
+
+    {# --- ZONE TECHNIQUE (VERROUILLÉE) --- #}
+    <div class="bc-box">
+        <div class="tech-grid">
+            <div class="tech-col">
+                <span class="label">EXIGENCE PARTICULIÈRE :</span>
+                {{ form_widget(form.exigenceParticuliere, {'attr': {'class': 'ghost-input full-width', 'readonly': 'readonly', 'style': 'pointer-events: none;'}}) }}
+            </div>
+            <div class="tech-col">
+                <span class="label">REPRISE USINAGE :</span>
+                {{ form_widget(form.repriseUsinage, {'attr': {'class': 'ghost-input full-width', 'readonly': 'readonly', 'style': 'pointer-events: none;'}}) }}
+            </div>
+            <div class="tech-col">
+                <span class="label">DÉLAI CLIENT :</span>
+                {{ form_widget(form.delaiClient, {'attr': {'class': 'ghost-input', 'readonly': 'readonly', 'style': 'pointer-events: none;'}}) }}
+            </div>
+        </div>
+    </div>
+
+    {# --- TABLEAU TECHNIQUE --- #}
+    <div class="bc-box description-box table-wrapper">
+        <table class= "bc-table">
+            <thead>
+                <tr>
+                    <th width="5%">Qté</th>
+                    <th width="25%">Désignation</th>
+                    <th width="5%">U</th>
+                    <th width="12%">Référence</th>
+                    <th width="13%">Trav. Annexes</th>
+                    <th width="10%">Poids Kg</th>
+                    <th width="10%" class="center" style="background:#e0e7ff; color:#4f46e5;">Prix/T</th>
+                    <th width="20%">Observations</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ligneForm in form.lignes %}
+                    <tr>
+                        <td class="center bold">{{ ligneForm.vars.value.nbPaquets }}</td>
+                        <td class="designation">
+                            <strong>{{ ligneForm.vars.value.description|default('Produit non précisé') }}</strong>
+                            <div class="sub-info">Emp: {{ ligneForm.vars.value.emplacement.nom }}</div>
+                        </td>
+                        
+                        {# Champs verrouillés pour le commercial #}
+                        <td class="p-0">{{ form_widget(ligneForm.u, {'attr': {'class': 'cell-input center', 'readonly': 'readonly'}}) }}</td>
+                        <td class="p-0">{{ form_widget(ligneForm.reference, {'attr': {'class': 'cell-input', 'readonly': 'readonly'}}) }}</td>
+                        <td class="p-0">{{ form_widget(ligneForm.travauxAnnexes, {'attr': {'class': 'cell-input', 'readonly': 'readonly'}}) }}</td>
+                        <td class="p-0">{{ form_widget(ligneForm.poids, {'attr': {'class': 'cell-input right', 'readonly': 'readonly'}}) }}</td>
+                        
+                        {# --- LE SEUL CHAMP MODIFIABLE : LE PRIX --- #}
+                        <td class="p-0">
+                            {{ form_widget(ligneForm.prixTonne, {'attr': {'class': 'cell-input center editable-price', 'style': 'color: #4f46e5; font-weight: bold; background: #f8faff;', 'step': '0.01', 'placeholder': '€/T'}}) }}
+                        </td>
+
+                        <td class="p-0">{{ form_widget(ligneForm.observations, {'attr': {'class': 'cell-input', 'rows':'1', 'readonly': 'readonly'}}) }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="8" class="center muted">Aucune ligne trouvée.</td></tr>
+                {% endfor %}
+
+                {% for i in 1..5 %}
+                <tr><td colspan="8" style="height: 35px; border-bottom: 1px solid #000; border-right: 1px solid #000;"></td></tr>
+                {% endfor %}
+
+                <tr style="background-color: #f8faff; font-weight: bold;">
+                    <td colspan="5" style="text-align: right; padding-right: 15px; text-transform: uppercase;">Total Poids (Kg) :</td>
+                    <td style="text-align: right; padding-right: 5px; color: #2e46a6; font-size: 14px;" id="total-poids-display">0.00</td>
+                    <td colspan="2"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {# --- PIED DE PAGE (VERROUILLÉ) --- #}
+    <div class="bc-box comment-box">
+        <span class="label">Observations générales du Bon de Travail :</span>
+        <div class="mt-2">{{ form_widget(form.observations, {'attr': {'class': 'w-100', 'rows': 2, 'readonly': 'readonly'}}) }}</div>
+    </div>
+
+    <div class="bc-footer-info">
+        <div><strong>Mise à dispo. atelier :</strong> {{ "now"|date('d/m/Y H:i') }}</div>
+        <div><strong>Règlement :</strong> SOUP.RGT.CPT.</div>
+    </div>
+
+    {# --- ACTIONS --- #}
+    <div class="bc-actions no-print">
+        <a href="{{ path('app_commercial_home') }}" class="btn-cancel">
+            <i class="fas fa-arrow-left"></i> Retour au tableau
+        </a>
+        
+        <button type="submit" class="btn-confirm" style="background: #4f46e5;">
+            <i class="fas fa-save"></i> ENREGISTRER LES PRIX
+        </button>
+
+        <button type="button" class="btn-print" onclick="window.print()">
+            <i class="fas fa-print"></i> Imprimer
+        </button>
+    </div>
+
+    {{ form_rest(form) }}
+    {{ form_end(form) }}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const displayElement = document.getElementById('total-poids-display');
+    const weightInputs = document.querySelectorAll('input[id$="_poids"]');
+
+    function calculerTotal() {
+        let total = 0;
+        weightInputs.forEach(input => {
+            let val = parseFloat(input.value.replace(',', '.'));
+            if (!isNaN(val) && val > 0) {
+                total += val;
+            }
+        });
+        if (displayElement) {
+            displayElement.textContent = total.toFixed(2);
+        }
+    }
+    calculerTotal();
+});
+</script>
+
+<style>
+    /* --- CSS HARMONISÉ --- */
+    .bc-wrapper { background: #f0f0f0; min-height: 100vh; padding: 40px 20px; font-family: Arial, sans-serif; color: #1a1a1a; }
+    .bc-paper { max-width: 900px; margin: 0 auto; background: white; padding: 40px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+    .bc-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; position: relative; }
+
+    .bc-header { display: grid; grid-template-columns: 1fr 2fr 1.5fr; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+    .bc-logo { max-width: 120px; }
+    .bc-title-container h1 { font-size: 22px; font-weight: 800; text-align: center; margin: 0; }
+    .bc-refi-container { text-align: right; font-size: 20px; font-weight: bold; }
+    .refi-input-ghost { border: none; font-weight: bold; font-size: 20px; width: 140px; text-align: right; outline: none; background: transparent; }
+
+    .bc-top-grid, .bc-middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 20px; }
+    .box-label { font-weight: bold; font-size: 11px; color: #666; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; }
+    .checkbox-group { display: flex; flex-direction: column; gap: 8px; }
+    .summary-line { display: flex; justify-content: space-between; border-bottom: 1px solid #f0f0f0; padding: 3px 0; font-size: 13px; }
+    .field { margin-bottom: 5px; font-size: 13px; }
+    .bold { font-weight: bold; }
+
+    .tech-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+    .label { font-weight: bold; font-size: 11px; text-transform: uppercase; margin-right: 5px; color: #444; }
+    .ghost-input { border: none; border-bottom: 1px dashed #ccc; outline: none; font-family: inherit; font-size: 13px; padding: 2px 0; background: transparent; color: #666; }
+    .ghost-input.full-width { width: 100%; }
+
+    .table-wrapper { padding: 0; border: 1px solid #000; overflow: hidden; }
+    .bc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .bc-table th { background: #f0f0f0; border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 8px 5px; text-align: left; font-size: 11px; text-transform: uppercase; }
+    .bc-table th:last-child { border-right: none; }
+    .bc-table td { border-bottom: 1px solid #000; border-right: 1px solid #000; height: 35px; vertical-align: middle; }
+    .bc-table td:last-child { border-right: none; }
+
+    /* Inputs dans tableau */
+    .cell-input { width: 100%; height: 100%; border: none; background: transparent; padding: 0 5px; box-sizing: border-box; font-family: inherit; font-size: 13px; color: #666; }
+    .cell-input[readonly] { cursor: not-allowed; }
+    
+    /* Input spécifique modifiable (Prix) */
+    .editable-price:focus { background: #e0e7ff !important; outline: 2px solid #4f46e5; outline-offset: -2px; color: #312e81 !important; }
+
+    .center { text-align: center; } .right { text-align: right; }
+    .designation { padding: 0 8px; }
+    .sub-info { font-size: 10px; color: #666; margin-top: 2px; }
+    .p-0 { padding: 0 !important; }
+
+    .comment-box textarea { width: 100%; border: none; border-bottom: 1px dashed #ccc; background: transparent; resize: vertical; outline: none; font-family: inherit; padding: 5px 0; color: #666; }
+
+    .bc-footer-info { display: flex; justify-content: space-between; font-size: 12px; margin-top: 10px; padding: 0 10px; }
+    .bc-actions { display: flex; gap: 15px; margin-top: 30px; }
+    .btn-cancel { flex: 1; background: #e06e54; color: white; padding: 15px; text-align: center; border-radius: 5px; text-decoration: none; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-confirm { flex: 2; color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+    .btn-confirm:hover { background: #3730a3 !important; }
+    .btn-print { flex: 0 0 auto; background: #333; color: white; border: none; padding: 15px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+
+    @media print {
+        @page { margin: 0; }
+        body { margin: 1.5cm; }
+        .no-print { display: none !important; }
+        .bc-wrapper { padding: 0; background: white; }
+        .bc-paper { box-shadow: none; border: none; padding: 0; margin: 0; max-width: 100%; }
+        .bc-box, .table-wrapper { border: 1px solid #000; }
+        .ghost-input { border-bottom: none; }
+    }
+</style>
+{% endblock %}

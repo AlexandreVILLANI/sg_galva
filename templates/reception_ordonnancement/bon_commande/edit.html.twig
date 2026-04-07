@@ -173,6 +173,11 @@
                 </div>
 
                 {% do form.imageFiles.setRendered %}
+                
+                <div style="display: none;">
+                    {{ form_widget(form.lignes) }}
+                </div>
+
                 {{ form_rest(form) }}
             {{ form_end(form) }}
         </div>

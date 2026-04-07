@@ -1,0 +1,279 @@
+<section id="list-bons-travail" class="content-section" style="display: none;">
+    <div class="section-header">
+        <h2 class="section-title">Bons de Travail</h2>
+    </div>
+
+    {# --- AFFICHAGE DES MESSAGES D'ERREUR --- #}
+    {% for message in app.flashes('error') %}
+        <div style="background: #fee2e2; color: #991b1b; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #f87171; text-align: center; font-weight: bold;">
+            <i class="fas fa-exclamation-triangle"></i> {{ message }}
+        </div>
+    {% endfor %}
+
+    {# --- BARRE DE FILTRES BT --- #}
+    <div class="filter-bar">
+        <div class="filter-form">
+            <div class="filter-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="filterGeneralBT" placeholder="N° BT, REFI ou Client...">
+            </div>
+
+            <div class="filter-group">
+                <i class="fas fa-calendar-alt"></i>
+                <input type="date" id="filterDateBT">
+            </div>
+
+            <div class="filter-group">
+                <i class="fas fa-tasks"></i>
+                <select id="filterStatusBT">
+                    <option value="">Tous les états</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="normal">Normal</option>
+                </select>
+            </div>
+            
+            <a href="#" class="btn-reset" id="resetBTFilters" title="Réinitialiser">
+                <i class="fas fa-sync-alt"></i>
+            </a>
+        </div>
+    </div>
+
+    {# --- TABLEAU --- #}
+    <div class="table-container">
+        <div class="table-grid header bt-grid-template">
+            <span>N° BT / Date</span>
+            <span>REFI Associé</span>
+            <span>Client</span>
+            <span>Délai Client</span>
+            <span style="text-align: center;">Avancement</span>
+            <span style="text-align: center;">Prix</span> {# <-- NOUVELLE COLONNE ICI #}
+            <span style="text-align: center;">Actions</span>
+        </div>
+
+        <div id="btTableBody">
+            {% for bt in bons_travail %}
+                
+                {# --- LOGIQUE POUR SAVOIR SI LE PRIX EST SAISI --- #}
+                {% set prixSaisi = false %}
+                {% if bt.lignes is defined %}
+                    {% for ligne in bt.lignes %}
+                        {% if ligne.prixTonne and ligne.prixTonne > 0 %}
+                            {% set prixSaisi = true %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+
+                {# --- LA BONNE REDIRECTION EST ICI --- #}
+                <div class="table-grid row clickable-row bt-grid-template" 
+                     data-btnum="{{ bt.numero|lower }}"
+                     data-refi="{{ bt.bonCommande.refi|lower }}" 
+                     data-client="{{ bt.bonCommande.client.nom|lower }}" 
+                     data-date="{{ bt.dateCreation|date('Y-m-d') }}"
+                     data-status="{{ bt.exigenceParticuliere ? 'urgent' : 'normal' }}"
+                     onclick="window.location='{{ path('app_commercial_bt_show', {'id': bt.id}) }}'">
+                    
+                    <div class="ref-cell-group">
+                        <span class="ref-cell" style="color: #dcb35c;">{{ bt.numero }}</span>
+                        <small class="date-subtext">Créé le {{ bt.dateCreation|date('d/m/Y') }}</small>
+                    </div>
+
+                    <span class="ref-cell">{{ bt.bonCommande.refi }}</span>
+
+                    <span class="client-cell" style="font-weight: 500;">{{ bt.bonCommande.client.nom }}</span>
+
+                    <span>
+                        <span class="badge-info">
+                            <i class="far fa-clock"></i> {{ bt.delaiClient ? bt.delaiClient|date('d/m/Y') : 'Non défini' }}
+                        </span>
+                    </span>
+
+                    {# --- CELLULE : AVANCEMENT --- #}
+                    <span class="progress-cell" style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
+                        
+                        {# 1. BADGE PESÉE #}
+                        {% if bt.isPeseeValidee %}
+                            <span class="status-badge success" title="Pesée terminée"><i class="fas fa-weight"></i> Pesée OK</span>
+                        {% else %}
+                            <span class="status-badge pending" title="Pesée en attente"><i class="fas fa-weight"></i> Pesée...</span>
+                        {% endif %}
+
+                        {# 2. BADGE PLANNING #}
+                        {% set isTermineAtelier = false %}
+                        {% set isPlanifie = false %}
+                        
+                        {% if bt.planningLignes is defined and bt.planningLignes|length > 0 %}
+                            {% set isPlanifie = true %}
+                            {% for lignePlanning in bt.planningLignes %}
+                                {% if lignePlanning.avancement == true %}
+                                    {% set isTermineAtelier = true %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+
+                        {% if isTermineAtelier %}
+                            <span class="status-badge success" title="Terminé dans l'atelier"><i class="fas fa-check-double"></i> Fait (Atelier)</span>
+                        {% elseif isPlanifie %}
+                            <span class="status-badge warning" title="Dans le planning, en attente de réalisation"><i class="fas fa-calendar-check"></i> Planifié</span>
+                        {% else %}
+                            <span class="status-badge pending" title="Non planifié"><i class="fas fa-calendar-alt"></i> À planifier</span>
+                        {% endif %}
+                    </span>
+
+                    {# --- CELLULE : PRIX (NOUVEAU) --- #}
+                    <span style="display: flex; justify-content: center; align-items: center;">
+                        {% if prixSaisi %}
+                            <span class="status-badge" style="background-color: #e0e7ff; color: #4f46e5; border: 1px solid #c7d2fe;" title="Prix enregistrés">
+                                <i class="fas fa-check"></i> Saisi
+                            </span>
+                        {% else %}
+                            <span class="status-badge pending" title="Prix manquants">
+                                <i class="fas fa-euro-sign"></i> À saisir
+                            </span>
+                        {% endif %}
+                    </span>
+
+                    {# --- BOUTON DE CONSULTATION (Remplace la poubelle) --- #}
+                    <span class="actions-cell" style="display: flex; justify-content: center; gap: 10px;">
+                        <a href="{{ path('app_commercial_bt_show', {'id': bt.id}) }}" 
+                           class="btn-action-view"
+                           title="Voir les détails">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </span>
+                </div>
+            {% else %}
+                <div class="no-data">
+                    <i class="fas fa-tools" style="font-size: 24px; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+                    <span>Aucun bon de travail généré.</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<script>
+function setupBTFilters() {
+    const inputSearch = document.getElementById('filterGeneralBT');
+    const inputDate = document.getElementById('filterDateBT');
+    const selectStatus = document.getElementById('filterStatusBT');
+    const btnReset = document.getElementById('resetBTFilters');
+    
+    const rows = document.querySelectorAll('#btTableBody .row');
+
+    if (!inputSearch || rows.length === 0) return;
+
+    function filterTable() {
+        const valSearch = inputSearch.value.toLowerCase().trim();
+        const valDate = inputDate.value;
+        const valStatus = selectStatus.value;
+
+        rows.forEach(row => {
+            const rowBt = row.dataset.btnum || "";
+            const rowRefi = row.dataset.refi || "";
+            const rowClient = row.dataset.client || "";
+            const rowDate = row.dataset.date || "";
+            const rowStatus = row.dataset.status || "";
+
+            const matchesSearch = rowBt.includes(valSearch) || rowRefi.includes(valSearch) || rowClient.includes(valSearch);
+            const matchesDate = valDate === "" || rowDate === valDate;
+            const matchesStatus = valStatus === "" || rowStatus === valStatus;
+
+            row.style.display = (matchesSearch && matchesDate && matchesStatus) ? 'grid' : 'none';
+        });
+    }
+
+    [inputSearch, inputDate, selectStatus].forEach(el => {
+        el.addEventListener(el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input', filterTable);
+    });
+
+    if (btnReset) {
+        btnReset.addEventListener('click', (e) => {
+            e.preventDefault();
+            inputSearch.value = '';
+            inputDate.value = '';
+            selectStatus.value = '';
+            filterTable();
+        });
+    }
+}
+
+document.addEventListener('turbo:load', () => {
+    setupBTFilters();
+});
+</script>
+
+<style>
+    /* --- STYLES DE BASE DU COMPOSANT (Autonomie) --- */
+    .filter-bar { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
+    .filter-form { display: flex; gap: 15px; align-items: center; }
+    .filter-group { display: flex; align-items: center; background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 10px; flex: 1; }
+    .filter-group i { color: #94a3b8; margin-right: 10px; }
+    .filter-group input, .filter-group select { border: none; outline: none; width: 100%; font-size: 13px; color: #334155; background: transparent; }
+    .btn-reset { color: #94a3b8; text-decoration: none; padding: 8px; transition: 0.2s; }
+    .btn-reset:hover { color: #3b82f6; transform: rotate(90deg); }
+
+    .table-container { background: white; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+    .table-grid { display: grid; padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    .table-grid.header { background: #f8fafc; font-weight: 600; color: #64748b; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+    .table-grid.row { transition: background 0.2s, transform 0.1s; }
+    .table-grid.row:hover { background: #f8fafc; }
+    .clickable-row { cursor: pointer; }
+
+    .ref-cell-group { display: flex; flex-direction: column; }
+    .ref-cell { font-weight: bold; font-size: 14px; }
+    .date-subtext { font-size: 11px; color: #94a3b8; }
+    .badge-info { background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+
+    /* --- STYLES SPÉCIFIQUES BT (Mise à jour pour 7 colonnes) --- */
+    .bt-grid-template { 
+        /* On a ajouté une colonne de 90px pour le "Prix" */
+        grid-template-columns: 160px 140px 1fr 140px 120px 90px 80px !important; 
+        align-items: center; 
+    }
+
+    /* Le nouveau bouton "Consulter" du commercial */
+    .btn-action-view {
+        color: #6366f1; /* Couleur Indigo typique du commercial */
+        font-size: 16px;
+        transition: 0.2s;
+        text-decoration: none;
+    }
+    .btn-action-view:hover {
+        color: #4f46e5;
+        transform: scale(1.2);
+    }
+
+    .badge-info i { margin-right: 4px; font-size: 10px; }
+    
+    /* Styles pour les petits badges d'avancement */
+    .status-badge {
+        font-size: 10px;
+        font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 12px;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        width: 105px; 
+        justify-content: center;
+    }
+    
+    .status-badge.success {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+    
+    .status-badge.pending {
+        background-color: #f3f4f6;
+        color: #6b7280;
+        border: 1px solid #e5e7eb;
+    }
+
+    .status-badge.warning {
+        background-color: #fef08a;
+        color: #854d0e;
+        border: 1px solid #fde047;
+    }
+</style>

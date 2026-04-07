@@ -1,0 +1,185 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Espace Commercial - SG Galva{% endblock %}
+
+{% block body %}
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-header">
+                <div class="logo-box" style="background-color: #6366f1;">SG</div>
+                <span class="brand-name">Commercial</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                {# --- ONGLET UNIQUE POUR LE COMMERCIAL --- #}
+                <a href="#" class="nav-item" data-target="list-bons-travail">
+                    <i class="fas fa-tools"></i>
+                    <span>Bon de travail</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-footer">
+            <a href="{{ path('app_logout') }}" class="logout-link">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Déconnexion</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="user-welcome-bar">
+            <div class="welcome-message">
+                Bonjour, <strong>{{ app.user.prenom|default('Commercial') }}</strong>
+            </div>
+            <div class="current-date">
+                <i class="far fa-calendar-alt"></i>
+                {{ "now"|date('d/m/Y', 'Europe/Paris') }}
+            </div>
+        </header>
+
+        {# État vide (bien qu'il n'y ait qu'un seul onglet, c'est utile pour la structure) #}
+        <div id="empty-state" class="empty-placeholder" style="display: none;">
+            <div class="dashed-container">
+                <p>Chargement des données commerciales...</p>
+            </div>
+        </div>
+
+        <div id="content-area">
+            {{ include('components/commercial/_list_bon_travail.html.twig') }}
+        </div>
+    </main>
+</div>
+
+<script>
+    function initCommercialDashboard() {
+        const navItems = document.querySelectorAll('.nav-item');
+        const emptyState = document.getElementById('empty-state');
+        const sections = document.querySelectorAll('.content-section');
+
+        function showSection(id) {            
+            const target = document.getElementById(id);
+            const nav = document.querySelector(`[data-target="${id}"]`);
+
+            if (target && nav) {
+                if (emptyState) emptyState.style.display = 'none';
+                
+                // 1. On cache toutes les sections
+                sections.forEach(s => { 
+                    s.style.display = 'none'; 
+                    s.classList.remove('active'); 
+                });
+                navItems.forEach(i => i.classList.remove('active'));
+
+                // 2. On affiche la cible
+                target.style.display = 'block';
+                target.classList.add('active');
+                nav.classList.add('active');
+
+                // 3. Relancer les scripts de filtrage du Bon de Travail s'ils existent
+                if (id === 'list-bons-travail' && typeof setupBTFilters === 'function') setupBTFilters();
+            }
+        }
+
+        // Configuration des clics
+        navItems.forEach(item => {
+            item.onclick = function(e) {
+                e.preventDefault();
+                showSection(this.getAttribute('data-target'));
+            };
+        });
+
+        // Chargement par défaut : On force l'ouverture du seul onglet disponible
+        showSection('list-bons-travail');
+    }
+
+    // Gestion du chargement avec ou sans Turbo
+    document.addEventListener('turbo:load', initCommercialDashboard);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCommercialDashboard);
+    } else {
+        initCommercialDashboard();
+    }
+</script>
+
+<style>
+    :root {
+        --sidebar-width: 260px;
+        --primary-blue: #2e46a6;
+        --primary-gold: #dcb35c; /* Couleur pour le Bon de Travail */
+        --primary-indigo: #6366f1; /* Couleur spécifique au service commercial */
+        --text-gray: #6b7280;
+        --bg-gray: #f9fafb;
+        --border-color: #f3f4f6;
+    }
+
+    body, html { margin: 0; padding: 0; height: 100vh; font-family: 'Inter', sans-serif; background: white; }
+    .dashboard-container { display: flex; height: 100vh; }
+
+    /* Sidebar */
+    .sidebar { 
+        width: var(--sidebar-width); 
+        border-right: 1px solid var(--border-color); 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: space-between;
+        background: white;
+    }
+    .sidebar-header { display: flex; align-items: center; padding: 25px 20px; gap: 10px; }
+    .logo-box { 
+        color: white; 
+        width: 32px; height: 32px; 
+        display: flex; align-items: center; justify-content: center; 
+        border-radius: 6px; font-weight: 800; font-size: 13px; 
+    }
+    .brand-name { font-weight: 700; color: #111827; font-size: 15px; letter-spacing: -0.3px; }
+
+    .nav-item { 
+        display: flex; align-items: center; gap: 12px; padding: 12px 20px; 
+        text-decoration: none; color: #4b5563; font-size: 13px; transition: 0.2s;
+    }
+    .nav-item i { font-size: 14px; width: 20px; text-align: center; }
+    .nav-item:hover { background: var(--bg-gray); }
+    
+    /* Style actif (Bon de Travail) */
+    .nav-item[data-target="list-bons-travail"].active { 
+        color: var(--primary-gold); font-weight: 600; background: #fffdf5; border-right: 3px solid var(--primary-gold); 
+    }
+
+    .sidebar-footer { padding: 15px 20px; border-top: 1px solid var(--border-color); }
+    .logout-link { color: #ef4444; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; }
+
+    /* Main Content */
+    .main-content { flex-grow: 1; background: white; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
+    
+    .user-welcome-bar {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 20px 25px 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px;
+    }
+
+    .welcome-message { font-size: 18px; color: #111827; }
+    .welcome-message strong { color: var(--primary-indigo); font-weight: 700; text-transform: capitalize; }
+
+    .current-date {
+        font-size: 13px; color: var(--text-gray); display: flex; align-items: center; gap: 8px;
+        background: var(--bg-gray); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border-color);
+    }
+
+    .empty-placeholder { flex-grow: 1; display: flex; padding: 10px; }
+    .dashed-container { 
+        flex-grow: 1; border: 2px dashed #e5e7eb; border-radius: 12px; 
+        display: flex; align-items: center; justify-content: center; 
+        color: #9ca3af; font-size: 14px; background: #fafafa;
+    }
+
+    /* Sections */
+    .content-section { display: none; }
+    .content-section.active { display: block; animation: fadeIn 0.3s ease; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}

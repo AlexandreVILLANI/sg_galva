@@ -161,7 +161,15 @@
             </a>
             
             <button type="submit" class="btn-confirm"><i class="fas fa-save"></i> METTRE À JOUR</button>
+        </div>        
+        
+        {# L'ASTUCE EST ICI : On génère les champs de manière invisible #}
+        {# 1. Ça empêche form_rest() de les afficher n'importe comment #}
+        {# 2. Ça renvoie bien les données au serveur pour éviter l'erreur "null/int" #}
+        <div style="display: none;">
+            {{ form_widget(form.lignes) }}
         </div>
+
         {{ form_rest(form) }}
     {{ form_end(form) }}
 </div>

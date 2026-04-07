@@ -16,7 +16,6 @@ use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\SecurityRequestAttributes;
 use Symfony\Component\Security\Http\Util\TargetPathTrait;
 
-
 class AppAuthenticator extends AbstractLoginFormAuthenticator
 {
     use TargetPathTrait;
@@ -55,6 +54,9 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
             $target = 'app_reception_terrain_home';
         } elseif (in_array('ROLE_RECEPTION_ORDONNANCEMENT', $roles)) {
             $target = 'app_reception_ordonnancement_home'; 
+        } elseif (in_array('ROLE_COMMERCIAL', $roles)) {
+            $target = 'app_commercial_home'; 
+        
         } else {
             $target = 'app_home'; 
         }
