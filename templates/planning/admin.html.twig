@@ -1,0 +1,504 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="bc-wrapper">
+    <div class="bc-paper" style="max-width: 98%;">
+        
+        {# --- ENTÊTE --- #}
+        <div class="bc-header">
+            <div class="bc-logo-container">
+                <img src="{{ asset('images/sg-galva-logo.png') }}" alt="Logo" class="bc-logo">
+            </div>
+            <div class="bc-title-container">
+                <h1>FEUILLE DE SUIVI & QUALITÉ</h1>
+                <p class="subtitle" style="color: #4f46e5;">MODE ADMINISTRATEUR (TOUT MODIFIABLE)</p>
+            </div>
+            <div class="bc-refi-container">
+                <div class="date-box">
+                    <small>ÉDITION DU</small>
+                    <span class="value">{{ planning.datePlanning|date('d/m/Y') }}</span>
+                </div>
+            </div>
+        </div>
+
+        {# --- CONFIG & KPI --- #}
+        <div class="bc-top-grid">
+            <div class="bc-box category-box">
+                <p class="box-label">CATÉGORIE DU PLANNING</p>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="cat" value="GB" {% if planning.categorie == 'GB' %}checked{% endif %}> GB
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="cat" value="PB" {% if planning.categorie == 'PB' %}checked{% endif %}> PB
+                    </label>
+                </div>
+            </div>
+            <div class="bc-box stats-box">
+                <p class="box-label">SUIVI DE LA PRODUCTION</p>
+                <div class="stats-flex">
+                    <div class="stat-item green">
+                        <small>LIGNES TERMINÉES</small>
+                        <strong id="count-coded">0</strong>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item gray">
+                        <small>EN ATTENTE</small>
+                        <strong id="count-empty">0</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# --- BOUTONS DE FILTRE DES COLONNES --- #}
+        <div class="column-toggles no-print">
+            <strong style="font-size: 11px; color: #6b7280;">AFFICHER / MASQUER :</strong>
+            <button type="button" class="toggle-btn active" data-target="col-group-qualite">
+                <i class="fas fa-check-circle"></i> Préparations (Qualité)
+            </button>
+            <button type="button" class="toggle-btn" data-target="col-group-bains">
+                <i class="fas fa-water"></i> Bains et Rebuts
+            </button>
+            <button type="button" class="toggle-btn" data-target="col-group-final">
+                <i class="fas fa-flag-checkered"></i> Contrôle Final
+            </button>
+        </div>
+
+        {# --- TABLEAU DE SAISIE --- #}
+        <div class="planning-table-container">
+            <table class="bc-table">
+                <thead>         
+                    <tr>
+                        <th colspan="6" style="background: #f3f4f6; border-right: 2px solid #1f2937; padding: 5px;">ORDONNANCEMENT (Modifiable)</th>
+                        
+                        <th colspan="3" class="col-group-qualite" style="background: #e0f2fe; border-right: 2px solid #1f2937; color: #0369a1;">
+                            CONTRÔLE PRÉPARATIONS PIÈCES SUIVANT NORMES<br>NF EN SIO 1461 ET NF EN ISO 14713
+                        </th>
+                        <th colspan="2" style="background: #fef3c7; border-right: 2px solid #1f2937; color: #92400e;">
+                            CONTRÔLE ATTACHAGE<br>PRD 02 01 05
+                        </th>
+                        
+                        <th colspan="3" class="col-group-bains hidden-column" style="background: #ecfdf5; border-right: 2px solid #1f2937; color: #047857;">
+                            BAINS ET REBUTS
+                        </th>
+                        <th colspan="2" class="col-group-final hidden-column" style="background: #ede9fe; border-right: 2px solid #1f2937; color: #5b21b6;">
+                            CONTRÔLE APRÈS TRAITEMENT
+                        </th>
+                        <th style="background: #1f2937; color: white;">VALID.</th>
+                    </tr>
+                    <tr>
+                        <th style="width: 100px; min-width: 100px;">REFI</th>
+                        <th style="width: 120px; min-width: 120px;">CLIENT</th>
+                        <th style="width: 30px; min-width: 30px;">IMP.</th>
+                        <th style="width: 110px; min-width: 110px;">H. M.A.D</th>
+                        <th style="width: 120px; min-width: 120px;">OBSERVATIONS</th>
+                        
+                        <th style="width: 40px; min-width: 40px; border-right: 2px solid #1f2937;">AVANCEMENT</th>
+                        
+                        <th class="col-group-qualite" style="min-width: 70px;">Q. OK/KO</th>
+                        <th class="col-group-qualite" style="min-width: 100px;">N° Fiche NC</th>
+                        <th class="col-group-qualite" style="min-width: 150px; border-right: 2px solid #1f2937;">Opérations</th>
+
+                        <th style="min-width: 100px;">CE</th>
+                        <th style="min-width: 100px; border-right: 2px solid #1f2937;">CONT.</th>
+
+                        <th class="col-group-bains hidden-column" style="min-width: 70px;">TRAITEMENT DE SURFACE</th>
+                        <th class="col-group-bains hidden-column" style="min-width: 70px;">BAIN ZINC</th>
+                        <th class="col-group-bains hidden-column" style="min-width: 150px; border-right: 2px solid #1f2937;">Rebuts</th>
+
+                        <th class="col-group-final hidden-column" style="min-width: 70px;">FIN OK</th>
+                        <th class="col-group-final hidden-column" style="min-width: 100px; border-right: 2px solid #1f2937;">N° Fiche NC</th>
+
+                        <th style="min-width: 60px;">FAIT</th>
+                    </tr>                
+                </thead>
+                <tbody id="planning-body">
+                    {% for ligne in planning.lignes %}
+                    <tr class="planning-row" data-ligne-id="{{ ligne.id }}" style="{% if ligne.avancement %}background: #ecfdf5;{% endif %}">
+                        
+                        {# --- MODIFICATION ICI : AUTOCOMPLÉTION REFI --- #}
+                        <td class="p-0 autocomplete-wrapper" style="text-align: center; background: #f9fafb; position: relative;"> 
+                            <input type="text" class="cell-input center-text refi-input" style="font-weight: 900; color: var(--primary-blue); width: calc(100% - 20px);" value="{{ ligne.bonTravail.bonCommande.refi }}" placeholder="Recherche...">
+                            
+                            {# Liste déroulante des résultats #}
+                            <div class="autocomplete-results"></div>
+
+                            <a href="{{ path('app_bon_travail_view', {'id': ligne.bonTravail.id}) }}" target="_blank" class="bt-link-icon" title="Consulter le BT" style="position: absolute; right: 4px; top: 10px; color: #9ca3af; font-size: 10px;">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </td>
+
+                        <td class="p-0" style="background: #f9fafb;"><input type="text" class="cell-input client-name-compact" title="{{ ligne.bonTravail.bonCommande.client.nom }}" value="{{ ligne.bonTravail.bonCommande.client.nom }}" readonly style="color: #6b7280; cursor: not-allowed;"></td>
+                        
+                        {# --- DÉVERROUILLAGE ORDONNANCEMENT --- #}
+                        <td class="center-content"><input type="checkbox" class="important-check" {% if ligne.importance %}checked{% endif %}></td>
+                        <td class="p-0"><input type="datetime-local" class="cell-input center-text dt-input {% if ligne.importance %}is-important{% endif %}" value="{{ ligne.heureMiseADisposition ? ligne.heureMiseADisposition|date('Y-m-d\\TH:i', 'UTC') : '' }}"></td>
+                        <td class="p-0"><input type="text" class="cell-input obs-ord" title="{{ ligne.observations }}" value="{{ ligne.observations }}"></td>
+                        <td class="p-0" style="border-right: 2px solid #1f2937;">
+                            <input type="text" class="cell-input center-text code-ord" style="font-weight: 900; color: #111827;" title="Code Avancement" value="{{ ligne.avancementCode }}">
+                        </td>
+
+                        {# --- PARTIE QUALITÉ --- #}
+                        <td class="p-0 col-group-qualite">
+                            <select class="cell-input center-text q-ok bold-select">
+                                <option value=""></option>
+                                <option value="1" style="color: green;" {% if ligne.qualiteConforme is same as(true) %}selected{% endif %}>OK</option>
+                                <option value="0" style="color: red;" {% if ligne.qualiteConforme is same as(false) %}selected{% endif %}>KO</option>
+                            </select>
+                        </td>
+                        <td class="p-0 col-group-qualite"><input type="text" class="cell-input center-text q-nc" placeholder="NC-..." value="{{ ligne.qualiteFicheNC }}"></td>
+                        <td class="p-0 col-group-qualite" style="border-right: 2px solid #1f2937;"><input type="text" class="cell-input q-op" placeholder="..." value="{{ ligne.qualiteOperations }}"></td>
+
+                        <td class="p-0"><input type="text" class="cell-input center-text aff-ce" placeholder="Init. CE" value="{{ ligne.affichageCaseCE }}"></td>
+                        <td class="p-0" style="border-right: 2px solid #1f2937;"><input type="text" class="cell-input center-text aff-ctrl" placeholder="Init. Ctrl" value="{{ ligne.affichageCaseControleur }}"></td>
+
+                        <td class="p-0 col-group-bains hidden-column">
+                            <select class="cell-input center-text ts-ok bold-select">
+                                <option value=""></option>
+                                <option value="1" style="color: green;" {% if ligne.traitementSurfaceConforme is same as(true) %}selected{% endif %}>OK</option>
+                                <option value="0" style="color: red;" {% if ligne.traitementSurfaceConforme is same as(false) %}selected{% endif %}>KO</option>
+                            </select>
+                        </td>
+                        <td class="p-0 col-group-bains hidden-column">
+                            <select class="cell-input center-text zn-ok bold-select">
+                                <option value=""></option>
+                                <option value="1" style="color: green;" {% if ligne.bainZincConforme is same as(true) %}selected{% endif %}>OK</option>
+                                <option value="0" style="color: red;" {% if ligne.bainZincConforme is same as(false) %}selected{% endif %}>KO</option>
+                            </select>
+                        </td>
+                        <td class="p-0 col-group-bains hidden-column" style="border-right: 2px solid #1f2937;"><input type="text" class="cell-input rebuts" placeholder="Détail rebuts..." value="{{ ligne.rebuts }}"></td>
+
+                        <td class="p-0 col-group-final hidden-column">
+                            <select class="cell-input center-text fin-ok bold-select">
+                                <option value=""></option>
+                                <option value="1" style="color: green;" {% if ligne.finalConforme is same as(true) %}selected{% endif %}>OK</option>
+                                <option value="0" style="color: red;" {% if ligne.finalConforme is same as(false) %}selected{% endif %}>KO</option>
+                            </select>
+                        </td>
+                        <td class="p-0 col-group-final hidden-column" style="border-right: 2px solid #1f2937;"><input type="text" class="cell-input center-text fin-nc" placeholder="NC-..." value="{{ ligne.finalFicheNC }}"></td>
+
+                        <td class="center-content" style="background: #f9fafb;">
+                            <input type="checkbox" class="avancement-check" style="transform: scale(1.5); cursor: pointer;" {% if ligne.avancement %}checked{% endif %}>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bc-actions no-print">
+            <a href="{{ path('app_admin_home') }}" class="btn-back">
+                RETOUR ADMIN
+            </a>
+            <button class="btn-save" style="background: #4f46e5;" onclick="validerPlanning()">
+                <i class="fas fa-save"></i> ENREGISTRER TOUT LE PLANNING
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root { 
+        --primary-green: #10b981; 
+        --primary-red: #dc2626; 
+        --border-dark: #1f2937; 
+        --primary-blue: #2e46a6;
+    }
+
+    .bc-wrapper { background: #e5e7eb; min-height: 100vh; padding: 20px; font-family: sans-serif; }
+    .bc-paper { margin: 0 auto; background: white; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 4px; }
+    .bc-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--border-dark); padding-bottom: 15px; margin-bottom: 25px; }
+    .bc-logo { max-width: 100px; height: auto; }
+    .bc-title-container { flex-grow: 1; text-align: center; }
+    .bc-title-container h1 { margin: 0; font-size: 24px; font-weight: 900; }
+    .subtitle { font-size: 11px; font-weight: bold; text-transform: uppercase; margin-top: 5px; }
+
+    .bc-top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .bc-box { border: 1px solid #e5e7eb; padding: 15px; background: #f9fafb; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
+    .box-label { font-size: 10px; font-weight: 900; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    
+    .stats-flex { display: flex; align-items: center; justify-content: space-around; width: 100%; }
+    .stat-item { text-align: center; }
+    .stat-item small { display: block; font-size: 9px; font-weight: bold; color: #6b7280; margin-bottom: 5px; line-height: 1.2; }
+    .stat-item strong { font-size: 24px; font-weight: 900; }
+    .stat-item.green { color: var(--primary-green); }
+
+    .column-toggles { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .toggle-btn { background: white; border: 1px solid #d1d5db; color: #6b7280; padding: 6px 15px; border-radius: 20px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; gap: 5px; align-items: center; }
+    .toggle-btn:hover { background: #f3f4f6; }
+    .toggle-btn.active { background: #4f46e5; color: white; border-color: #4f46e5; }
+    .hidden-column { display: none !important; }
+
+    .planning-table-container { 
+        width: 100%; 
+        overflow-x: auto; 
+        padding-bottom: 160px; 
+        margin-bottom: -140px; 
+    }
+
+    .bc-table { 
+        border: 2px solid var(--border-dark);
+        width: max-content; 
+        min-width: 100%; 
+        border-collapse: collapse; 
+        table-layout: fixed; 
+    }
+
+    .bc-actions { 
+        display: flex; 
+        gap: 15px; 
+        margin-top: 30px; 
+        position: relative; 
+        z-index: 10;
+    }
+    .bc-table th { border-bottom: 2px solid var(--border-dark); border-right: 1px solid #d1d5db; padding: 10px 5px; font-size: 10px; font-weight: 900; text-transform: uppercase; text-align: center; overflow: hidden; }
+    .bc-table td { border-bottom: 1px solid #ddd; border-right: 1px solid #ddd; height: 35px; vertical-align: middle; }
+    
+    .cell-input { width: 100%; height: 100%; border: none; background: transparent; padding: 0 4px; font-size: 12px; outline: none; box-sizing: border-box; transition: 0.2s; }
+    .cell-input:focus { background: #eef2ff; }
+    .bold-select { font-weight: bold; cursor: pointer; text-align-last: center; }
+    .dt-input { font-size: 10px; padding: 0 !important; cursor: pointer; } 
+    .dt-input.is-important { color: var(--primary-red) !important; font-weight: 900; background: #fff1f2; }
+    .center-text { text-align: center; }
+    .p-0 { padding: 0 !important; }
+
+    .client-name-compact { font-weight: bold; color: #374151; }
+    .autocomplete-results { 
+        display: none; position: absolute; top: 100%; left: 0; width: 250px; 
+        background: white; border: 1px solid #d1d5db; border-radius: 4px; 
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); z-index: 9999; 
+        text-align: left; max-height: 200px; overflow-y: auto; 
+    }
+    .autocomplete-item { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; cursor: pointer; font-size: 11px; transition: 0.2s; line-height: 1.2; }
+    .autocomplete-item:hover { background: #e0f2fe; }
+    .autocomplete-item:last-child { border-bottom: none; }
+    .autocomplete-item strong { color: var(--primary-blue); font-size: 12px; }
+
+    .btn-save { flex: 4; color: white; border: none; padding: 15px; border-radius: 4px; font-weight: 800; cursor: pointer; font-size: 16px; transition: 0.2s; }
+    .btn-save:hover { filter: brightness(0.9); }
+    .btn-back { flex: 1; background: #6b7280; color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-weight: bold; }
+    
+    .bt-link-icon:hover { color: var(--primary-blue) !important; }
+</style>
+
+<script>
+function initColumnToggles() {
+    const toggleButtons = document.querySelectorAll('.toggle-btn');
+    
+    toggleButtons.forEach(btn => {
+        btn.onclick = function(e) {
+            e.preventDefault();
+            this.classList.toggle('active');
+            const targetClass = this.getAttribute('data-target');
+            const columns = document.querySelectorAll('.' + targetClass);
+            columns.forEach(col => { col.classList.toggle('hidden-column'); });
+        };
+    });
+}
+
+function sortRows() {
+    const tbody = document.getElementById('planning-body');
+    const rows = Array.from(tbody.querySelectorAll('.planning-row'));
+
+    rows.sort((a, b) => {
+        const impA = a.querySelector('.important-check').checked ? 1 : 0;
+        const impB = b.querySelector('.important-check').checked ? 1 : 0;
+
+        if (impA !== impB) { return impB - impA; }
+
+        const dateA = a.querySelector('.dt-input').value;
+        const dateB = b.querySelector('.dt-input').value;
+
+        if (dateA && dateB) { return dateA.localeCompare(dateB); } 
+        else if (dateA && !dateB) { return -1; } 
+        else if (!dateA && dateB) { return 1; } 
+        else { return 0; }
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// --- GESTION DE LA LISTE DÉROULANTE (AUTOCOMPLÉTION) ---
+function initRefiAutocomplete() {
+    const refiInputs = document.querySelectorAll('.refi-input');
+
+    // Cacher les listes si on clique à côté
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.autocomplete-wrapper')) {
+            document.querySelectorAll('.autocomplete-results').forEach(el => el.style.display = 'none');
+        }
+    });
+
+    refiInputs.forEach(input => {
+        const wrapper = input.closest('.autocomplete-wrapper');
+        const resultsDiv = wrapper.querySelector('.autocomplete-results');
+        const row = input.closest('tr');
+        const clientInput = row.querySelector('.client-name-compact');
+
+        // Au clic dans la case : on cherche (soit le texte, soit tout si vide)
+        input.addEventListener('click', function() {
+            performRefiSearch(this.value.trim(), resultsDiv, input, clientInput);
+        });
+
+        // À chaque fois qu'on tape une lettre
+        input.addEventListener('input', function() {
+            performRefiSearch(this.value.trim(), resultsDiv, input, clientInput);
+        });
+    });
+}
+
+async function performRefiSearch(term, resultsDiv, input, clientInput) {
+    try {
+        // Appelle l'API de recherche que vous aviez déjà (qui cherche parmi tous les BTs)
+        const response = await fetch(`/api/search-bt?q=${encodeURIComponent(term)}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            resultsDiv.innerHTML = ''; // On vide la liste précédente
+
+            if (data.length === 0) {
+                resultsDiv.innerHTML = '<div class="autocomplete-item" style="color:#dc2626; cursor:default;">Aucun REFI trouvé</div>';
+                resultsDiv.style.display = 'block';
+                return;
+            }
+
+            // On construit la liste
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.innerHTML = `<strong>${item.refi}</strong><br><span style="color:#6b7280;">${item.client}</span>`;
+                
+                // Ce qui se passe quand on clique sur un choix
+                div.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    input.value = item.refi;
+                    clientInput.value = item.client;
+                    clientInput.style.color = '#374151'; // Couleur normale
+                    resultsDiv.style.display = 'none'; // On referme le menu
+                });
+                
+                resultsDiv.appendChild(div);
+            });
+            
+            resultsDiv.style.display = 'block'; // On affiche le menu
+        }
+    } catch (e) {
+        console.error("Erreur réseau pendant la recherche", e);
+    }
+}
+
+async function validerPlanning() {
+    const lignes = [];
+    const rows = document.querySelectorAll('.planning-row');
+
+    // 1. On capture la catégorie globale
+    const categorieSelect = document.querySelector('input[name="cat"]:checked');
+    const categorie = categorieSelect ? categorieSelect.value : 'GB';
+
+    rows.forEach(row => {
+        const ligneId = row.getAttribute('data-ligne-id'); 
+        if (ligneId) {
+            const getBoolVal = (selector) => {
+                const val = row.querySelector(selector).value;
+                if (val === "1") return true;
+                if (val === "0") return false;
+                return null;
+            };
+
+            const refiValue = row.querySelector('.refi-input').value.trim();
+            if (!refiValue) return; // On ignore les lignes sans REFI
+
+            lignes.push({
+                id: parseInt(ligneId),
+                
+                refi: refiValue, 
+                important: row.querySelector('.important-check').checked,
+                hmad: row.querySelector('.dt-input').value,
+                observations: row.querySelector('.obs-ord').value.trim(),
+                code: row.querySelector('.code-ord').value.trim(),
+
+                qualiteConforme: getBoolVal('.q-ok'),
+                qualiteFicheNC: row.querySelector('.q-nc').value.trim(),
+                qualiteOperations: row.querySelector('.q-op').value.trim(),
+                affichageCaseCE: row.querySelector('.aff-ce').value.trim(),
+                affichageCaseControleur: row.querySelector('.aff-ctrl').value.trim(),
+                traitementSurfaceConforme: getBoolVal('.ts-ok'),
+                bainZincConforme: getBoolVal('.zn-ok'),
+                rebuts: row.querySelector('.rebuts').value.trim(),
+                finalConforme: getBoolVal('.fin-ok'),
+                finalFicheNC: row.querySelector('.fin-nc').value.trim(),
+                avancement: row.querySelector('.avancement-check').checked 
+            });
+        }
+    });
+
+    if (lignes.length === 0) { alert("Attention : Aucune donnée valide à enregistrer ! Vérifiez vos REFI."); return; }
+
+    try {
+        const btnSave = document.querySelector('.btn-save');
+        const oldText = btnSave.innerHTML;
+        btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ENREGISTREMENT...';
+        btnSave.disabled = true;
+
+        const planningId = "{{ planning.id }}";
+        const url = "{{ path('app_planning_update', {'id': 'ID_PLACEHOLDER'}) }}".replace('ID_PLACEHOLDER', planningId);
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ 
+                categorie: categorie,
+                lignes: lignes 
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            window.location.href = "{{ path('app_admin_home') }}";
+        } else {
+            alert("Erreur : " + (data.message || "Inconnue."));
+            btnSave.innerHTML = oldText;
+            btnSave.disabled = false;
+        }
+    } catch (err) {
+        alert("Erreur réseau. Impossible d'enregistrer.");
+        document.querySelector('.btn-save').disabled = false;
+    }
+}
+
+function updateStats() {
+    const rows = document.querySelectorAll('.planning-row');
+    let fait = 0; let attente = 0;
+    rows.forEach(row => {
+        if (row.querySelector('.avancement-check').checked) fait++;
+        else attente++;
+    });
+    document.getElementById('count-coded').textContent = fait;
+    document.getElementById('count-empty').textContent = attente;
+}
+
+function initPlanning() {
+    sortRows();
+    updateStats(); 
+    initColumnToggles(); 
+    initRefiAutocomplete();
+    
+    const tbody = document.getElementById('planning-body');
+    tbody.onchange = function(e) {
+        if (e.target.classList.contains('avancement-check')) {
+            const row = e.target.closest('tr');
+            if (e.target.checked) { row.style.background = '#ecfdf5'; } 
+            else { row.style.background = 'transparent'; }
+            updateStats();
+        }
+    };
+}
+
+document.removeEventListener('turbo:load', initPlanning);
+document.addEventListener('turbo:load', initPlanning);
+
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initPlanning); } 
+else { initPlanning(); }
+</script>
+{% endblock %}

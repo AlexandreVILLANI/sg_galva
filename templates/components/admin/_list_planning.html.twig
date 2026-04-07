@@ -1,4 +1,4 @@
-<section id="ordo-plannings" class="content-section" style="display: none;">
+<div>
     <div class="section-header">
         <h2 class="section-title">Plannings de Production</h2>
         <a href="{{ path('app_planning_new') }}" class="btn-create-planning">
@@ -29,14 +29,13 @@
         </div>
     </div>
 
-    {# --- TABLEAU DES PLANNINGS (VRAIES DONNÉES) --- #}
+    {# --- TABLEAU DES PLANNINGS --- #}
     <div class="table-container">
         <div class="table-grid header planning-list-grid">
             <span>Date du Planning</span>
             <span>Catégorie</span>
             <span style="text-align: center;">Lignes traitées</span>
             <span>État d'avancement atelier</span>
-            <style> .planning-list-grid { grid-template-columns: 180px 150px 150px 1fr 100px !important; } </style>
             <span style="text-align: center;">Actions</span>
         </div>
 
@@ -51,13 +50,15 @@
                 {% endfor %}
                 {% set pourcentage = totalLignes > 0 ? (lignesFaites / totalLignes * 100)|round : 0 %}
                 {% set barColor = pourcentage == 100 ? '#10b981' : (pourcentage > 0 ? '#f59e0b' : '#e5e7eb') %}
+                
+                {# --- 1ère MODIF ICI : Ligne cliquable --- #}
                 <div class="table-grid row clickable-row planning-list-grid" 
                      data-date="{{ planning.datePlanning|date('Y-m-d') }}"
                      data-cat="{{ planning.categorie }}"
-                     onclick="window.location='{{ path('app_planning_edit', {'id': planning.id}) }}'">
+                     onclick="window.location='{{ path('app_admin_planning_edit', {'id': planning.id}) }}'">
 
                     <div class="ref-cell-group">
-                        <span class="ref-cell" style="color: var(--primary-green);">
+                        <span class="ref-cell" style="color: var(--primary-admin, #4f46e5);">
                             <i class="far fa-calendar-check"></i> {{ planning.datePlanning|date('d/m/Y') }}
                         </span>
                     </div>
@@ -80,8 +81,10 @@
                     </div>
 
                     <div class="actions-cell center-content" onclick="event.stopPropagation();">
-                        <a href="{{ path('app_planning_edit', {'id': planning.id}) }}" class="btn-action-icon" title="Voir / Modifier">
-                            <i class="fas fa-eye" style="color: var(--primary-green);"></i>
+                        
+                        {# --- 2ème MODIF ICI : Bouton "Oeil" --- #}
+                        <a href="{{ path('app_admin_planning_edit', {'id': planning.id}) }}" class="btn-action-icon" title="Voir / Modifier">
+                            <i class="fas fa-eye" style="color: var(--primary-admin, #4f46e5);"></i>
                         </a>
 
                         <form method="post" action="{{ path('app_planning_delete', {'id': planning.id}) }}" 
@@ -105,7 +108,7 @@
             {% endfor %}
         </div>
     </div>
-</section>
+</div>
 
 <script>
 function setupPlanningListFilters() {
@@ -138,6 +141,7 @@ function setupPlanningListFilters() {
         });
     }
 }
+document.addEventListener('turbo:load', setupPlanningListFilters);
 </script>
 
 <style>
@@ -149,7 +153,7 @@ function setupPlanningListFilters() {
     .filter-group input, .filter-group select { border: none; background: transparent; font-size: 13px; outline: none; width: 100%; color: #374151; }
     
     .btn-reset { color: #6b7280; background: #f3f4f6; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #e5e7eb; }
-    .btn-reset:hover { background: #e5e7eb; color: var(--primary-green); }
+    .btn-reset:hover { background: #e5e7eb; color: var(--primary-admin, #4f46e5); }
 
     .table-container { background: white; border: 1px solid #f3f4f6; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     .table-grid { display: grid; align-items: center; padding: 12px 20px; font-size: 13px; }
@@ -174,4 +178,8 @@ function setupPlanningListFilters() {
     .btn-action-icon { font-size: 16px; text-decoration: none; padding: 5px; }
     .btn-action-icon:hover { transform: scale(1.1); }
     .planning-list-grid { grid-template-columns: 180px 150px 150px 1fr 120px !important; }
+
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .btn-create-planning { background: var(--primary-admin, #4f46e5); color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 14px; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+    .btn-create-planning:hover { background: #4338ca; color: white; }
 </style>

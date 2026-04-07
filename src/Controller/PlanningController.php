@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted; // <-- AJOUT IMPORTANT POUR LA SÉCURITÉ
 
 class PlanningController extends AbstractController
 {
@@ -193,7 +194,7 @@ class PlanningController extends AbstractController
     }
 
     // =========================================================================
-    // NOUVELLE PARTIE : CHEF D'ÉQUIPE (Qualité & Validation)
+    // PARTIE CHEF D'ÉQUIPE (Qualité & Validation)
     // =========================================================================
 
     /**
@@ -220,40 +221,32 @@ class PlanningController extends AbstractController
         }
 
         foreach ($data['lignes'] as $ligneData) {
-            // Le chef d'équipe ne peut que modifier des lignes existantes
             if (!empty($ligneData['id'])) {
                 $ligne = $em->getRepository(PlanningLigne::class)->find($ligneData['id']);
                 
                 if ($ligne && $ligne->getPlanning() === $planning) {
                     
-                    // 1. Contrôle Qualité
                     if (array_key_exists('qualiteConforme', $ligneData)) $ligne->setQualiteConforme($ligneData['qualiteConforme']);
                     if (array_key_exists('qualiteFicheNC', $ligneData)) $ligne->setQualiteFicheNC($ligneData['qualiteFicheNC']);
                     if (array_key_exists('qualiteOperations', $ligneData)) $ligne->setQualiteOperations($ligneData['qualiteOperations']);
 
-                    // 2. Affichage
                     if (array_key_exists('affichageCaseCE', $ligneData)) $ligne->setAffichageCaseCE($ligneData['affichageCaseCE']);
                     if (array_key_exists('affichageCaseControleur', $ligneData)) $ligne->setAffichageCaseControleur($ligneData['affichageCaseControleur']);
 
-                    // 3. Bains & Rebuts
                     if (array_key_exists('traitementSurfaceConforme', $ligneData)) $ligne->setTraitementSurfaceConforme($ligneData['traitementSurfaceConforme']);
                     if (array_key_exists('bainZincConforme', $ligneData)) $ligne->setBainZincConforme($ligneData['bainZincConforme']);
                     if (array_key_exists('rebuts', $ligneData)) $ligne->setRebuts($ligneData['rebuts']);
 
-                    // 4. Contrôle Final
                     if (array_key_exists('finalConforme', $ligneData)) $ligne->setFinalConforme($ligneData['finalConforme']);
                     if (array_key_exists('finalFicheNC', $ligneData)) $ligne->setFinalFicheNC($ligneData['finalFicheNC']);
 
-                    // 5. Validation "Fait"
                     if (array_key_exists('avancement', $ligneData)) {
                         $isFait = $ligneData['avancement'];
                         
-                        // Si le chef d'équipe coche la case
                         if ($isFait && !$ligne->isAvancement()) {
                             $ligne->setDateValidation(new \DateTime()); 
                             $ligne->setValidePar($this->getUser());     
                         } 
-                        // S'il la décoche
                         elseif (!$isFait && $ligne->isAvancement()) {
                             $ligne->setDateValidation(null);
                             $ligne->setValidePar(null);
@@ -267,5 +260,21 @@ class PlanningController extends AbstractController
 
         $em->flush();
         return new JsonResponse(['success' => true]);
+    }
+
+    // =========================================================================
+    // NOUVELLE PARTIE : ADMINISTRATEUR (Tout modifiable)
+    // =========================================================================
+
+    /**
+     * OUVRE LE PLANNING COMPLET POUR L'ADMINISTRATEUR
+     */
+    #[Route('/admin/planning/{id}/modifier', name: 'app_admin_planning_edit', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function editAdmin(Planning $planning): Response
+    {
+        return $this->render('planning/admin.html.twig', [
+            'planning' => $planning,
+        ]);
     }
 }
