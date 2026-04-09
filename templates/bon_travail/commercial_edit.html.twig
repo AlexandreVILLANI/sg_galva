@@ -83,9 +83,9 @@
         </div>
     </div>
 
-    {# --- TABLEAU TECHNIQUE --- #}
+    {# --- TABLEAU TECHNIQUE  --- #}
     <div class="bc-box description-box table-wrapper">
-        <table class= "bc-table">
+        <table class="bc-table">
             <thead>
                 <tr>
                     <th width="5%">Qté</th>
@@ -99,40 +99,31 @@
                 </tr>
             </thead>
             <tbody>
-                {% for ligneForm in form.lignes %}
+                {% for ligne in bt.lignes %}
                     <tr>
-                        <td class="center bold">{{ ligneForm.vars.value.nbPaquets }}</td>
-                        <td class="designation">
-                            <strong>{{ ligneForm.vars.value.description|default('Produit non précisé') }}</strong>
-                            <div class="sub-info">Emp: {{ ligneForm.vars.value.emplacement.nom }}</div>
+                        <td class="center bold bg-gray">{{ ligne.nbPaquets }}</td>
+                        <td class="designation bg-gray">
+                            <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
+                            <div class="sub-info">Emp: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }}</div>
                         </td>
                         
-                        {# Champs verrouillés pour le commercial #}
-                        <td class="p-0">{{ form_widget(ligneForm.u, {'attr': {'class': 'cell-input center', 'readonly': 'readonly'}}) }}</td>
-                        <td class="p-0">{{ form_widget(ligneForm.reference, {'attr': {'class': 'cell-input', 'readonly': 'readonly'}}) }}</td>
-                        <td class="p-0">{{ form_widget(ligneForm.travauxAnnexes, {'attr': {'class': 'cell-input', 'readonly': 'readonly'}}) }}</td>
-                        <td class="p-0">{{ form_widget(ligneForm.poids, {'attr': {'class': 'cell-input right', 'readonly': 'readonly'}}) }}</td>
+                        <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][u]" class="cell-input center" value="{{ ligne.u }}"></td>
+                        <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][reference]" class="cell-input" value="{{ ligne.reference }}"></td>
+                        <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][travauxAnnexes]" class="cell-input" value="{{ ligne.travauxAnnexes }}"></td>
+                        <td class="p-0"><input type="number" step="0.01" name="lignes[{{ ligne.id }}][poids]" class="cell-input right" value="{{ ligne.poids }}"></td>
                         
-                        {# --- LE SEUL CHAMP MODIFIABLE : LE PRIX --- #}
+                        {# --- CASE PRIX (Identique à la vue commerciale) --- #}
                         <td class="p-0">
-                            {{ form_widget(ligneForm.prixTonne, {'attr': {'class': 'cell-input center editable-price', 'style': 'color: #4f46e5; font-weight: bold; background: #f8faff;', 'step': '0.01', 'placeholder': '€/T'}}) }}
+                            <input type="number" step="0.01" name="lignes[{{ ligne.id }}][prixTonne]" 
+                                    class="cell-input center editable-price" 
+                                    style="color: #4f46e5; font-weight: bold; background: #f8faff;" 
+                                    placeholder="€/T" 
+                                    value="{{ ligne.prixTonne }}">
                         </td>
-
-                        <td class="p-0">{{ form_widget(ligneForm.observations, {'attr': {'class': 'cell-input', 'rows':'1', 'readonly': 'readonly'}}) }}</td>
+                        
+                        <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][observations]" class="cell-input" value="{{ ligne.observations }}"></td>
                     </tr>
-                {% else %}
-                    <tr><td colspan="8" class="center muted">Aucune ligne trouvée.</td></tr>
                 {% endfor %}
-
-                {% for i in 1..5 %}
-                <tr><td colspan="8" style="height: 35px; border-bottom: 1px solid #000; border-right: 1px solid #000;"></td></tr>
-                {% endfor %}
-
-                <tr style="background-color: #f8faff; font-weight: bold;">
-                    <td colspan="5" style="text-align: right; padding-right: 15px; text-transform: uppercase;">Total Poids (Kg) :</td>
-                    <td style="text-align: right; padding-right: 5px; color: #2e46a6; font-size: 14px;" id="total-poids-display">0.00</td>
-                    <td colspan="2"></td>
-                </tr>
             </tbody>
         </table>
     </div>
@@ -239,6 +230,12 @@ document.addEventListener('DOMContentLoaded', function() {
     .btn-confirm { flex: 2; color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
     .btn-confirm:hover { background: #3730a3 !important; }
     .btn-print { flex: 0 0 auto; background: #333; color: white; border: none; padding: 15px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+    .editable-price:focus { 
+        background: #e0e7ff !important; 
+        outline: 2px solid #4f46e5; 
+        outline-offset: -2px; 
+        color: #312e81 !important; 
+    }
 
     @media print {
         @page { margin: 0; }

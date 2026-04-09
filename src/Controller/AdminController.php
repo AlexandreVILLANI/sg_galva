@@ -7,11 +7,13 @@ use App\Entity\BonDeCommande;
 use App\Entity\FicheDechargement;
 use App\Entity\BonTravail;
 use App\Entity\User;
+use App\Entity\BonLivraison;
 
 use App\Form\BonDeCommandeType;
 use App\Form\ClientType;
 use App\Form\UserEditType;
 use App\Form\UserType;
+use App\Form\BonLivraisonType;
 
 use App\Repository\BonDeCommandeRepository;
 use App\Repository\LigneDechargementRepository;
@@ -21,6 +23,7 @@ use App\Repository\BonTravailRepository;
 use App\Repository\UserRepository;
 use App\Repository\EmplacementRepository;
 use App\Repository\PlanningRepository;
+use App\Repository\BonLivraisonRepository; 
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
@@ -46,7 +49,8 @@ class AdminController extends AbstractController
         ClientRepository $clientRepo,
         BonTravailRepository $btRepo,
         PlanningRepository $planningRepo,
-        UserRepository $userRepo
+        UserRepository $userRepo,
+        BonLivraisonRepository $blRepo
     ): Response {
         return $this->render('home/admin.html.twig', [
             'bons' => $bcRepo->findBy([], ['date' => 'DESC']),
@@ -55,6 +59,7 @@ class AdminController extends AbstractController
             'bons_travail' => $btRepo->findAll(),
             'plannings' => $planningRepo->findBy([], ['datePlanning' => 'DESC']), 
             'users' => $userRepo->findBy([], ['id' => 'ASC']),
+            'bons_livraison' => $blRepo->findBy([], ['dateCreation' => 'DESC']),
         ]);
     }
 
@@ -248,8 +253,13 @@ class AdminController extends AbstractController
                     $ligne->setU($data['u'] ?? '');
                     $ligne->setReference($data['reference'] ?? '');
                     $ligne->setTravauxAnnexes($data['travauxAnnexes'] ?? '');
-                    $ligne->setPoids((float) ($data['poids'] ?? 0));
                     $ligne->setObservations($data['observations'] ?? '');
+                    
+                    $poidsSaisi = str_replace(',', '.', $data['poids'] ?? '0');
+                    $ligne->setPoids((float) $poidsSaisi);
+                    
+                    $prixSaisi = str_replace(',', '.', $data['prixTonne'] ?? '0');
+                    $ligne->setPrixTonne((float) $prixSaisi);
                 }
             }
         }
@@ -420,5 +430,41 @@ class AdminController extends AbstractController
         }
 
         return $this->redirectToRoute('app_admin_home', ['section' => 'admin-us']);
+    }
+
+    /**
+     * AFFICHER ET ÉDITER LE BON DE LIVRAISON (Vue Admin)
+     */
+    #[Route('/bon-livraison/{id}', name: 'app_admin_bl_show', methods: ['GET', 'POST'])]
+    public function showBonLivraison(Request $request, BonLivraison $bl, EntityManagerInterface $em): Response
+    {
+        // On récupère le bon de travail et la commande associés pour l'affichage
+        $bt = $bl->getBonTravail();
+        $commande = $bt->getBonCommande();
+
+        // On crée le formulaire pour éditer les infos de transport et la signature
+        $form = $this->createForm(BonLivraisonType::class, $bl);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            
+            // Si une nouvelle signature a été faite, on passe le statut à "signé"
+            if ($bl->getSignature()) {
+                $bl->setStatut('Signé'); 
+            }
+
+            $em->flush();
+            $this->addFlash('success', 'Le Bon de Livraison a bien été enregistré.');
+
+            // Redirection vers l'affichage du BL (la même page) pour voir la modif
+            return $this->redirectToRoute('app_admin_bl_show', ['id' => $bl->getId()]);
+        }
+
+        return $this->render('bon_livraison/admin.html.twig', [
+            'bl' => $bl,
+            'bt' => $bt,
+            'commande' => $commande,
+            'form' => $form->createView(),
+        ]);
     }
 }

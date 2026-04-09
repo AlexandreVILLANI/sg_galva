@@ -77,11 +77,12 @@
                 <thead>
                     <tr>
                         <th width="5%">Qté</th>
-                        <th width="30%">Désignation</th>
+                        <th width="25%">Désignation</th>
                         <th width="5%">U</th>
-                        <th width="15%">Référence</th>
-                        <th width="15%">Trav. Annexes</th>
+                        <th width="12%">Référence</th>
+                        <th width="13%">Trav. Annexes</th>
                         <th width="10%">Poids Kg</th>
+                        <th width="10%">Prix/T (€)</th>
                         <th width="20%">Observations</th>
                     </tr>
                 </thead>
@@ -99,6 +100,10 @@
                             <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][reference]" class="cell-input" value="{{ ligne.reference }}"></td>
                             <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][travauxAnnexes]" class="cell-input" value="{{ ligne.travauxAnnexes }}"></td>
                             <td class="p-0"><input type="number" step="0.01" name="lignes[{{ ligne.id }}][poids]" class="cell-input right" value="{{ ligne.poids }}"></td>
+                            
+                            {# --- NOUVELLE CASE PRIX --- #}
+                            <td class="p-0"><input type="number" step="0.01" name="lignes[{{ ligne.id }}][prixTonne]" class="cell-input right" style="color: #10b981; font-weight: bold;" value="{{ ligne.prixTonne }}"></td>
+                            
                             <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][observations]" class="cell-input" value="{{ ligne.observations }}"></td>
                         </tr>
                     {% endfor %}

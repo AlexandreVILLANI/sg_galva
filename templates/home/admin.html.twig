@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Administration - SG Galva{% endblock %}
+{% block title %}Administration - SG GALVA{% endblock %}
 
 {% block body %}
 <div class="dashboard-container">
@@ -18,7 +18,7 @@
                 <a href="#" class="nav-item" data-target="admin-cl">
                     <i class="fas fa-building"></i>
                     <span>Clients</span>
-                </a>
+                </a> 
                 <a href="#" class="nav-item" data-target="admin-fd">
                     <i class="fas fa-clipboard-check"></i>
                     <span>Fiche de déchargement</span>
@@ -34,6 +34,10 @@
                 <a href="#" class="nav-item" data-target="admin-pl">
                     <i class="fas fa-calendar-alt"></i>
                     <span>Planning</span>
+                </a>
+                <a href="#" class="nav-item" data-target="admin-bl">
+                    <i class="fas fa-truck"></i>
+                    <span>Bon de livraison</span>
                 </a>
             </nav>
         </div>
@@ -77,36 +81,33 @@
 
         <div id="content-area">
             
-            {# --- 1. SECTION BONS DE COMMANDE --- #}
             <section id="admin-bc" class="content-section active">
                 {{ include('components/admin/_list_bon_commande.html.twig') }}                
             </section>
 
-            {# --- 2. SECTION FICHES DE DÉCHARGEMENT --- #}
             <section id="admin-fd" class="content-section">
                 {{ include('components/admin/_list_fiche_dechargement.html.twig') }} 
             </section>
 
-            {# --- 3. SECTION BONS DE TRAVAIL --- #}
             <section id="admin-bt" class="content-section">
                 {{ include('components/admin/_list_bon_travail.html.twig') }}
             </section>
 
-            {# --- 4. SECTION PLANNINGS --- #}
             <section id="admin-pl" class="content-section">
                 {{ include('components/admin/_list_planning.html.twig') }}
             </section>
 
-            {# --- 5. SECTION CLIENTS --- #}
             <section id="admin-cl" class="content-section">
                 {{ include('components/admin/_list_client.html.twig') }}
             </section>
 
-            {# --- 6. SECTION UTILISATEURS (NOUVEAU) --- #}
             <section id="admin-us" class="content-section">
                 {{ include('components/admin/_list_user.html.twig') }}
             </section>
 
+            <section id="admin-bl" class="content-section">
+                {{ include('components/admin/_list_bon_livraison.html.twig') }}
+            </section>
         </div>
     </main>
 </div>
