@@ -267,7 +267,7 @@ class AdminController extends AbstractController
         // 4. SAUVEGARDE FINALE
         $em->flush(); 
         
-        $this->addFlash('success', 'Mise à jour réussie. Le traitement a été synchronisé !');
+        $this->addFlash('success', 'Mi se à jour réussie. Le traitement a été synchronisé !');
         return $this->redirectToRoute('app_admin_home', ['section' => 'admin-bt']);
     }
 
