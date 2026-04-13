@@ -81,6 +81,14 @@
                 {{ form_widget(form.delaiClient, {'attr': {'class': 'ghost-input', 'readonly': 'readonly', 'style': 'pointer-events: none;'}}) }}
             </div>
         </div>
+
+        {# --- AFFICHAGE NON MODIFIABLE DU CERTIFICAT --- #}
+        <div class="certificat-box">
+            <label class="certificat-label">
+                <input type="checkbox" class="certificat-checkbox" disabled {% if bt.demandeCertificat %}checked{% endif %}>
+                Demande de certificat
+            </label>
+        </div>
     </div>
 
     {# --- TABLEAU TECHNIQUE  --- #}
@@ -154,8 +162,11 @@
         </button>
     </div>
 
-    {{ form_rest(form) }}
-    {{ form_end(form) }}
+    {% do form.demandeCertificat.setRendered %}
+    {% do form.lignes.setRendered %}
+
+{{ form_rest(form) }}
+{{ form_end(form) }}
 </div>
 
 <script>
@@ -190,6 +201,10 @@ document.addEventListener('DOMContentLoaded', function() {
     .bc-title-container h1 { font-size: 22px; font-weight: 800; text-align: center; margin: 0; }
     .bc-refi-container { text-align: right; font-size: 20px; font-weight: bold; }
     .refi-input-ghost { border: none; font-weight: bold; font-size: 20px; width: 140px; text-align: right; outline: none; background: transparent; }
+
+    .certificat-box { margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; }
+    .certificat-label { font-weight: bold; font-size: 13px; color: #444; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+    .certificat-checkbox { width: 16px; height: 16px; accent-color: #4f46e5; cursor: not-allowed; }
 
     .bc-top-grid, .bc-middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 20px; }
     .box-label { font-weight: bold; font-size: 11px; color: #666; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; }

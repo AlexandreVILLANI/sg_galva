@@ -83,7 +83,14 @@
                     <span class="label" style="color: var(--primary-green);">DÉLAI CLIENT : <i class="fas fa-pencil-alt"></i></span>
                     <input type="date" name="delai_client" class="ghost-input editable-field" value="{{ bt.delaiClient ? bt.delaiClient|date('Y-m-d') : '' }}">
                 </div>
-                
+            </div>
+
+            {# --- AFFICHAGE NON MODIFIABLE DU CERTIFICAT --- #}
+            <div class="certificat-box">
+                <label class="certificat-label">
+                    <input type="checkbox" class="certificat-checkbox" disabled {% if bt.demandeCertificat %}checked{% endif %}>
+                    Demande de certificat
+                </label>
             </div>
         </div>
 
@@ -219,6 +226,9 @@
     .bc-footer-info { display: flex; justify-content: space-between; font-size: 12px; margin-top: 10px; padding: 0 10px; }
     .bc-actions { display: flex; gap: 15px; margin-top: 30px; }
     .btn-cancel { flex: 1; color: white; padding: 15px; text-align: center; border-radius: 5px; text-decoration: none; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .certificat-box { margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; }
+    .certificat-label { font-weight: bold; font-size: 13px; color: #2e46a6; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+    .certificat-checkbox { width: 16px; height: 16px; accent-color: #2e46a6; cursor: not-allowed; }
 
     @media print {
         .no-print { display: none !important; }

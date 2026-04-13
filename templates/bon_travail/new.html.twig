@@ -93,6 +93,14 @@
                 {{ form_widget(form.delaiClient, {'attr': {'class': 'ghost-input'}}) }}
             </div>
         </div>
+
+        {# --- NOUVEAU : LA CASE DEMANDE DE CERTIFICAT --- #}
+        <div class="certificat-box">
+            <label class="certificat-label">
+                {{ form_widget(form.demandeCertificat, {'attr': {'class': 'certificat-checkbox'}}) }}
+                Demande de certificat
+            </label>
+        </div>
     </div>
 
     {# --- TABLEAU TECHNIQUE (AUTOMATIQUE ) --- #}
@@ -277,6 +285,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     .btn-create-bl { flex: 1; background: #10b981; color: white; border: none; padding: 15px; border-radius: 5px; font-weight: bold; text-decoration: none; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
     .btn-create-bl:hover { background: #059669; }
+    .certificat-box { margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; }
+    .certificat-label { font-weight: bold; font-size: 13px; color: #2e46a6; text-transform: uppercase; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .certificat-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: #2e46a6; }
 
     @media print {
         @page { margin: 0; }

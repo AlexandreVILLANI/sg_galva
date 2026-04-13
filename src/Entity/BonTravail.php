@@ -50,11 +50,15 @@ class BonTravail
     #[ORM\OneToMany(mappedBy: 'bonTravail', targetEntity: PlanningLigne::class)]
     private Collection $planningLignes;
 
+    #[ORM\Column(options: ["default" => false])]
+    private ?bool $demandeCertificat = false;
+
     public function __construct()
     {
         $this->dateCreation = new \DateTime();
         $this->isPeseeValidee = false; 
         $this->planningLignes = new ArrayCollection(); 
+        $this->demandeCertificat = false;
     }
 
     public function getId(): ?int { return $this->id; }
@@ -113,11 +117,24 @@ class BonTravail
         return $this;
     }
 
+    
+
     /**
      * @return Collection<int, PlanningLigne>
     */
     public function getPlanningLignes(): Collection
     {
         return $this->planningLignes;
+    }
+
+    public function isDemandeCertificat(): ?bool
+    {
+        return $this->demandeCertificat;
+    }
+
+    public function setDemandeCertificat(bool $demandeCertificat): self
+    {
+        $this->demandeCertificat = $demandeCertificat;
+        return $this;
     }
 }

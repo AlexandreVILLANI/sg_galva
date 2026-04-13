@@ -6,8 +6,10 @@ framework:
         handler_id: 'session.handler.native_file'
         save_path: '%kernel.cache_dir%/sessions'
         storage_factory_id: session.storage.factory.native
-        cookie_secure: true
-        cookie_samesite: none 
+        
+        cookie_secure: auto   
+        cookie_samesite: lax  
+        
         cookie_lifetime: 28800 # 8 heures
         gc_maxlifetime: 28800
     

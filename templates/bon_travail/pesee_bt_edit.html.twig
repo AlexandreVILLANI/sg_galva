@@ -84,6 +84,14 @@
                     <input type="text" class="ghost-input full-width" value="{{ bt.delaiClient ? bt.delaiClient|date('d/m/Y') : 'Non défini' }}" readonly>
                 </div>
             </div>
+
+            {# --- AFFICHAGE NON MODIFIABLE DU CERTIFICAT --- #}
+            <div class="certificat-box">
+                <label class="certificat-label">
+                    <input type="checkbox" class="certificat-checkbox" disabled {% if bt.demandeCertificat %}checked{% endif %}>
+                    Demande de certificat
+                </label>
+            </div>
         </div>
 
         {# --- TABLEAU TECHNIQUE (SAISIE DES POIDS) --- #}
@@ -213,6 +221,9 @@
     .checkbox-group { display: flex; flex-direction: column; gap: 8px; }
     .summary-line { display: flex; justify-content: space-between; border-bottom: 1px solid #f0f0f0; padding: 3px 0; font-size: 13px; }
     .bold { font-weight: bold; }
+    .certificat-box { margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; }
+    .certificat-label { font-weight: bold; font-size: 13px; color: var(--primary-blue); text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+    .certificat-checkbox { width: 16px; height: 16px; accent-color: var(--primary-blue); cursor: not-allowed; }
 
     /* Zone Technique */
     .tech-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }

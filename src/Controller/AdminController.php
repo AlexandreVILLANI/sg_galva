@@ -236,6 +236,12 @@ class AdminController extends AbstractController
         $bt->setRepriseUsinage($request->request->get('reprise_usinage'));
         $bt->setObservations($request->request->get('observations'));
         
+        // --- AJOUT ICI : SAUVEGARDE DE LA DEMANDE DE CERTIFICAT ---
+        // Si la case est cochée, ça renvoie '1', sinon null. Donc si c'est '1', ça passe à true, sinon false.
+        $demandeCertificat = $request->request->get('demande_certificat') === '1';
+        $bt->setDemandeCertificat($demandeCertificat);
+        // ----------------------------------------------------------
+        
         $delai = $request->request->get('delai_client');
         if ($delai) {
             $bt->setDelaiClient(new \DateTimeImmutable($delai));
@@ -267,10 +273,10 @@ class AdminController extends AbstractController
         // 4. SAUVEGARDE FINALE
         $em->flush(); 
         
-        $this->addFlash('success', 'Mi se à jour réussie. Le traitement a été synchronisé !');
+        $this->addFlash('success', 'Mise à jour réussie. Le traitement a été synchronisé !');
         return $this->redirectToRoute('app_admin_home', ['section' => 'admin-bt']);
     }
-
+    
     #[Route('/dechargement/{id}', name: 'app_admin_dechargement_edit', methods: ['GET', 'POST'])]
     public function editDechargement(
         Request $request, 

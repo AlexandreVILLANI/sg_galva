@@ -69,6 +69,15 @@
                     <input type="date" name="delai_client" class="ghost-input editable date-field" value="{{ bt.delaiClient ? bt.delaiClient|date('Y-m-d') : '' }}">
                 </div>
             </div>
+
+            {# --- AFFICHAGE MODIFIABLE DU CERTIFICAT --- #}
+            <div class="certificat-box">
+                <label class="certificat-label">
+                    {# On retire 'disabled', on ajoute 'name="demande_certificat"' et 'value="1"' #}
+                    <input type="checkbox" name="demande_certificat" value="1" class="certificat-checkbox" {% if bt.demandeCertificat %}checked{% endif %}>
+                    Demande de certificat
+                </label>
+            </div>
         </div>
 
         {# --- TABLEAU TECHNIQUE (TOUT MODIFIABLE) --- #}
@@ -151,6 +160,11 @@
     .tech-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
     .label { font-weight: bold; font-size: 11px; text-transform: uppercase; margin-bottom: 5px; color: #444; display: block; }
     .readonly-box { background: #f9fafb; color: #666; }
+
+    /* --- CASE À COCHER CERTIFICAT (ÉDITABLE) --- */
+    .certificat-box { margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; }
+    .certificat-label { font-weight: bold; font-size: 13px; color: #10b981; text-transform: uppercase; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .certificat-checkbox { width: 16px; height: 16px; accent-color: #10b981; cursor: pointer; }
 
     /* Style Ghost Editable */
     .ghost-input.editable, .ghost-textarea.editable { 
