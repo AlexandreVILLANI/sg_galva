@@ -16,9 +16,17 @@
     {% if bt.isPeseeValidee and isTermineAtelier %}
         {% set isPretPourLivraison = true %}
     {% endif %}
+
 <div class="bc-wrapper">
     {{ form_start(form, {'attr': {'class': 'bc-paper'}}) }}
     
+    {# --- BLOC CACHÉ POUR PRÉSERVER LES DONNÉES DU FORFAIT LORS DE LA SAUVEGARDE --- #}
+    <div style="display:none;">
+        {{ form_widget(form.isForfait) }}
+        {{ form_widget(form.nomForfait) }}
+        {{ form_widget(form.prixForfait) }}
+    </div>
+
     {# --- ENTÊTE --- #}
     <div class="bc-header">
         <div class="bc-logo-container">
@@ -28,48 +36,41 @@
             <h1>BON DE TRAVAIL</h1>
         </div>
         <div class="bc-refi-container">
+            <button type="button" class="copy-btn-mini no-print" onclick="copyInput('{{ form.numero.vars.id }}', this)" title="Copier N° BT"><i class="far fa-copy"></i></button>
             <label>N° BT -</label>
             {{ form_widget(form.numero, {'attr': {'class': 'refi-input-ghost', 'readonly': 'readonly'}}) }}
         </div>
     </div>
 
-    {# --- GRILLE HAUTE --- #}
+    {# ... (Grilles Traitement et Adresses restent identiques) ... #}
     <div class="bc-top-grid">
         <div class="bc-box treatment-box">
             <p class="box-label">TRAITEMENT :</p>
             <div class="checkbox-group">
-                
-                {# Case Galvanisation : cochée si isCataphorese est FAUX #}
-                <label>
-                    <input type="checkbox" 
-                        {% if not commande.isCataphorese %}checked="checked"{% endif %} 
-                        disabled> Galvanisation
-                </label>
-
-                {# Case Cataphorèse : cochée si isCataphorese est VRAI #}
-                <label>
-                    <input type="checkbox" 
-                        {% if commande.isCataphorese %}checked="checked"{% endif %} 
-                        disabled> Cataphorèse
-                </label>
-                
+                <label><input type="checkbox" {% if not commande.isCataphorese %}checked="checked"{% endif %} disabled> Galvanisation</label>
+                <label><input type="checkbox" {% if commande.isCataphorese %}checked="checked"{% endif %} disabled> Cataphorèse</label>
             </div>
         </div>
     </div>
 
-    {# --- GRILLE MILIEU : ADRESSES --- #}
     <div class="bc-middle-grid">
         <div class="bc-box client-box">
-            <p class="box-label">ADRESSE DE FACTURATION</p>
-            <div class="frame-content">
+            <p class="box-label">
+                <button type="button" class="copy-btn-mini no-print" onclick="copyAddress('facturation-text', this)"><i class="far fa-copy"></i></button>
+                ADRESSE DE FACTURATION
+            </p>
+            <div class="frame-content" id="facturation-text">
                 <strong>{{ commande.fiche.client.nom }}</strong><br>
                 {{ commande.fiche.client.adresseFacturation|nl2br }}<br>
                 {{ commande.fiche.client.codePostal }} {{ commande.fiche.client.ville }}
             </div>
         </div>
         <div class="bc-box driver-box">
-            <p class="box-label">ADRESSE DE LIVRAISON</p>
-            <div class="frame-content">
+            <p class="box-label">
+                <button type="button" class="copy-btn-mini no-print" onclick="copyAddress('livraison-text', this)"><i class="far fa-copy"></i></button>
+                ADRESSE DE LIVRAISON
+            </p>
+            <div class="frame-content" id="livraison-text">
                 <strong>{{ commande.fiche.client.nom }}</strong><br>
                 {{ commande.fiche.client.adresseLivraison|default(commande.fiche.client.adresseFacturation)|nl2br }}<br>
                 {{ commande.fiche.client.codePostal }} {{ commande.fiche.client.ville }}
@@ -81,20 +82,27 @@
     <div class="bc-box">
         <div class="tech-grid">
             <div class="tech-col">
-                <span class="label">EXIGENCE PARTICULIÈRE :</span>
+                <span class="label">
+                    <button type="button" class="copy-btn-mini no-print" onclick="copyInput('{{ form.exigenceParticuliere.vars.id }}', this)"><i class="far fa-copy"></i></button>
+                    EXIGENCE PARTICULIÈRE :
+                </span>
                 {{ form_widget(form.exigenceParticuliere, {'attr': {'class': 'ghost-input full-width'}}) }}
             </div>
             <div class="tech-col">
-                <span class="label">REPRISE USINAGE :</span>
+                <span class="label">
+                    <button type="button" class="copy-btn-mini no-print" onclick="copyInput('{{ form.repriseUsinage.vars.id }}', this)"><i class="far fa-copy"></i></button>
+                    REPRISE USINAGE :
+                </span>
                 {{ form_widget(form.repriseUsinage, {'attr': {'class': 'ghost-input full-width'}}) }}
             </div>
             <div class="tech-col">
-                <span class="label">DÉLAI CLIENT :</span>
+                <span class="label">
+                    <button type="button" class="copy-btn-mini no-print" onclick="copyInput('{{ form.delaiClient.vars.id }}', this)"><i class="far fa-copy"></i></button>
+                    DÉLAI CLIENT :
+                </span>
                 {{ form_widget(form.delaiClient, {'attr': {'class': 'ghost-input'}}) }}
             </div>
         </div>
-
-        {# --- NOUVEAU : LA CASE DEMANDE DE CERTIFICAT --- #}
         <div class="certificat-box">
             <label class="certificat-label">
                 {{ form_widget(form.demandeCertificat, {'attr': {'class': 'certificat-checkbox'}}) }}
@@ -103,7 +111,7 @@
         </div>
     </div>
 
-    {# --- TABLEAU TECHNIQUE (AUTOMATIQUE ) --- #}
+    {# --- TABLEAU TECHNIQUE --- #}
     <div class="bc-box description-box table-wrapper">
         <table class= "bc-table">
             <thead>
@@ -114,56 +122,73 @@
                     <th width="12%">Référence</th>
                     <th width="13%">Trav. Annexes</th>
                     <th width="10%">Poids Kg</th>
-                    <th width="10%" class="center">Prix/T</th> {# <-- AJOUT ICI #}
+                    <th width="10%" class="center">Prix/T</th>
                     <th width="20%">Observations</th>
                 </tr>
             </thead>
             <tbody>
-                {# On boucle sur les sous-formulaires (LigneTravailType) #}
                 {% for ligneForm in form.lignes %}
                     <tr>
-                        {# Lecture seule : Infos venant de la réception #}
                         <td class="center bold">{{ ligneForm.vars.value.nbPaquets }}</td>
                         <td class="designation">
-                            <strong>{{ ligneForm.vars.value.description|default('Produit non précisé') }}</strong>
-                            <div class="sub-info">Emp: {{ ligneForm.vars.value.emplacement.nom }}</div>
+                            <strong>
+                                <button type="button" class="copy-btn-mini no-print" onclick="copyValue('{{ ligneForm.vars.value.description|default('Produit non précisé')|escape('js') }}', this)"><i class="far fa-copy"></i></button>
+                                {{ ligneForm.vars.value.description|default('Produit non précisé') }}
+                            </strong>
                         </td>
-                        
-                        {# Champs modifiables #}
                         <td class="p-0">{{ form_widget(ligneForm.u, {'attr': {'class': 'cell-input center'}}) }}</td>
-                        <td class="p-0">{{ form_widget(ligneForm.reference, {'attr': {'class': 'cell-input'}}) }}</td>
+                        <td class="p-0" style="position: relative;">
+                            <button type="button" class="copy-btn-cell no-print" onclick="copyInput('{{ ligneForm.reference.vars.id }}', this)"><i class="far fa-copy"></i></button>
+                            {{ form_widget(ligneForm.reference, {'attr': {'class': 'cell-input', 'style': 'padding-left: 20px;'}}) }}
+                        </td>
                         <td class="p-0">{{ form_widget(ligneForm.travauxAnnexes, {'attr': {'class': 'cell-input'}}) }}</td>
                         <td class="p-0">{{ form_widget(ligneForm.poids, {'attr': {'class': 'cell-input right', 'step':'0.01'}}) }}</td>
-                        
                         <td class="p-0">
-                            {{ form_widget(ligneForm.prixTonne, {'attr': {'class': 'cell-input center', 'style': 'color: #10b981; font-weight: bold;', 'step': '0.01', 'placeholder': '€/T'}}) }}
+                            {{ form_widget(ligneForm.prixTonne, {
+                                'attr': {
+                                    'class': 'cell-input center', 
+                                    'style': 'color: #10b981; font-weight: bold; pointer-events: none;', 
+                                    'readonly': 'readonly'
+                                }
+                            }) }}
                         </td>
-
-                        {# Observation SPÉCIFIQUE à la ligne #}
                         <td class="p-0">{{ form_widget(ligneForm.observations, {'attr': {'class': 'cell-input', 'rows':'1'}}) }}</td>
                     </tr>
-                {% else %}
-                    <tr><td colspan="8" class="center muted">Aucune ligne trouvée.</td></tr>
-                {% endfor %}
-
-                {# Remplissage visuel #}
-                {% for i in 1..5 %}
-                <tr><td colspan="8" style="height: 35px; border-bottom: 1px solid #000; border-right: 1px solid #000;"></td></tr>
                 {% endfor %}
 
                 <tr style="background-color: #f8faff; font-weight: bold;">
                     <td colspan="5" style="text-align: right; padding-right: 15px; text-transform: uppercase;">Total Poids (Kg) :</td>
                     <td style="text-align: right; padding-right: 5px; color: #2e46a6; font-size: 14px;" id="total-poids-display">0.00</td>
-                    <td colspan="2"></td> {# <-- AJUSTEMENT ICI POUR ALIGNER LE RESTE DU TABLEAU #}
+                    <td colspan="2"></td> 
                 </tr>
             </tbody>
+
+            <tfoot>
+                <tr style="background-color: {% if bt.isForfait %}#d1fae5{% else %}#f8fafc{% endif %}; border-top: 2px solid {% if bt.isForfait %}#10b981{% else %}#e2e8f0{% endif %};">
+                    <td colspan="2" class="designation" style="padding: 10px;">
+                        <label style="font-weight: bold; color: {% if bt.isForfait %}#065f46{% else %}#94a3b8{% endif %}; display: flex; align-items: center; gap: 10px; font-size: 13px;">
+                            <input type="checkbox" disabled {% if bt.isForfait %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #10b981;">
+                            APPLIQUER UN PRIX AU FORFAIT POUR TOUT LE BON
+                        </label>
+                        {% if bt.isForfait %}
+                        <div style="margin-top: 8px;">
+                            <input type="text" class="cell-input" readonly style="background: transparent; border: none; color: #065f46; font-style: italic;" value="{{ bt.nomForfait }}">
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td colspan="4" class="right bold" style="padding-right: 15px; vertical-align: middle; color: {% if bt.isForfait %}#065f46{% else %}#94a3b8{% endif %}; text-transform: uppercase;">Montant Global :</td>
+                    <td class="p-0" style="vertical-align: middle;">
+                        {% if bt.isForfait %}<input type="text" class="cell-input center" readonly style="color: #065f46; font-weight: bold;" value="{{ bt.prixForfait }} €">{% endif %}
+                    </td>
+                    <td style="background: #f0f0f0;"></td>
+                </tr>
+            </tfoot>
         </table>
     </div>
 
-    {# --- PIED  DE PAGE : OBSERVATIONS GÉNÉRALES --- #}
+    {# ... (Actions et Footer) ... #}
     <div class="bc-box comment-box">
         <span class="label">Observations générales du Bon de Travail :</span>
-        {# C'est ici que s'affichera le champ ajouté dans l'étape 1 #}
         <div class="mt-2">{{ form_widget(form.observations, {'attr': {'class': 'w-100', 'rows': 2}}) }}</div>
     </div>
 
@@ -173,89 +198,118 @@
     </div>
 
     <div class="bc-actions no-print">
-        <a href="{{ path('app_reception_ordonnancement_home') }}" class="btn-cancel">
-            <i class="fas fa-arrow-left"></i> Retour
-        </a>
-        
-        <button type="submit" class="btn-confirm">
-            <i class="fas fa-save"></i>ENREGISTRER LE BON
-        </button>
-
+        <a href="{{ path('app_reception_ordonnancement_home') }}" class="btn-cancel"><i class="fas fa-arrow-left"></i> Retour</a>
+        <button type="submit" class="btn-confirm"><i class="fas fa-save"></i> ENREGISTRER LE BON</button>
         {% if isPretPourLivraison %}
-            <a href="{{ path('app_livraison_new', {'id': bt.id}) }}" class="btn-create-bl" title="Générer le Bon de Livraison">
-                <i class="fas fa-truck"></i> Créer le BL
-            </a>
+            <a href="{{ path('app_livraison_new', {'id': bt.id}) }}" class="btn-create-bl"><i class="fas fa-truck"></i> Créer le BL</a>
         {% endif %}
-
-        <button type="button" class="btn-print" onclick="window.print()">
-            <i class="fas fa-print"></i>
-        </button>
+        <button type="button" class="btn-print" onclick="window.print()"><i class="fas fa-print"></i></button>
     </div>
+
+    {% do form.isForfait.setRendered %} 
+    {% do form.nomForfait.setRendered %}
+    {% do form.prixForfait.setRendered %}
 
     {{ form_rest(form) }}
     {{ form_end(form) }}
 </div>
 
 <script>
+// --- FONCTIONS DE COPIE ---
+function copyValue(text, btn) { navigator.clipboard.writeText(text).then(() => showSuccess(btn)); }
+function copyInput(id, btn) { 
+    const input = document.getElementById(id); 
+    if(input) navigator.clipboard.writeText(input.value).then(() => showSuccess(btn)); 
+}
+function copyAddress(id, btn) {
+    const container = document.getElementById(id);
+    if(container) {
+        const text = container.innerText.replace(/\s+/g, ' ').trim();
+        navigator.clipboard.writeText(text).then(() => showSuccess(btn));
+    }
+}
+function showSuccess(btn) {
+    const icon = btn.querySelector('i');
+    icon.classList.replace('fa-copy', 'fa-check');
+    btn.classList.add('copy-success');
+    setTimeout(() => { icon.classList.replace('fa-check', 'fa-copy'); btn.classList.remove('copy-success'); }, 2000);
+}
+
+// --- LOGIQUE POIDS ---
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. On sélectionne l'endroit où afficher le total
     const displayElement = document.getElementById('total-poids-display');
-    
-    // 2. On sélectionne tous les inputs de type "number" (ou texte) qui gèrent le poids
     const weightInputs = document.querySelectorAll('input[id$="_poids"]');
 
     function calculerTotal() {
         let total = 0;
-        
         weightInputs.forEach(input => {
             let val = parseFloat(input.value.replace(',', '.'));
-            if (!isNaN(val) && val > 0) {
-                total += val;
-            }
+            if (!isNaN(val) && val > 0) total += val;
         });
-
-        if (displayElement) {
-            displayElement.textContent = total.toFixed(2);
-        }
+        if (displayElement) displayElement.textContent = total.toFixed(2);
     }
 
     calculerTotal();
-
     weightInputs.forEach(input => {
+        // ICI : On ne fait QUE le calcul, on ne touche plus à la checkbox forfait !
         input.addEventListener('input', calculerTotal);
     });
 });
 </script>
 
 <style>
+    /* --- STYLES BOUTONS COPIE --- */
+    .copy-btn-mini {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 0 5px;
+        font-size: 13px;
+        transition: 0.2s;
+    }
+    .copy-btn-mini:hover { color: #2e46a6; transform: scale(1.1); }
+    
+    .copy-btn-cell {
+        position: absolute;
+        left: 2px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 12px;
+        z-index: 10;
+        transition: 0.2s;
+    }
+    .copy-btn-cell:hover { color: #2e46a6; }
+    .copy-success { color: #10b981 !important; }
+
     /* --- CSS HARMONISÉ AVEC LE BON DE COMMANDE --- */
     .bc-wrapper { background: #f0f0f0; min-height: 100vh; padding: 40px 20px; font-family: Arial, sans-serif; color: #1a1a1a; }
     .bc-paper { max-width: 900px; margin: 0 auto; background: white; padding: 40px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
     .bc-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; position: relative; }
 
-    /* Header */
     .bc-header { display: grid; grid-template-columns: 1fr 2fr 1.5fr; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
     .bc-logo { max-width: 120px; }
     .bc-title-container h1 { font-size: 22px; font-weight: 800; text-align: center; margin: 0; }
-    .bc-refi-container { text-align: right; font-size: 20px; font-weight: bold; }
+    .bc-refi-container { text-align: right; font-size: 20px; font-weight: bold; display: flex; justify-content: flex-end; align-items: center; }
     .refi-input-ghost { border: none; font-weight: bold; font-size: 20px; width: 140px; text-align: right; outline: none; background: transparent; }
 
-    /* Grilles */
     .bc-top-grid, .bc-middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 20px; }
-    .box-label { font-weight: bold; font-size: 11px; color: #666; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; }
+    .box-label { font-weight: bold; font-size: 11px; color: #666; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; display: flex; align-items: center; }
     .checkbox-group { display: flex; flex-direction: column; gap: 8px; }
     .summary-line { display: flex; justify-content: space-between; border-bottom: 1px solid #f0f0f0; padding: 3px 0; font-size: 13px; }
     .field { margin-bottom: 5px; font-size: 13px; }
     .bold { font-weight: bold; }
 
-    /* Zone Technique */
     .tech-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
-    .label { font-weight: bold; font-size: 11px; text-transform: uppercase; margin-right: 5px; color: #444; }
+    .label { font-weight: bold; font-size: 11px; text-transform: uppercase; margin-right: 5px; color: #444; display: flex; align-items: center; }
     .ghost-input { border: none; border-bottom: 1px dashed #2e46a6; outline: none; font-family: inherit; font-size: 13px; padding: 2px 0; background: transparent; }
     .ghost-input.full-width { width: 100%; }
     .ghost-input:focus { border-bottom: 1px solid #2e46a6; background: #f8faff; }
 
-    /* Tableau */
     .table-wrapper { padding: 0; border: 1px solid #000; overflow: hidden; }
     .bc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .bc-table th { background: #f0f0f0; border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 8px 5px; text-align: left; font-size: 11px; text-transform: uppercase; }
@@ -264,7 +318,6 @@ document.addEventListener('DOMContentLoaded', function() {
     .bc-table td:last-child { border-right: none; }
     .bc-table tr:last-child td { border-bottom: none; }
 
-    /* Inputs dans tableau */
     .cell-input { width: 100%; height: 100%; border: none; background: transparent; padding: 0 5px; box-sizing: border-box; font-family: inherit; font-size: 13px; }
     .cell-input:focus { background: #eef; outline: 2px solid #2e46a6; outline-offset: -2px; }
     .center { text-align: center; } .right { text-align: right; }
@@ -272,11 +325,34 @@ document.addEventListener('DOMContentLoaded', function() {
     .sub-info { font-size: 10px; color: #666; margin-top: 2px; }
     .p-0 { padding: 0 !important; }
 
-    /* Commentaires */
-    .comment-box textarea { width: 100%; border: none; border-bottom: 1px dashed #2e46a6; background: transparent; resize: vertical; outline: none; font-family: inherit; padding: 5px 0; }
-    .comment-box textarea:focus { border-bottom: 1px solid #2e46a6; background: #f8faff; }
+    /* --- CORRECTIONS CSS POUR LES OBSERVATIONS --- */
+    
+    /* 1. Observations dans le tableau (textarea) */
+    textarea.cell-input {
+        resize: none; 
+        padding-top: 9px; 
+        line-height: 1.4;
+        display: block;
+    }
 
-    /* Footer & Actions */
+    /* 2. Observations générales en bas de page */
+    .comment-box textarea { 
+        width: 100%; 
+        border: none; 
+        border-bottom: 1px dashed #2e46a6; 
+        background: transparent; 
+        resize: vertical; 
+        outline: none; 
+        font-family: inherit; 
+        padding: 10px 5px; 
+        min-height: 80px; 
+        line-height: 1.4;
+    }
+    .comment-box textarea:focus { 
+        border-bottom: 1px solid #2e46a6; 
+        background: #f8faff; 
+    }
+
     .bc-footer-info { display: flex; justify-content: space-between; font-size: 12px; margin-top: 10px; padding: 0 10px; }
     .bc-actions { display: flex; gap: 15px; margin-top: 30px; }
     .btn-cancel { flex: 1; background: #e06e54; color: white; padding: 15px; text-align: center; border-radius: 5px; text-decoration: none; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }

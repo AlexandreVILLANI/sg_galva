@@ -4,13 +4,9 @@ namespace App\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-
 use App\Repository\BonTravailRepository;
-
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-
 use Symfony\Component\Validator\Constraints as Assert;
-
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
@@ -47,23 +43,39 @@ class BonTravail
     #[ORM\Column(options: ["default" => false])]
     private ?bool $isPeseeValidee = false;
 
+    #[ORM\Column(options: ["default" => false])]
+    private ?bool $isTermine = false; // Ajouté car il manquait pour ton getter isTermine()
+
     #[ORM\OneToMany(mappedBy: 'bonTravail', targetEntity: PlanningLigne::class)]
     private Collection $planningLignes;
 
     #[ORM\Column(options: ["default" => false])]
     private ?bool $demandeCertificat = false;
 
+    // --- NOUVEAUX CHAMPS POUR LE FORFAIT ---
+    
+    #[ORM\Column(options: ["default" => false])]
+    private ?bool $isForfait = false;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $nomForfait = null;
+
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    private ?float $prixForfait = null;
+
+    // ---------------------------------------
+
     public function __construct()
     {
         $this->dateCreation = new \DateTime();
         $this->isPeseeValidee = false; 
-        $this->planningLignes = new ArrayCollection(); 
+        $this->isTermine = false;
         $this->demandeCertificat = false;
+        $this->isForfait = false; // Initialisation du forfait à false
+        $this->planningLignes = new ArrayCollection(); 
     }
 
     public function getId(): ?int { return $this->id; }
-
-    // --- GETTERS ET SETTERS CORRIGÉS ---
 
     public function getBonCommande(): ?BonDeCommande { return $this->bonCommande; }
     public function setBonCommande(BonDeCommande $bonCommande): self { $this->bonCommande = $bonCommande; return $this; }
@@ -82,6 +94,7 @@ class BonTravail
 
     public function getDateCreation(): ?\DateTimeInterface { return $this->dateCreation; }
     public function setDateCreation(\DateTimeInterface $dateCreation): self { $this->dateCreation = $dateCreation; return $this; }
+    
     public function getLignes(): \Doctrine\Common\Collections\Collection
     {
         if ($this->bonCommande && $this->bonCommande->getFiche()) {
@@ -89,8 +102,10 @@ class BonTravail
         }
         return new \Doctrine\Common\Collections\ArrayCollection();
     }
+    
     public function addLigne($ligne): self { return $this; }
     public function removeLigne($ligne): self { return $this; }
+    
     public function getObservations(): ?string{return $this->observations;}
     public function setObservations(?string $observations): self{$this->observations = $observations;return $this;}
 
@@ -102,7 +117,6 @@ class BonTravail
     public function setIsTermine(bool $isTermine): static
     {
         $this->isTermine = $isTermine;
-
         return $this;
     }
 
@@ -116,8 +130,6 @@ class BonTravail
         $this->isPeseeValidee = $isPeseeValidee;
         return $this;
     }
-
-    
 
     /**
      * @return Collection<int, PlanningLigne>
@@ -135,6 +147,41 @@ class BonTravail
     public function setDemandeCertificat(bool $demandeCertificat): self
     {
         $this->demandeCertificat = $demandeCertificat;
+        return $this;
+    }
+
+    // --- GETTERS ET SETTERS POUR LE FORFAIT ---
+
+    public function isForfait(): ?bool
+    {
+        return $this->isForfait;
+    }
+
+    public function setIsForfait(bool $isForfait): self
+    {
+        $this->isForfait = $isForfait;
+        return $this;
+    }
+
+    public function getNomForfait(): ?string
+    {
+        return $this->nomForfait;
+    }
+
+    public function setNomForfait(?string $nomForfait): self
+    {
+        $this->nomForfait = $nomForfait;
+        return $this;
+    }
+
+    public function getPrixForfait(): ?float
+    {
+        return $this->prixForfait;
+    }
+
+    public function setPrixForfait(?float $prixForfait): self
+    {
+        $this->prixForfait = $prixForfait;
         return $this;
     }
 }

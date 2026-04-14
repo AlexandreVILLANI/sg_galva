@@ -9,7 +9,8 @@ use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType; 
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\NumberType; // <--- Ajout important pour le prix
 use Symfony\Component\Form\FormBuilderInterface;
 
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -40,21 +41,32 @@ class BonTravailType extends AbstractType
                 'required' => false,
                 'attr' => ['class' => 'w-100', 'rows' => 3]
             ])
-            // --- AJOUT ICI : Le champ pour la demande de certificat ---
             ->add('demandeCertificat', CheckboxType::class, [
                 'label'    => 'Demande de certificat',
                 'required' => false, 
-                // Optionnel : tu peux ajouter une classe si tu as un style Bootstrap ou Tailwind
-                // 'attr' => ['class' => 'form-check-input'] 
             ])
             
-            // --- C'EST ICI QUE LA MAGIE OPÈRE ---
+            // --- NOUVEAUX CHAMPS POUR LE FORFAIT ---
+            ->add('isForfait', CheckboxType::class, [
+                'required' => false,
+            ])
+            ->add('nomForfait', TextType::class, [
+                'required' => false,
+            ])
+            ->add('prixForfait', NumberType::class, [
+                'required' => false,
+                'scale' => 2, // Pour accepter les centimes (2 chiffres après la virgule)
+                'html5' => true,
+            ])
+            // ---------------------------------------
+
+            // --- LIGNES DU TABLEAU ---
             ->add('lignes', CollectionType::class, [
                 'entry_type' => LigneTravailType::class,
                 'entry_options' => ['label' => false],
-                'allow_add' => false, // On ne rajoute pas de lignes, elles existent déjà
+                'allow_add' => false, 
                 'allow_delete' => false,
-                'by_reference' => true, // Important pour modifier les objets existants
+                'by_reference' => true, 
             ])
         ;
     }

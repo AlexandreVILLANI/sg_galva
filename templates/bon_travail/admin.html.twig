@@ -73,7 +73,6 @@
             {# --- AFFICHAGE MODIFIABLE DU CERTIFICAT --- #}
             <div class="certificat-box">
                 <label class="certificat-label">
-                    {# On retire 'disabled', on ajoute 'name="demande_certificat"' et 'value="1"' #}
                     <input type="checkbox" name="demande_certificat" value="1" class="certificat-checkbox" {% if bt.demandeCertificat %}checked{% endif %}>
                     Demande de certificat
                 </label>
@@ -104,19 +103,37 @@
                                 <div class="sub-info">Emp: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }}</div>
                             </td>
                             
-                            {# Champs éditables avec l'ID de la ligne pour le contrôleur #}
                             <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][u]" class="cell-input center" value="{{ ligne.u }}"></td>
                             <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][reference]" class="cell-input" value="{{ ligne.reference }}"></td>
                             <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][travauxAnnexes]" class="cell-input" value="{{ ligne.travauxAnnexes }}"></td>
                             <td class="p-0"><input type="number" step="0.01" name="lignes[{{ ligne.id }}][poids]" class="cell-input right" value="{{ ligne.poids }}"></td>
-                            
-                            {# --- NOUVELLE CASE PRIX --- #}
                             <td class="p-0"><input type="number" step="0.01" name="lignes[{{ ligne.id }}][prixTonne]" class="cell-input right" style="color: #10b981; font-weight: bold;" value="{{ ligne.prixTonne }}"></td>
-                            
                             <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][observations]" class="cell-input" value="{{ ligne.observations }}"></td>
                         </tr>
                     {% endfor %}
                 </tbody>
+                
+                {# --- LIGNE SPÉCIALE FORFAIT (Adaptée au thème Admin Vert) --- #}
+                <tfoot>
+                    <tr style="background-color: #d1fae5; border-top: 2px solid #10b981;">
+                        <td colspan="2" class="designation" style="padding: 10px;">
+                            <label style="font-weight: bold; color: #065f46; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px;">
+                                <input type="checkbox" name="is_forfait" value="1" class="forfait-checkbox" style="width: 18px; height: 18px; accent-color: #10b981;" {% if bt.isForfait %}checked{% endif %}>
+                                APPLIQUER UN PRIX AU FORFAIT POUR TOUT LE BON
+                            </label>
+                            <div id="forfait-nom-container" style="margin-top: 8px;">
+                                <input type="text" name="nom_forfait" class="cell-input" placeholder="Ex: Forfait Zingage Complet..." style="background: white; border: 1px dashed #10b981; padding: 5px; border-radius: 3px;" value="{{ bt.nomForfait }}">
+                            </div>
+                        </td>
+                        <td colspan="4" class="right bold" style="padding-right: 15px; vertical-align: middle; color: #065f46; text-transform: uppercase;">
+                            Montant Global du Forfait :
+                        </td>
+                        <td class="p-0" style="vertical-align: middle;">
+                            <input type="number" step="0.01" name="prix_forfait" class="cell-input center forfait-prix-input" placeholder="€" style="color: #065f46; font-weight: bold; background: white; font-size: 14px;" value="{{ bt.prixForfait }}">
+                        </td>
+                        <td style="background: #f0f0f0;"></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
 
@@ -140,6 +157,48 @@
 
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- GESTION DU FORFAIT (N'affecte pas les autres lignes) ---
+    const forfaitCheckbox = document.querySelector('.forfait-checkbox');
+    const forfaitNomContainer = document.getElementById('forfait-nom-container');
+    const forfaitPrixInput = document.querySelector('.forfait-prix-input');
+
+    function toggleForfait() {
+        if (!forfaitCheckbox) return;
+        const isForfait = forfaitCheckbox.checked;
+
+        // A. Afficher ou masquer le nom du forfait
+        if (forfaitNomContainer) {
+            forfaitNomContainer.style.display = isForfait ? 'block' : 'none';
+        }
+
+        // B. Activer ou désactiver UNIQUEMENT le champ "Prix Global" du forfait en bas
+        if (forfaitPrixInput) {
+            if (isForfait) {
+                forfaitPrixInput.removeAttribute('readonly');
+                forfaitPrixInput.style.pointerEvents = 'auto';
+                forfaitPrixInput.style.backgroundColor = '#ffffff';
+                forfaitPrixInput.style.opacity = '1';
+                forfaitPrixInput.style.cursor = 'text';
+            } else {
+                forfaitPrixInput.setAttribute('readonly', 'true');
+                forfaitPrixInput.style.pointerEvents = 'none';
+                forfaitPrixInput.style.backgroundColor = '#d1fae5'; // Vert clair admin
+                forfaitPrixInput.style.opacity = '0.5';
+                forfaitPrixInput.style.cursor = 'not-allowed';
+                forfaitPrixInput.value = ''; // On vide le prix si on décoche
+            }
+        }
+    }
+
+    if (forfaitCheckbox) {
+        forfaitCheckbox.addEventListener('change', toggleForfait);
+        toggleForfait(); // On lance une première fois pour ajuster au chargement
+    }
+});
+</script>
 
 <style>
     /* --- STYLE REPRIS DE TON FICHIER --- */

@@ -55,10 +55,18 @@
                 
                 {# --- LOGIQUE POUR SAVOIR SI LE PRIX EST SAISI --- #}
                 {% set prixSaisi = false %}
-                {% if bt.lignes is defined %}
+
+                {% if bt.isForfait and bt.prixForfait > 0 %}
+                    {# CAS 1 : C'est un forfait, et le prix global est bien rempli #}
+                    {% set prixSaisi = true %}
+                {% elseif bt.lignes is defined and bt.lignes|length > 0 %}
+                    {# CAS 2 : Pas de forfait. On vérifie que TOUTES les lignes ont un prix #}
+                    {% set prixSaisi = true %} {# On part du principe que c'est bon... #}
+                    
                     {% for ligne in bt.lignes %}
-                        {% if ligne.prixTonne and ligne.prixTonne > 0 %}
-                            {% set prixSaisi = true %}
+                        {% if ligne.prixTonne is empty or ligne.prixTonne <= 0 %}
+                            {# ... Mais dès qu'une seule ligne est vide ou à zéro, on annule tout ! #}
+                            {% set prixSaisi = false %}
                         {% endif %}
                     {% endfor %}
                 {% endif %}
