@@ -478,9 +478,9 @@ class AdminController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             
             // Si une nouvelle signature a été faite, on passe le statut à "signé"
-            if ($bl->getSignature()) {
-                $bl->setStatut('Signé'); 
-            }
+            // if ($bl->getSignature()) {
+            //     $bl->setStatut('Signé'); 
+            // }
 
             $em->flush();
             $this->addFlash('success', 'Le Bon de Livraison a bien été enregistré.');
