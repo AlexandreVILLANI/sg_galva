@@ -48,7 +48,7 @@ class HomeController extends AbstractController
      */
     #[Route('/home', name: 'app_home')]
     #[IsGranted('ROLE_USER')]
-    public function home(): Response
+    public function home(FicheDechargementRepository $ficheRepo,BonLivraisonRepository $blRepo): Response
     {
         if ($this->isGranted('ROLE_ADMIN')) {
             return $this->redirectToRoute('app_admin_home');
@@ -74,8 +74,14 @@ class HomeController extends AbstractController
             return $this->redirectToRoute('app_commercial_home');
         }
 
-        return $this->render('home/index.html.twig', [
+        // On récupère toutes les fiches triées par date (les plus récentes d'abord)
+        $fiches = $ficheRepo->findBy([], ['date' => 'DESC']);
+        $bons_livraison = $blRepo->findBy([], ['id' => 'DESC']);
+
+        return $this->render('home/cariste.html.twig', [
             'controller_name' => 'Espace Cariste',
+            'fiches' => $fiches,
+            'bons_livraison' => $bons_livraison,
         ]);
     }
 
@@ -89,6 +95,25 @@ class HomeController extends AbstractController
         // 2. On les envoie à la vue Twig
         return $this->render('home/commercial.html.twig', [
             'bons_travail' => $bons_travail
+        ]);
+    }
+
+    /**
+     * Vue en lecture seule du Bon de Livraison pour le Cariste
+     */
+    #[Route('/livraison/{id}/cariste', name: 'app_livraison_cariste_show', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')] // Accessible aux caristes
+    public function showForCariste(\App\Entity\BonLivraison $bl): Response
+    {
+        // On récupère les informations liées pour les envoyer à la vue
+        $bt = $bl->getBonTravail();
+        $commande = $bt ? $bt->getBonCommande() : null;
+
+        // On renvoie vers ton fameux fichier "bon_livraison/cariste.html.twig"
+        return $this->render('bon_livraison/cariste.html.twig', [
+            'bl' => $bl,
+            'bt' => $bt,
+            'commande' => $commande,
         ]);
     }
 

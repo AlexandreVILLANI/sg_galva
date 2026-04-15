@@ -20,6 +20,13 @@
             </div>
         {% endfor %}
     {% endfor %}
+    <h1>
+        {% if editMode is defined and editMode %}
+            Modification de la Fiche n°{{ fiche.id }}
+        {% else %}
+            Nouvelle Fiche de Déchargement
+        {% endif %}
+    </h1>
 
     <div class="form-header">
         <img src="{{ asset('images/sg-galva-logo.png') }}" alt="Logo" class="logo">
@@ -96,16 +103,39 @@
         </div>
 
         <div class="form-group">
-            <label>Joindre photos</label>
+            <label>Photos jointes</label>
+            
+            {# --- NOUVEAU : AFFICHAGE DES PHOTOS DÉJÀ EXISTANTES EN BASE DE DONNÉES --- #}
+            {% if fiche is defined and fiche.photos is not empty %}
+                <div class="file-preview-container" style="margin-bottom: 20px;">
+                    {% for photo in fiche.photos %}
+                        <div class="preview-item">
+                            {# 
+                                ATTENTION : Vérifie bien le chemin 'uploads/fiches/'. 
+                                Il doit correspondre au dossier public où tes images sont sauvegardées. 
+                            #}
+                            <img src="{{ asset('uploads/fiches/' ~ photo.nomFichier) }}" alt="Photo existante">
+                            <span class="file-name" style="font-size: 11px; margin-top:5px; display:block; overflow:hidden; color: var(--primary-blue); font-weight: bold;">
+                                <i class="fas fa-check-circle"></i> Enregistrée
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {# --- ZONE POUR AJOUTER DE NOUVELLES PHOTOS --- #}
             <div class="upload-zone" id="drop-zone" onclick="document.getElementById('{{ form.imageFiles.vars.id }}').click()">
                 {{ form_widget(form.imageFiles, {'attr': {'hidden': 'hidden'}}) }}
                 <i class="fas fa-paperclip"></i>
-                <p>Glisser-déposer ou <span class="browse">Parcourir</span></p>
+                <p>Glisser-déposer de nouvelles photos ou <span class="browse">Parcourir</span></p>
             </div>
             <div id="file-preview" class="file-preview-container"></div>
         </div>
 
         <div class="form-actions">
+            <a href="{{ path('app_home') }}" class="btn-back" title="Retour à la liste">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
             <button type="submit" class="btn-submit">Valider le déchargement</button>
         </div>
         {% do form.lignes.setRendered() %}
@@ -410,6 +440,60 @@ document.addEventListener('turbo:load', function() {
         font-weight: 500;
         animation: fadeInDown 0.4s ease-out;
     }
+
+    /* --- Actions --- */
+    .form-actions { 
+        margin-top: 40px; 
+        display: flex; 
+        gap: 15px; /* Espace entre les deux boutons */
+    }
+    
+    .btn-back {
+        background-color: #e2e8f0;
+        color: #475569;
+        text-decoration: none;
+        padding: 18px 25px;
+        border-radius: 6px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: 0.3s;
+        box-shadow: 0 4px 0 #cbd5e1;
+    }
+
+    .btn-back:hover { 
+        background-color: #cbd5e1; 
+        transform: translateY(-1px); 
+    }
+    
+    .btn-back:active { 
+        transform: translateY(2px); 
+        box-shadow: none; 
+    }
+
+    .btn-submit { 
+        flex: 1; /* Le bouton valider prendra tout le reste de la largeur */
+        background-color: var(--secondary-gold); 
+        color: white; 
+        border: none; 
+        padding: 18px; 
+        border-radius: 6px; 
+        font-size: 1.2rem; 
+        font-weight: bold; 
+        cursor: pointer; 
+        transition: 0.3s; 
+        box-shadow: 0 4px 0 #b38f3d; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .btn-submit:hover { background-color: #c9a24d; transform: translateY(-1px); }
+    .btn-submit:active { transform: translateY(2px); box-shadow: none; }
     
     .alert-success { 
         background-color: #d4edda; 

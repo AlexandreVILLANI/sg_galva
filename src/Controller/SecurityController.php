@@ -31,24 +31,21 @@ class SecurityController extends AbstractController
         throw new \LogicException('Method intercepted by logout key.');
     }
 
-    #[Route('/login-auto/{token}', name: 'app_magic_login')]
+   #[Route('/login-auto/{token}', name: 'app_magic_login')]
     public function magicLogin(string $token, UserRepository $userRepo, Security $security): Response
     {
         $user = $userRepo->findOneBy(['token' => $token]);
 
         if (!$user) {
             $this->addFlash('error', 'Lien invalide.');
-            return $this->redirectToRoute('app_login'); // Redirige plutôt vers login que home si échec
+            return $this->redirectToRoute('app_login');
         }
 
         $security->login($user, AppAuthenticator::class, 'main'); 
 
-        // --- NOUVEAU : REDIRECTION SELON LE RÔLE ---
         if (in_array('ROLE_COLISAGE', $user->getRoles())) {
             return $this->redirectToRoute('app_colisage_home');
         }
-
-        // Par défaut (pour les caristes)
-        return $this->redirectToRoute('app_fiche_dechargement');
+        return $this->redirectToRoute('app_home'); 
     }
 }

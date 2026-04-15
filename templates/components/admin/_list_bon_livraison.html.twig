@@ -35,7 +35,7 @@
 <div class="table-container">
     <div class="table-grid header bl-grid-template">
         <span>N° BL / Date</span>
-        <span>Origine (BT/REFI)</span>
+        <span>REFI</span>
         <span>Client</span>
         <span>Transporteur</span>
         <span style="text-align: center;">Statut</span>
@@ -59,8 +59,7 @@
                 </div>
 
                 <div class="ref-cell-group">
-                    <span class="ref-cell" style="font-size: 12px; color: #4b5563;">{{ bl.bonTravail.numero }}</span>
-                    <small class="date-subtext">Réf: {{ bl.bonTravail.bonCommande.refi }}</small>
+                    <span class="ref-cell" style="font-size: 12px; color: #4b5563;">Réf: {{ bl.bonTravail.bonCommande.refi }}</span>
                 </div>
 
                 <span class="client-cell" style="font-weight: 500;">
@@ -154,6 +153,15 @@ function setupBLFilters() {
         });
     }
 }
+// On lance la fonction une fois que la page est chargée
+document.addEventListener('DOMContentLoaded', () => {
+    setupBLFilters();
+});
+
+// (Optionnel)
+document.addEventListener('turbo:load', () => {
+    setupBLFilters();
+});
 </script>
 
 <style>

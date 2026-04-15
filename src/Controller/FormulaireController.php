@@ -72,13 +72,63 @@ class FormulaireController extends AbstractController
             $em->flush();
 
             $this->addFlash('success', 'La fiche de déchargement a bien été enregistrée.');
-            return $this->redirectToRoute('app_fiche_dechargement');
+            return $this->redirectToRoute('app_home');
         }
 
         return $this->render('formulaire/dechargement.html.twig', [
             'form' => $form->createView(),
         ]);
     }
+
+    #[Route('/reception/dechargement/{id}/modifier', name: 'app_dechargement_edit', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function edit(FicheDechargement $fiche, Request $request, EntityManagerInterface $em): Response
+    {
+        // On crée le formulaire avec les données de la fiche existante
+        $form = $this->createForm(FicheDechargementType::class, $fiche);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // On recalcule le total des paquets au cas où
+            $total = 0;
+            foreach ($fiche->getLignes() as $ligne) {
+                $total += $ligne->getNbPaquets();
+            }
+            $fiche->setTotalPaquets($total);
+
+            $em->flush();
+
+            $this->addFlash('success', 'La fiche de déchargement a été mise à jour.');
+            return $this->redirectToRoute('app_home'); // Retour au dashboard cariste
+        }
+
+        // IMPORTANT : On utilise le template de création 'formulaire/dechargement.html.twig'
+        return $this->render('formulaire/dechargement.html.twig', [
+            'form' => $form->createView(),
+            'fiche' => $fiche,
+            'editMode' => true // Pour pouvoir changer le titre en "Modification" dans le Twig
+        ]);
+    }
+
+    #[Route('/reception/dechargement/{id}/supprimer', name: 'app_fiche_dechargement_delete', methods: ['POST'])]
+    // Optionnel : #[IsGranted('ROLE_USER')] si tu veux sécuriser
+    public function deleteFiche(Request $request, FicheDechargement $fiche, EntityManagerInterface $em): Response
+    {
+        // Vérification du jeton CSRF de sécurité
+        if ($this->isCsrfTokenValid('delete_fiche'.$fiche->getId(), $request->request->get('_token'))) {
+            
+            // On supprime la fiche de la base de données
+            $em->remove($fiche);
+            $em->flush();
+            
+            $this->addFlash('success', 'La fiche de déchargement a été supprimée avec succès.');
+        }
+
+        // On le redirige vers son espace cariste
+        return $this->redirectToRoute('app_home');
+    }
+
+    
 
     #[Route('/reception/dechargement/{id}', name: 'app_dechargement_show')]
     #[IsGranted('ROLE_RECEPTION_TERRAIN')]
