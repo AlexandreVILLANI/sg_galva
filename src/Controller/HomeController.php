@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -48,31 +47,14 @@ class HomeController extends AbstractController
      */
     #[Route('/home', name: 'app_home')]
     #[IsGranted('ROLE_USER')]
-    public function home(FicheDechargementRepository $ficheRepo,BonLivraisonRepository $blRepo): Response
+    public function home(FicheDechargementRepository $ficheRepo, BonLivraisonRepository $blRepo): Response
     {
-        if ($this->isGranted('ROLE_ADMIN')) {
-            return $this->redirectToRoute('app_admin_home');
-        }
-        
-        if ($this->isGranted('ROLE_ORDONNANCEMENT')) {
-            return $this->redirectToRoute('app_ordonnancement_home');
-        }
-        
-        if ($this->isGranted('ROLE_RECEPTION_ORDONNANCEMENT')) {
-            return $this->redirectToRoute('app_reception_ordonnancement_home');
-        }
-        
-        if ($this->isGranted('ROLE_RECEPTION_TERRAIN')) {
-            return $this->redirectToRoute('app_reception_terrain_home');
-        }
-
-        if ($this->isGranted('ROLE_PESEE')) {
-            return $this->redirectToRoute('app_pesee_home');
-        }
-        
-        if ($this->isGranted('ROLE_COMMERCIAL')) {
-            return $this->redirectToRoute('app_commercial_home');
-        }
+        if ($this->isGranted('ROLE_ADMIN')) return $this->redirectToRoute('app_admin_home');
+        if ($this->isGranted('ROLE_ORDONNANCEMENT')) return $this->redirectToRoute('app_ordonnancement_home');
+        if ($this->isGranted('ROLE_RECEPTION_ORDONNANCEMENT')) return $this->redirectToRoute('app_reception_ordonnancement_home');
+        if ($this->isGranted('ROLE_RECEPTION_TERRAIN')) return $this->redirectToRoute('app_reception_terrain_home');
+        if ($this->isGranted('ROLE_PESEE')) return $this->redirectToRoute('app_pesee_home');
+        if ($this->isGranted('ROLE_COMMERCIAL')) return $this->redirectToRoute('app_commercial_home');
 
         // On récupère toutes les fiches triées par date (les plus récentes d'abord)
         $fiches = $ficheRepo->findBy([], ['date' => 'DESC']);
@@ -89,34 +71,47 @@ class HomeController extends AbstractController
     #[IsGranted('ROLE_COMMERCIAL')]
     public function commercialIndex(BonTravailRepository $btRepository): Response
     {
-        // 1. On va chercher tous les bons de travail dans la base de données
         $bons_travail = $btRepository->findBy([], ['dateCreation' => 'DESC']);
         
-        // 2. On les envoie à la vue Twig
         return $this->render('home/commercial.html.twig', [
             'bons_travail' => $bons_travail
         ]);
     }
 
     /**
-     * Vue en lecture seule du Bon de Livraison pour le Cariste
+     * FONCTION CORRIGÉE POUR LE BOUTON CARISTE
      */
-    #[Route('/livraison/{id}/cariste', name: 'app_livraison_cariste_show', methods: ['GET'])]
-    #[IsGranted('ROLE_USER')] // Accessible aux caristes
-    public function showForCariste(\App\Entity\BonLivraison $bl): Response
+    #[Route('/livraison/{id}/cariste', name: 'app_livraison_cariste_show', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function showForCariste(\App\Entity\BonLivraison $bl, Request $request, EntityManagerInterface $em): Response
     {
-        // On récupère les informations liées pour les envoyer à la vue
         $bt = $bl->getBonTravail();
         $commande = $bt ? $bt->getBonCommande() : null;
 
-        // On renvoie vers ton fameux fichier "bon_livraison/cariste.html.twig"
+        // Si le cariste a cliqué sur le bouton "Valider le chargement"
+        if ($request->isMethod('POST')) {
+            
+            // On attribue le BL au Cariste connecté
+            $bl->setCariste($this->getUser());
+            $bl->setCaristeValide(true);
+            
+            // On enregistre en base de données
+            $em->persist($bl);
+            $em->flush();
+
+            $this->addFlash('success', 'Le chargement a bien été validé par vos soins !');
+            
+            // Redirection vers l'accueil cariste
+            return $this->redirectToRoute('app_home');
+        }
+
+        // Sinon, on affiche simplement la page
         return $this->render('bon_livraison/cariste.html.twig', [
             'bl' => $bl,
             'bt' => $bt,
             'commande' => $commande,
         ]);
     }
-
 
     /**
      * Espace RÉCEPTION TERRAIN (Thibaut)

@@ -3,7 +3,7 @@
     <div class="card-header-flex">
         <div class="header-content">
             <h2 class="admin-section-title">Bons de Livraison</h2>
-            <p class="admin-section-subtitle">Gérez les expéditions et faites signer les transporteurs.</p>
+            <p class="admin-section-subtitle">Gérez les expéditions et suivez les validations de chargement.</p>
         </div>
         <div class="header-stats">
             <span class="stat-badge" style="background: #fdfbf5; color: var(--primary-gold);">
@@ -24,11 +24,12 @@
                 <input type="date" id="filterDateBL">
             </div>
             <div class="modern-input-group" style="max-width: 250px;">
-                <i class="fas fa-signature"></i>
+                <i class="fas fa-filter"></i>
                 <select id="filterStatusBL" style="width: 100%; border: none; outline: none; padding: 8px 12px 8px 34px; border-radius: 6px; font-size: 0.85rem; appearance: none; background: white; cursor: pointer;">
                     <option value="">Tous les statuts</option>
-                    <option value="signe">Signé</option>
-                    <option value="attente">En attente de signature</option>
+                    <option value="pret">Prêt au départ (100% validé)</option>
+                    <option value="attente_signature">En attente Signature</option>
+                    <option value="attente_cariste">En attente Cariste</option>
                 </select>
             </div>
         </div>
@@ -44,19 +45,41 @@
             <span>Origine</span>
             <span>Client</span>
             <span>Transporteur</span>
-            <span class="center">Statut</span>
+            <span>État (Cariste / Chauffeur)</span>
             <span class="center">Actions</span>
         </div>
 
         <div id="blTableBody" class="grid-body">
             {% for bl in bons_livraison %}
-                <div class="grid-row clickable-row bl-grid" 
+                
+                {# MODIFICATION : Le data-status va regrouper tous les mots-clés pertinents #}
+                {% set status_global = '' %}
+                {% if bl.caristeValide and bl.signatureValide %}
+                    {% set status_global = 'pret ' %}
+                {% else %}
+                    {% if not bl.caristeValide %}
+                        {% set status_global = status_global ~ 'attente_cariste ' %}
+                    {% endif %}
+                    {% if not bl.signatureValide %}
+                        {% set status_global = status_global ~ 'attente_signature ' %}
+                    {% endif %}
+                {% endif %}
+
+                {# CONDITION D'ACCÈS : Est-ce que le BL est signé ? #}
+                <div class="grid-row bl-grid {{ bl.signatureValide ? 'clickable-row' : 'locked-row' }}" 
                      data-blnum="{{ bl.numero|lower }}"
                      data-client="{{ bl.bonTravail.bonCommande.client.nom|default('')|lower }}" 
                      data-transporteur="{{ bl.transporteur|default('')|lower }}"
                      data-date="{{ bl.dateCreation ? bl.dateCreation|date('Y-m-d') : '' }}"
-                     data-status="{{ bl.signature ? 'signe' : 'attente' }}"
-                     onclick="window.location='{{ path('app_livraison_cariste_show', {'id': bl.id}) }}'">
+                     data-status="{{ status_global|trim }}"
+                     
+                     {# Si signé = On ouvre. Si non signé = Alerte JS #}
+                     {% if bl.signatureValide %}
+                        onclick="window.location='{{ path('app_livraison_cariste_show', {'id': bl.id}) }}'"
+                     {% else %}
+                        onclick="alert('Accès refusé : Ce Bon de Livraison n\'a pas encore été signé par le transporteur.');"
+                     {% endif %}
+                >
                     
                     <div class="ref-cell-group">
                         <span class="ref-cell" style="color: var(--primary-gold); font-weight: 700;">{{ bl.numero }}</span>
@@ -83,22 +106,41 @@
                         {% endif %}
                     </span>
 
-                    <span class="center">
-                        {% if bl.signature %}
-                            <span class="badge-status success" title="Document signé par le transporteur">
+                    {# --- COLONNE DE STATUTS MULTIPLES (AVEC COULEURS FRANCHES) --- #}
+                    <div class="status-stack">
+                        {# 1. Statut Cariste #}
+                        {% if bl.caristeValide %}
+                            <span class="badge-status badge-green mb-1" title="Chargement validé par le cariste">
+                                <i class="fas fa-check-circle"></i> Chargé ({{ bl.cariste ? bl.cariste.prenom : 'Oui' }})
+                            </span>
+                        {% else %}
+                            <span class="badge-status badge-orange mb-1" title="En attente de validation du chargement">
+                                <i class="fas fa-box-open"></i> À charger
+                            </span>
+                        {% endif %}
+
+                        {# 2. Statut Chauffeur (Signature) #}
+                        {% if bl.signatureValide %}
+                            <span class="badge-status badge-green" title="Document signé par le transporteur">
                                 <i class="fas fa-file-signature"></i> Signé
                             </span>
                         {% else %}
-                            <span class="badge-status warning" title="En attente de signature">
+                            <span class="badge-status badge-red pulse-soft" title="En attente de signature du chauffeur">
                                 <i class="fas fa-pen"></i> À signer
                             </span>
                         {% endif %}
-                    </span>
+                    </div>
 
                     <span class="center">
-                        <button type="button" class="btn-action-view" title="Ouvrir le BL" onclick="event.stopPropagation(); window.location='{{ path('app_livraison_cariste_show', {'id': bl.id}) }}'">
-                            <i class="fas fa-eye"></i>
-                        </button>
+                        {% if bl.signatureValide %}
+                            <button type="button" class="btn-action-view" title="Ouvrir le BL" onclick="event.stopPropagation(); window.location='{{ path('app_livraison_cariste_show', {'id': bl.id}) }}'">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        {% else %}
+                            <button type="button" class="btn-action-locked" title="Accès verrouillé (non signé)" onclick="event.stopPropagation(); alert('Accès refusé : En attente de la signature du transporteur.');">
+                                <i class="fas fa-lock"></i>
+                            </button>
+                        {% endif %}
                     </span>
                 </div>
             {% else %}
@@ -124,18 +166,20 @@
         function filterBLTable() {
             const valSearch = inputSearch.value.toLowerCase().trim();
             const valDate = inputDate.value;
-            const valStatus = selectStatus.value;
+            const valStatus = selectStatus.value; // la valeur choisie dans le select
 
             rows.forEach(row => {
                 const dataBl = row.dataset.blnum || "";
                 const dataClient = row.dataset.client || "";
                 const dataTransp = row.dataset.transporteur || "";
                 const dataDate = row.dataset.date || "";
-                const dataStatus = row.dataset.status || "";
+                const dataStatus = row.dataset.status || ""; // contient "attente_cariste attente_signature"
 
                 const matchesSearch = dataBl.includes(valSearch) || dataClient.includes(valSearch) || dataTransp.includes(valSearch);
                 const matchesDate = valDate === "" || dataDate === valDate;
-                const matchesStatus = valStatus === "" || dataStatus === valStatus;
+                
+                // On vérifie si la valeur choisie est incluse dans notre liste de mots-clés
+                const matchesStatus = valStatus === "" || dataStatus.includes(valStatus);
 
                 if (matchesSearch && matchesDate && matchesStatus) {
                     row.classList.remove('hidden-row');
@@ -169,28 +213,57 @@
 </script>
 
 <style>
-    /* Spécifique à la grille des BL */
+    /* La grille */
     .bl-grid { 
         display: grid; 
-        grid-template-columns: 140px 140px 1fr 180px 120px 80px; 
+        grid-template-columns: 140px 140px 1fr 180px 180px 80px; 
     }
     
+    /* Conteneur pour superposer les deux badges */
+    .status-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    .mb-1 { margin-bottom: 2px; }
+
+    /* --- NOUVELLES COULEURS FRANCHES POUR LES BADGES --- */
+    .badge-status { 
+        display: inline-flex; align-items: center; gap: 6px; 
+        padding: 4px 10px; border-radius: 6px; 
+        font-size: 0.7rem; font-weight: 700; width: fit-content; 
+    }
+    .badge-green { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-orange { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+    .badge-red { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+
+    /* Ligne bloquée si non signé */
+    .locked-row {
+        background-color: #f8fafc; /* Gris très clair */
+        opacity: 0.85;
+        cursor: not-allowed;
+    }
+    .locked-row:hover { background-color: #f1f5f9; }
+
+    /* Bouton Vue Normale */
     .btn-action-view { 
-        background: #fdfbf5; 
-        color: var(--primary-gold); 
-        border: 1px solid #f9f1df; 
-        width: 32px; height: 32px; 
-        border-radius: 6px; 
-        cursor: pointer; 
-        display: inline-flex; align-items: center; justify-content: center; 
-        transition: 0.2s; 
+        background: #fdfbf5; color: var(--primary-gold); border: 1px solid #f9f1df; 
+        width: 32px; height: 32px; border-radius: 6px; cursor: pointer; 
+        display: inline-flex; align-items: center; justify-content: center; transition: 0.2s; 
     }
-    .btn-action-view:hover { 
-        background: var(--primary-gold); 
-        color: white; 
-        transform: scale(1.05); 
-    }
+    .btn-action-view:hover { background: var(--primary-gold); color: white; transform: scale(1.05); }
     
-    /* On masque la flèche native du select pour faire plus propre */
+    /* Bouton Verrouillé (Cadenas) */
+    .btn-action-locked {
+        background: #e2e8f0; color: #94a3b8; border: 1px solid #cbd5e1;
+        width: 32px; height: 32px; border-radius: 6px; cursor: not-allowed;
+        display: inline-flex; align-items: center; justify-content: center;
+    }
+
+    /* Petite animation discrète pour le texte rouge "À signer" */
+    .pulse-soft { animation: pulse-red 2s infinite; }
+    @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
     #filterStatusBL::-ms-expand { display: none; }
 </style>

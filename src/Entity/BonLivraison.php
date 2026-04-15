@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\BonLivraisonRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\User; 
 
 #[ORM\Entity(repositoryClass: BonLivraisonRepository::class)]
 class BonLivraison
@@ -14,7 +15,6 @@ class BonLivraison
     #[ORM\Column]
     private ?int $id = null;
 
-    // --- RELATION : 1 Bon de Livraison = 1 Bon de Travail ---
     #[ORM\OneToOne(targetEntity: BonTravail::class, cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
     private ?BonTravail $bonTravail = null;
@@ -37,13 +37,26 @@ class BonLivraison
     #[ORM\Column(length: 150, nullable: true)]
     private ?string $chauffeur = null;
 
-    // Type TEXT pour stocker l'image de la signature en Base64 ou le chemin du fichier
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $signature = null;
 
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    private ?User $cariste = null;
+
+    // =========================================================================
+    // SÉPARATION DES VALIDATIONS
+    // =========================================================================
+
+    // Validation côté Cariste (Le chargement est fait)
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $caristeValide = false;
+
+    // Validation côté Transporteur (Le document est signé)
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $signatureValide = false;
+
     public function __construct()
     {
-        // La date de création se remplit toute seule à l'instant T
         $this->dateCreation = new \DateTime();
     }
 
@@ -141,6 +154,39 @@ class BonLivraison
     public function setSignature(?string $signature): self
     {
         $this->signature = $signature;
+        return $this;
+    }
+
+    public function getCariste(): ?User
+    {
+        return $this->cariste;
+    }
+
+    public function setCariste(?User $cariste): self
+    {
+        $this->cariste = $cariste;
+        return $this;
+    }
+
+    public function isCaristeValide(): bool
+    {
+        return $this->caristeValide;
+    }
+
+    public function setCaristeValide(bool $caristeValide): self
+    {
+        $this->caristeValide = $caristeValide;
+        return $this;
+    }
+
+    public function isSignatureValide(): bool
+    {
+        return $this->signatureValide;
+    }
+
+    public function setSignatureValide(bool $signatureValide): self
+    {
+        $this->signatureValide = $signatureValide;
         return $this;
     }
 }

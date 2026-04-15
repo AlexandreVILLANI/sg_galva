@@ -10,8 +10,8 @@ framework:
         cookie_secure: auto   
         cookie_samesite: lax  
         
-        cookie_lifetime: 28800 # 8 heures
-        gc_maxlifetime: 28800
+        cookie_lifetime: 0 # Le cookie de session expire uniquement quand on ferme complètement le navigateur
+        gc_maxlifetime: 43200 #Le serveur garde les données 12 heures (idéal pour tenir toute une journée de travail avec les mises en veille)
     
     trusted_proxies: '127.0.0.1,REMOTE_ADDR'
     trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port']

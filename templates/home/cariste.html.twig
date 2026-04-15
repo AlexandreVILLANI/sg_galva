@@ -20,10 +20,6 @@
                     <i class="fas fa-truck-loading"></i>
                     <span>Bons de Livraison</span>
                 </a>
-                <a href="#" class="nav-item" data-target="cariste-chargement">
-                    <i class="fas fa-dolly"></i>
-                    <span>Fiches de Chargement</span>
-                </a>
             </nav>
         </div>
 
@@ -54,7 +50,6 @@
         </div>
 
         <div id="content-area">
-            
             <div id="cariste-dechargement" class="content-section">
                 <div class="section-header">
                     <h2 class="section-title">Fiches de Déchargement</h2>
@@ -70,21 +65,6 @@
             <div id="cariste-livraison" class="content-section">
                 {# On appelle le fichier qu'on vient de créer #}
                 {{ include('components/cariste/_list_bon_livraison.html.twig', {'bons_livraison': bons_livraison}) }}
-            </div>
-
-
-            <div id="cariste-chargement" class="content-section">
-                <div class="section-header">
-                    <h2 class="section-title">Fiches de Chargement</h2>
-                    <button class="btn-create-action">
-                        <i class="fas fa-plus"></i> Nouveau Chargement
-                    </button>
-                </div>
-                {# Tu pourras inclure ton composant de liste ici : #}
-                {# {{ include('components/cariste/_list_chargement.html.twig') }} #}
-                <div class="dashed-container" style="min-height: 300px;">
-                    <p>Ici apparaîtra la liste des Fiches de Chargement</p>
-                </div>
             </div>
         </div>
     </main>
