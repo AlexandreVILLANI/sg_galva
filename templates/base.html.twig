@@ -16,39 +16,5 @@
     </head>
     <body>
         {% block body %}{% endblock %}
-
-        {# --- SCRIPT DE DÉCONNEXION AUTOMATIQUE --- #}
-        {# On ne lance le script que si un utilisateur est actuellement connecté #}
-        {% if app.user %}
-        <script>
-            // Temps d'inactivité avant déconnexion (ici 10 minutes = 600000 ms)
-            // Tu peux changer cette valeur (ex: 5 minutes = 300000 ms)
-            const INACTIVITY_LIMIT = 600000; 
-            let inactivityTimeout;
-
-            function resetInactivityTimer() {
-                clearTimeout(inactivityTimeout);
-                inactivityTimeout = setTimeout(function() {
-                    window.location.href = "{{ path('app_logout') }}";
-                }, INACTIVITY_LIMIT);
-            }
-
-            // On écoute toutes les actions possibles sur l'écran (souris, clavier, tactile)
-            window.onload = resetInactivityTimer;
-            document.onmousemove = resetInactivityTimer;
-            document.onkeypress = resetInactivityTimer;
-            document.ontouchstart = resetInactivityTimer; // Pour les tablettes et smartphones
-            document.onclick = resetInactivityTimer;
-            document.onscroll = resetInactivityTimer;
-
-            // Déconnexion immédiate si l'application est mise en arrière-plan sur tablette
-            // (Optionnel : Enlève les '//' devant window.location.href si tu veux l'activer)
-            document.addEventListener("visibilitychange", function() {
-                if (document.visibilityState === 'hidden') {
-                    // window.location.href = "{{ path('app_logout') }}";
-                }
-            });
-        </script>
-        {% endif %}
     </body>
 </html>
