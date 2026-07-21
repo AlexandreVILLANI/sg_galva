@@ -45,11 +45,11 @@ class BonDeCommandeType extends AbstractType
             ])
             // --- Le champ pour les photos spécifiques au Bon ---
             ->add('imageFiles', FileType::class, [
-                'label' => 'Photos complémentaires',
+                'label' => 'Documents complémentaires (Photos/PDF)',
                 'multiple' => true,
                 'mapped' => false, 
                 'required' => false,
-                'attr' => ['accept' => 'image/*']
+                'attr' => ['accept' => 'image/*,application/pdf']
             ])
             ->add('isGalvanisation', CheckboxType::class, ['required' => false])
             ->add('isCataphorese', CheckboxType::class, ['required' => false])

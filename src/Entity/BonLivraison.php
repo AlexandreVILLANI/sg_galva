@@ -6,6 +6,8 @@ use App\Repository\BonLivraisonRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\User; 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: BonLivraisonRepository::class)]
 class BonLivraison
@@ -55,9 +57,13 @@ class BonLivraison
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     private bool $signatureValide = false;
 
+    #[ORM\OneToMany(mappedBy: 'bonLivraison', targetEntity: DocumentBonLivraison::class, cascade: ['persist', 'remove'])]
+    private Collection $documents;
+
     public function __construct()
     {
         $this->dateCreation = new \DateTime();
+        $this->documents = new ArrayCollection();
     }
 
     // =========================================================================
@@ -187,6 +193,36 @@ class BonLivraison
     public function setSignatureValide(bool $signatureValide): self
     {
         $this->signatureValide = $signatureValide;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, DocumentBonLivraison>
+     */
+    public function getDocuments(): Collection
+    {
+        return $this->documents;
+    }
+
+    public function addDocument(DocumentBonLivraison $document): static
+    {
+        if (!$this->documents->contains($document)) {
+            $this->documents->add($document);
+            $document->setBonLivraison($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDocument(DocumentBonLivraison $document): static
+    {
+        if ($this->documents->removeElement($document)) {
+            // set the owning side to null (unless already changed)
+            if ($document->getBonLivraison() === $this) {
+                $document->setBonLivraison(null);
+            }
+        }
+
         return $this;
     }
 }

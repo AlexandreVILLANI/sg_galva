@@ -10,7 +10,6 @@
 <div class="bc-wrapper">
     {{ form_start(form, {'attr': {'class': 'bc-paper', 'enctype': 'multipart/form-data'}}) }}
     
-        {# --- ENTÊTE --- #}
         <div class="bc-header">
             <div class="bc-logo-container">
                 <img src="{{ asset('images/sg-galva-logo.png') }}" alt="Logo" class="bc-logo">
@@ -114,7 +113,6 @@
             </div>
         </div>
 
-        {# --- ZONE DESCRIPTION --- #}
         <div class="bc-box description-box table-wrapper">
             <p class="box-label">DÉTAILS DU DÉCHARGEMENT</p>
             <table class="bc-table mt-2">
@@ -126,7 +124,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {# On boucle directement sur le sous-formulaire que l'on vient de créer #}
                     {% for ligneForm in form.lignes %}
                         <tr>
                             <td class="p-0 center">{{ form_widget(ligneForm.nbPaquets, {'attr': {'class': 'cell-input center fw-bold text-blue'}}) }}</td>
@@ -144,7 +141,6 @@
             </div>
         </div>
 
-        {# --- EMPLACEMENT --- #}
         <div class="bc-box emplacement-box">
             <span class="label">Emplacement :</span>
             <strong>
@@ -154,7 +150,6 @@
             </strong>
         </div>
 
-        {# --- COMMENTAIRES --- #}
         <div class="bc-box comment-box">
             <span class="label">Commentaires / Observations :</span>
             <div class="mt-2">
@@ -162,14 +157,21 @@
             </div>
         </div>
 
-        {# --- SECTION PHOTOS --- #}
         <div class="photo-section mt-4">
             <div class="bc-box mb-4">
                 <label class="label">Archive Déchargement (Photos Fiche #{{ fiche.id }})</label>
                 <div class="photo-grid">
                     {% for photo in fiche.photos %}
-                        <div class="photo-item">
-                            <img src="{{ asset('uploads/fiches/' ~ photo.nomFichier) }}" alt="Photo déchargement" onclick="window.open(this.src)">
+                        {% set ext = photo.nomFichier|split('.')|last|lower %}
+                        <div class="photo-item archive-item" style="text-align:center;">
+                            {% if ext == 'pdf' %}
+                                <a href="{{ asset('uploads/fiches/' ~ photo.nomFichier) }}" target="_blank" style="text-decoration:none; display:block; padding-top:20px;">
+                                    <i class="fas fa-file-pdf" style="font-size: 40px; color: #e06e54;"></i>
+                                    <div style="margin-top: 10px; font-size: 12px; color: #2e46a6; word-break: break-all;">{{ photo.nomFichier }}</div>
+                                </a>
+                            {% else %}
+                                <img src="{{ asset('uploads/fiches/' ~ photo.nomFichier) }}" alt="Photo déchargement" onclick="window.open(this.src)">
+                            {% endif %}
                         </div>
                     {% else %}
                         <p class="no-data">Aucune photo jointe au déchargement.</p>
@@ -183,12 +185,16 @@
                 <label class="label">Photos complémentaires (Ce Bon)</label>
                 <div class="form-group mt-2">
                     
-                    {# 1. ON CACHE LE CHAMP ICI ET ON FORCE L'ATTRIBUT MULTIPLE #}
                     <div style="display: none;">
-                        {{ form_widget(form.imageFiles, {'attr': {'multiple': 'multiple', 'accept': 'image/*'}}) }}
+                        {{ form_widget(form.imageFiles, {
+                            'attr': {
+                                'multiple': 'multiple', 
+                                'accept': 'image/*,application/pdf', 
+                                'capture': 'environment'
+                            }
+                        }) }}
                     </div>
 
-                    {# 2. LA ZONE DE CLIC EST SÉPARÉE #}
                     <div class="upload-zone" id="drop-zone" onclick="document.getElementById('{{ form.imageFiles.vars.id }}').click()">
                         <i class="fas fa-paperclip"></i>
                         <p>Glisser-déposer plusieurs photos ou <span class="browse">Parcourir</span></p>
@@ -199,21 +205,23 @@
             </div>
         </div>
 
-        {# --- ACTIONS --- #}
         <div class="bc-actions no-print">
-            <a href="{{ path('app_reception_terrain_home') }}" class="btn-cancel">
+            <a href="{{ path('app_reception_terrain_home', {'section': 'list-scans'}) }}" class="btn-cancel">
                 <i class="fas fa-arrow-left"></i> Annuler
             </a>
-            <button type="submit" class="btn-confirm">
-                <i class="fas fa-save"></i> SAUVEGARDER LE BON
-            </button>
+            
+            <button type="submit" class="btn-confirm"><i class="fas fa-save"></i> VALIDER LA RÉCEPTION</button>
+        </div>        
+        
+        <div style="display: none;">
+            {{ form_widget(form.lignes) }}
         </div>
+
         {{ form_rest(form) }}
     {{ form_end(form) }}
 </div>
 
 <script>
-    // --- LOGIQUE ATTRIBUTION CLIENT ---
     let clientSelectSearch = null;
 
     function toggleClientEdit() {
@@ -272,51 +280,94 @@
         }
     }
 
-    // --- LOGIQUE PHOTOS ---
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('{{ form.imageFiles.vars.id }}');
     const preview = document.getElementById('file-preview');
+    // We don't strictly need a global DataTransfer if we are just previewing what's currently in the input,
+    // but it's useful if we want to allow appending multiple times. Let's keep it and fix its usage.
     let dataTransfer = new DataTransfer();
 
-    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+    fileInput.addEventListener('change', (e) => {
+        // Clear existing previews if you want to replace them, or comment out the next line to append
+        // preview.innerHTML = ''; 
+        // dataTransfer = new DataTransfer(); // Rest if replacing
+
+        handleFiles(e.target.files);
+    });
+
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('dragleave', () => dropZone.classLi st.remove('dragover'));
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
-        handleFiles(e.dataTransfer.files);
+        handleFiles(e.datTransfer.files);
     });
 
     function handleFiles(files) {
         Array.from(files).forEach(file => {
+            // Check if it's an image or PDF
+            if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+                console.warn('File format not supported:', file.name);
+                return; 
+            }
+
+            // Add to our DataTransfer object
             dataTransfer.items.add(file);
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const container = document.createElement('div');
-                container.className = 'photo-item';
+
+            // Create preview
+            const container = document.createElement('div');
+            container.className = 'photo-item';
+            
+            if (file.type === 'application/pdf') {
+                container.style.textAlign = 'center';
                 container.innerHTML = `
-                    <img src="${event.target.result}">
-                    <button type="button" class="btn-remove-photo" data-name="${file.name}">
+                    <div style="padding-top:20px;">
+                        <i class="fas fa-file-pdf" style="font-size: 40px; color: #e06e54;"></i>
+                        <div style="margin-top: 10px; font-size: 12px; color: #2e46a6; word-break: break-all;">${file.name}</div>
+                    </div>
+                    <button type="button" class="btn-remove-photo local-photo" data-name="${file.name}">
                         <i class="fas fa-times"></i>
                     </button>
                 `;
                 preview.appendChild(container);
-            };
-            reader.readAsDataURL(file);
+            } else {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    container.innerHTML = `
+                        <img src="${event.target.result}" alt="Preview of ${file.name}">
+                        <button type="button" class="btn-remove-photo local-photo" data-name="${file.name}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    preview.appendChild(container);
+                };
+                reader.readAsDataURL(file);
+            }
         });
+
+        // Update the actual file input with our accumulated files
         fileInput.files = dataTransfer.files;
     }
 
     preview.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-remove-photo');
         if (!btn) return;
+        
         const fileName = btn.getAttribute('data-name');
+        
+        // Create a new DataTransfer to hold the remaining files
         const newDataTransfer = new DataTransfer();
         Array.from(dataTransfer.files).forEach(file => {
-            if (file.name !== fileName) newDataTransfer.items.add(file);
+            if (file.name !== fileName) {
+                newDataTransfer.items.add(file);
+            }
         });
+        
+        // Update our global DataTransfer and the input
         dataTransfer = newDataTransfer; 
         fileInput.files = dataTransfer.files;
+        
+        // Remove the visual preview
         btn.parentElement.remove();
     });
 </script>

@@ -8,6 +8,10 @@ use App\Entity\FicheDechargement;
 use App\Entity\BonTravail;
 use App\Entity\User;
 use App\Entity\BonLivraison;
+use App\Entity\DocumentBonLivraison;
+
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 use App\Form\BonDeCommandeType;
 use App\Form\ClientType;
@@ -29,6 +33,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -482,6 +487,8 @@ class AdminController extends AbstractController
             //     $bl->setStatut('Signé'); 
             // }
 
+            $this->handleDocumentsUpload($form, $bl, $em);
+
             $em->flush();
             $this->addFlash('success', 'Le Bon de Livraison a bien été enregistré.');
 
@@ -495,5 +502,94 @@ class AdminController extends AbstractController
             'commande' => $commande,
             'form' => $form->createView(),
         ]);
+    }
+
+    private function handleDocumentsUpload($form, BonLivraison $bl, EntityManagerInterface $em)
+    {
+        $documentFiles = $form->get('documentFiles')->getData();
+        
+        if ($documentFiles) {
+            $manager = new ImageManager(new Driver());
+            $destinationFolder = $this->getParameter('kernel.project_dir').'/public/uploads/bl';
+            
+            if (!is_dir($destinationFolder)) {
+                mkdir($destinationFolder, 0777, true);
+            }
+
+            foreach ($documentFiles as $documentFile) {
+                $mimeType = $documentFile->getMimeType();
+                $extension = $documentFile->guessExtension();
+
+                if (str_starts_with($mimeType, 'image/')) {
+                    $newFilename = uniqid().'.jpg';
+                    $destinationPath = $destinationFolder . '/' . $newFilename;
+                    try {
+                        $image = $manager->read($documentFile->getPathname());
+                        $image->scaleDown(width: 1200);
+                        $image->save($destinationPath, quality: 75);
+                        
+                        $doc = new DocumentBonLivraison();
+                        $doc->setNomFichier($newFilename);
+                        $bl->addDocument($doc);
+                        $em->persist($doc); 
+                    } catch (\Exception $e) {
+                        // ignore or log
+                    }
+                } elseif ($mimeType === 'application/pdf') {
+                    $newFilename = uniqid().'.pdf';
+                    $destinationPath = $destinationFolder . '/' . $newFilename;
+                    
+                    try {
+                        // Compress PDF using Ghostscript
+                        $tempPath = $documentFile->getPathname();
+                        $command = 'gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/ebook -dNOPAUSE -dQUIET -dBATCH -sOutputFile=' . escapeshellarg($destinationPath) . ' ' . escapeshellarg($tempPath);
+                        shell_exec($command);
+                        
+                        // If Ghostscript failed to generate the file for some reason, fallback to move
+                        if (!file_exists($destinationPath)) {
+                            $documentFile->move($destinationFolder, $newFilename);
+                        }
+
+                        $doc = new DocumentBonLivraison();
+                        $doc->setNomFichier($newFilename);
+                        $bl->addDocument($doc);
+                        $em->persist($doc);
+                    } catch (\Exception $e) {
+                        // fallback to move
+                        $documentFile->move($destinationFolder, $newFilename);
+                        $doc = new DocumentBonLivraison();
+                        $doc->setNomFichier($newFilename);
+                        $bl->addDocument($doc);
+                        $em->persist($doc);
+                    }
+                }
+            }
+        }
+    }
+
+    #[Route('/bon-livraison/document/{id}/supprimer', name: 'app_admin_bl_document_delete', methods: ['POST'])]
+    public function deleteDocument(int $id, EntityManagerInterface $em): JsonResponse
+    {
+        $doc = $em->getRepository(DocumentBonLivraison::class)->find($id);
+
+        if (!$doc) {
+            return new JsonResponse(['success' => false, 'message' => 'Document introuvable.'], 404);
+        }
+
+        try {
+            $filePath = $this->getParameter('kernel.project_dir') . '/public/uploads/bl/' . $doc->getNomFichier();
+            
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+
+            $em->remove($doc);
+            $em->flush();
+
+            return new JsonResponse(['success' => true]);
+            
+        } catch (\Exception $e) {
+            return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la suppression.'], 500);
+        }
     }
 }

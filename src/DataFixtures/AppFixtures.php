@@ -147,7 +147,7 @@ class AppFixtures extends Fixture
         $commercial->setPrenom('Pereira');
         $commercial->setTypeAcces('MDP');
         $commercial->setRoles(['ROLE_COMMERCIAL']);
-        $commercial->setUserRole($commercialRole); // On lui donne bien le rôle Commercial créé plus haut
+        $commercial->setUserRole($commercialRole); 
         $commercial->setPassword($this->hasher->hashPassword($commercial, 'commercial'));
         $manager->persist($commercial);
 

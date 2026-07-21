@@ -8,6 +8,7 @@ use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -40,6 +41,13 @@ class BonLivraisonType extends AbstractType
             // Ce champ est CACHÉ car il sera rempli automatiquement par le script de la tablette
             ->add('signature', HiddenType::class, [
                 'required' => false,
+            ])
+            ->add('documentFiles', FileType::class, [
+                'label' => 'Documents (Photos/PDF)',
+                'multiple' => true,
+                'mapped' => false, 
+                'required' => false,
+                'attr' => ['accept' => 'image/*,application/pdf']
             ])
         ;
     }

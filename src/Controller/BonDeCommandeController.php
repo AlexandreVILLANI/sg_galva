@@ -150,28 +150,60 @@ class BonDeCommandeController extends AbstractController
             $destinationFolder = $this->getParameter('kernel.project_dir').'/public/uploads/bons';
 
             foreach ($imageFiles as $imageFile) {
-                // On force l'extension JPG pour la légèreté
-                $newFilename = uniqid().'.jpg';
-                $destinationPath = $destinationFolder . '/' . $newFilename;
-                
-                try {
-                    // Lecture de l'image envoyée
-                    $image = $manager->read($imageFile->getPathname());
+                $mimeType = $imageFile->getMimeType();
+                $extension = $imageFile->guessExtension();
+
+                if (str_starts_with($mimeType, 'image/')) {
+                    // On force l'extension JPG pour la légèreté
+                    $newFilename = uniqid().'.jpg';
+                    $destinationPath = $destinationFolder . '/' . $newFilename;
                     
-                    // Redimensionnement à max 1200px de large (garde les proportions)
-                    $image->scaleDown(width: 1200);
+                    try {
+                        // Lecture de l'image envoyée
+                        $image = $manager->read($imageFile->getPathname());
+                        
+                        // Redimensionnement à max 1200px de large (garde les proportions)
+                        $image->scaleDown(width: 1200);
+                        
+                        // Sauvegarde avec 75% de qualité
+                        $image->save($destinationPath, quality: 75);
+                        
+                        $photo = new PhotoBonCommande();
+                        $photo->setNomFichier($newFilename);
+                        $bon->addPhoto($photo);
+                        
+                        $em->persist($photo); 
+                        
+                    } catch (\Exception $e) {
+                        dd("Erreur lors de la compression : " . $e->getMessage());
+                    }
+                } elseif ($mimeType === 'application/pdf') {
+                    $newFilename = uniqid().'.pdf';
+                    $destinationPath = $destinationFolder . '/' . $newFilename;
                     
-                    // Sauvegarde avec 75% de qualité
-                    $image->save($destinationPath, quality: 75);
-                    
-                    $photo = new PhotoBonCommande();
-                    $photo->setNomFichier($newFilename);
-                    $bon->addPhoto($photo);
-                    
-                    $em->persist($photo); 
-                    
-                } catch (\Exception $e) {
-                    dd("Erreur lors de la compression : " . $e->getMessage());
+                    try {
+                        // Compress PDF using Ghostscript
+                        $tempPath = $imageFile->getPathname();
+                        $command = 'gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/ebook -dNOPAUSE -dQUIET -dBATCH -sOutputFile=' . escapeshellarg($destinationPath) . ' ' . escapeshellarg($tempPath);
+                        shell_exec($command);
+                        
+                        // If Ghostscript failed to generate the file for some reason, fallback to move
+                        if (!file_exists($destinationPath)) {
+                            $imageFile->move($destinationFolder, $newFilename);
+                        }
+
+                        $photo = new PhotoBonCommande();
+                        $photo->setNomFichier($newFilename);
+                        $bon->addPhoto($photo);
+                        $em->persist($photo);
+                    } catch (\Exception $e) {
+                        // fallback to move
+                        $imageFile->move($destinationFolder, $newFilename);
+                        $photo = new PhotoBonCommande();
+                        $photo->setNomFichier($newFilename);
+                        $bon->addPhoto($photo);
+                        $em->persist($photo);
+                    }
                 }
             }
         }

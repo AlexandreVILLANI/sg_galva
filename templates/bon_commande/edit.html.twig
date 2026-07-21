@@ -6,7 +6,6 @@
 <div class="bc-wrapper">
     {{ form_start(form, {'attr': {'class': 'bc-paper'}}) }}
         
-        {# --- ENTÊTE --- #}
         <div class="bc-header">
             <div class="bc-logo-container">
                 <img src="{{ asset('images/sg-galva-logo.png') }}" alt="Logo" class="bc-logo">
@@ -94,7 +93,6 @@
             </div>
         </div>
 
-        {# --- EMPLACEMENT --- #}
         <div class="bc-box emplacement-box">
             <span class="label">Emplacement :</span>
             <strong>
@@ -104,7 +102,6 @@
             </strong>
         </div>
 
-        {# --- ZONE COMMENTAIRES (OBSERVATIONS) --- #}
         <div class="bc-box comment-box">
             <span class="label">Commentaires / Observations :</span>
             <div class="mt-2">
@@ -112,41 +109,54 @@
             </div>
         </div>
 
-        {# --- SECTION PHOTOS --- #}
         <div class="photo-section mt-4">
-            {# ARCHIVE DÉCHARGEMENT (Lecture seule) #}
             <div class="bc-box mb-4">
                 <label class="label">Archive Déchargement (Fiche #{{ fiche.id }})</label>
                 <div class="photo-grid">
                     {% for photo in fiche.photos %}
-                        <div class="photo-item archive-item">
-                            <img src="{{ asset('uploads/fiches/' ~ photo.nomFichier) }}" onclick="window.open(this.src)">
+                        {% set ext = photo.nomFichier|split('.')|last|lower %}
+                        <div class="photo-item archive-item" style="text-align:center;">
+                            {% if ext == 'pdf' %}
+                                <a href="{{ asset('uploads/fiches/' ~ photo.nomFichier) }}" target="_blank" style="text-decoration:none; display:block; padding-top:20px;">
+                                    <i class="fas fa-file-pdf" style="font-size: 40px; color: #e06e54;"></i>
+                                    <div style="margin-top: 10px; font-size: 12px; color: #2e46a6; word-break: break-all;">{{ photo.nomFichier }}</div>
+                                </a>
+                            {% else %}
+                                <img src="{{ asset('uploads/fiches/' ~ photo.nomFichier) }}" onclick="window.open(this.src)">
+                            {% endif %}
                         </div>
                     {% endfor %}
                 </div>
             </div>
 
-            {# PHOTOS DU BON DE COMMANDE (Gestion) #}
             <div class="bc-box">
                 <label class="label">Photos du Bon (Déjà enregistrées)</label>
                 <div class="photo-grid mb-4" id="server-photos-grid">
                     {% for photo in bon.photos %}
-                        <div class="photo-item" id="photo-{{ photo.id }}">
-                            <img src="{{ asset('uploads/bons/' ~ photo.nomFichier) }}" onclick="window.open(this.src)" style="cursor: pointer;">
-                            <button type="button" class="btn-remove-photo server-photo" data-id="{{ photo.id }}" title="Supprimer cette photo">
+                        {% set ext = photo.nomFichier|split('.')|last|lower %}
+                        <div class="photo-item" id="photo-{{ photo.id }}" style="text-align:center;">
+                            {% if ext == 'pdf' %}
+                                <a href="{{ asset('uploads/bons/' ~ photo.nomFichier) }}" target="_blank" style="text-decoration:none; display:block; padding-top:20px;">
+                                    <i class="fas fa-file-pdf" style="font-size: 40px; color: #e06e54;"></i>
+                                    <div style="margin-top: 10px; font-size: 12px; color: #2e46a6; word-break: break-all;">{{ photo.nomFichier }}</div>
+                                </a>
+                            {% else %}
+                                <img src="{{ asset('uploads/bons/' ~ photo.nomFichier) }}" onclick="window.open(this.src)" style="cursor: pointer;">
+                            {% endif %}
+                            <button type="button" class="btn-remove-photo server-photo" data-id="{{ photo.id }}" title="Supprimer ce document">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
                     {% else %}
-                        <p class="no-data" style="font-size: 13px; color: #666; font-style: italic;">Aucune photo attachée à ce bon pour le moment.</p>
+                        <p class="no-data" style="font-size: 13px; color: #666; font-style: italic;">Aucun document attaché à ce bon pour le moment.</p>
                     {% endfor %}
                 </div>
 
                 <hr class="bc-hr">
 
-                <label class="label">Ajouter de nouvelles photos</label>
+                <label class="label">Ajouter de nouveaux documents (Photos/PDF)</label>
                 <div class="upload-zone mt-2" id="drop-zone" onclick="document.getElementById('{{ form.imageFiles.vars.id }}').click()">
-                    {{ form_widget(form.imageFiles, {'attr': {'hidden': 'hidden'}}) }}
+                    {{ form_widget(form.imageFiles, {'attr': {'hidden': 'hidden', 'accept': 'image/*,application/pdf'}}) }}
                     <i class="fas fa-cloud-upload-alt"></i>
                     <p>Glisser-déposer ou <span class="browse">Parcourir</span></p>
                 </div>
@@ -154,7 +164,6 @@
             </div>
         </div>
 
-        {# --- ACTIONS --- #}
         <div class="bc-actions no-print">
             <a href="{{ path('app_reception_terrain_home', {'section': 'list-scans'}) }}" class="btn-cancel">
                 <i class="fas fa-arrow-left"></i> Annuler
@@ -163,9 +172,6 @@
             <button type="submit" class="btn-confirm"><i class="fas fa-save"></i> METTRE À JOUR</button>
         </div>        
         
-        {# L'ASTUCE EST ICI : On génère les champs de manière invisible #}
-        {# 1. Ça empêche form_rest() de les afficher n'importe comment #}
-        {# 2. Ça renvoie bien les données au serveur pour éviter l'erreur "null/int" #}
         <div style="display: none;">
             {{ form_widget(form.lignes) }}
         </div>
@@ -192,7 +198,6 @@
         handleFiles(e.dataTransfer.files);
     });
 
-    // --- SUPPRESSION DES PHOTOS SERVEUR (Déjà enregistrées) ---
     const serverPhotosGrid = document.getElementById('server-photos-grid');
     if (serverPhotosGrid) {
         serverPhotosGrid.addEventListener('click', async (e) => {
@@ -209,7 +214,6 @@
             btn.disabled = true;
 
             try {
-                // IMPORTANT : Il faudra créer cette route dans ton contrôleur !
                 const response = await fetch(`/reception-terrain/bon-commande/photo/${photoId}/supprimer`, {
                     method: 'POST',
                     headers: {
@@ -220,7 +224,6 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Si succès, on retire l'image de l'écran avec une petite animation
                     const photoItem = document.getElementById(`photo-${photoId}`);
                     photoItem.style.transition = "opacity 0.3s";
                     photoItem.style.opacity = "0";
@@ -240,25 +243,41 @@
 
     function handleFiles(files) {
         Array.from(files).forEach(file => {
+            if (!file.type.startsWith('image/') && file.type !== 'application/pdf') return;
+
             dataTransfer.items.add(file);
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const container = document.createElement('div');
-                container.className = 'photo-item';
+            const container = document.createElement('div');
+            container.className = 'photo-item';
+
+            if (file.type === 'application/pdf') {
+                container.style.textAlign = 'center';
                 container.innerHTML = `
-                    <img src="${event.target.result}">
+                    <div style="padding-top:20px;">
+                        <i class="fas fa-file-pdf" style="font-size: 40px; color: #e06e54;"></i>
+                        <div style="margin-top: 10px; font-size: 12px; color: #2e46a6; word-break: break-all;">${file.name}</div>
+                    </div>
                     <button type="button" class="btn-remove-photo local-photo" data-name="${file.name}">
                         <i class="fas fa-times"></i>
                     </button>
                 `;
                 preview.appendChild(container);
-            };
-            reader.readAsDataURL(file);
+            } else {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    container.innerHTML = `
+                        <img src="${event.target.result}">
+                        <button type="button" class="btn-remove-photo local-photo" data-name="${file.name}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    preview.appendChild(container);
+                };
+                reader.readAsDataURL(file);
+            }
         });
         fileInput.files = dataTransfer.files;
     }
 
-    // Suppression des nouvelles photos (avant envoi)
     preview.addEventListener('click', (e) => {
         const btn = e.target.closest('.local-photo');
         if (!btn) return;
