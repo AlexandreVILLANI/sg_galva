@@ -1,0 +1,231 @@
+<div class="stats-container">
+    <div class="stats-header">
+        <h2>Tableau de Bord et Statistiques</h2>
+        <p>Aperçu global de l'activité de production</p>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="fas fa-building"></i></div>
+            <div class="kpi-data">
+                <span class="kpi-value">{{ stats_data.total_clients }}</span>
+                <span class="kpi-label">Clients Actifs</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: #e0e7ff; color: #4338ca;"><i class="fas fa-file-invoice"></i></div>
+            <div class="kpi-data">
+                <span class="kpi-value">{{ stats_data.total_bc }}</span>
+                <span class="kpi-label">Bons de Commande</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: #fce7f3; color: #be185d;"><i class="fas fa-tools"></i></div>
+            <div class="kpi-data">
+                <span class="kpi-value">{{ stats_data.total_bt }}</span>
+                <span class="kpi-label">Bons de Travail</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: #dcfce7; color: #166534;"><i class="fas fa-clipboard-check"></i></div>
+            <div class="kpi-data">
+                <span class="kpi-value">{{ stats_data.total_fiches }}</span>
+                <span class="kpi-label">Fiches de Déchargement</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h3>Répartition des Traitements</h3>
+            <div class="chart-wrapper" style="position: relative; height:300px; width:100%">
+                <canvas id="pieChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card" style="flex: 2;">
+            <h3>Activité (Création BT) - 6 Derniers Mois</h3>
+            <div class="chart-wrapper" style="position: relative; height:300px; width:100%">
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initCharts();
+});
+
+document.addEventListener('turbo:load', function() {
+    initCharts();
+});
+
+let pieChartInstance = null;
+let barChartInstance = null;
+
+function initCharts() {
+    // Eviter de recréer si on ne voit pas le canvas
+    if (!document.getElementById('pieChart')) return;
+    
+    // Données venant de PHP
+    const statsData = {{ stats_data|json_encode|raw }};
+    
+    // Graphique Camembert (Répartition)
+    const ctxPie = document.getElementById('pieChart').getContext('2d');
+    if (pieChartInstance) pieChartInstance.destroy();
+    
+    pieChartInstance = new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+            labels: ['Galvanisation', 'Cataphorèse'],
+            datasets: [{
+                data: [statsData.galva_count, statsData.cata_count],
+                backgroundColor: [
+                    '#3b82f6', // blue
+                    '#8b5cf6'  // purple
+                ],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            },
+            cutout: '65%'
+        }
+    });
+
+    // Graphique Barres (Activité 6 mois)
+    const ctxBar = document.getElementById('barChart').getContext('2d');
+    if (barChartInstance) barChartInstance.destroy();
+    
+    // Inverser pour avoir du plus ancien au plus récent
+    const labels = statsData.months_labels.slice().reverse();
+    const dataCounts = statsData.bt_counts.slice().reverse();
+
+    barChartInstance = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Bons de Travail Créés',
+                data: dataCounts,
+                backgroundColor: '#4f46e5',
+                borderRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, grid: { borderDash: [2, 4] } },
+                x: { grid: { display: false } }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+}
+
+// Ré-initialiser les graphes lorsqu'on clique sur l'onglet admin (vu qu'ils peuvent être cachés au montage)
+document.addEventListener('click', function(e) {
+    const navItem = e.target.closest('.nav-item');
+    if (navItem && navItem.getAttribute('data-target') === 'admin-stats') {
+        setTimeout(initCharts, 50); // Petit délai pour laisser le temps au DOM de s'afficher (display: block)
+    }
+});
+</script>
+
+<style>
+.stats-container {
+    padding: 10px;
+}
+.stats-header {
+    margin-bottom: 25px;
+}
+.stats-header h2 {
+    margin: 0 0 5px 0;
+    color: #111827;
+    font-size: 24px;
+}
+.stats-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+.kpi-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+.kpi-card:hover {
+    transform: translateY(-2px);
+}
+.kpi-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #4b5563;
+}
+.kpi-data {
+    display: flex;
+    flex-direction: column;
+}
+.kpi-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.2;
+}
+.kpi-label {
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.charts-grid {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.chart-card {
+    flex: 1;
+    min-width: 300px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.chart-card h3 {
+    margin: 0 0 20px 0;
+    font-size: 16px;
+    color: #374151;
+    font-weight: 600;
+}
+</style>

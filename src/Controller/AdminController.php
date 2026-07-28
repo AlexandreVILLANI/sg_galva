@@ -63,15 +63,59 @@ class AdminController extends AbstractController
         $configRetention = $configRepo->findOneBy(['cle' => 'retention_photos_jours']);
         $retentionJours = $configRetention ? $configRetention->getValeur() : '30';
 
+        $bons = $bcRepo->findBy([], ['date' => 'DESC']);
+        $fiches = $ficheRepo->findBy([], ['date' => 'DESC']); 
+        $clients = $clientRepo->findBy([], ['nom' => 'ASC']);
+        $bons_travail = $btRepo->findAll();
+
+        $galvaCount = 0;
+        $cataCount = 0;
+        foreach ($bons as $b) {
+            if ($b->isIsGalvanisation()) $galvaCount++;
+            if ($b->isIsCataphorese()) $cataCount++;
+        }
+
+        $monthsLabels = [];
+        $btCounts = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = new \DateTime("-$i months");
+            $formatter = new \IntlDateFormatter('fr_FR', \IntlDateFormatter::NONE, \IntlDateFormatter::NONE);
+            $formatter->setPattern('MMM yyyy');
+            $monthsLabels[] = ucfirst($formatter->format($date));
+            
+            $start = (clone $date)->modify('first day of this month')->setTime(0, 0, 0);
+            $end = (clone $date)->modify('last day of this month')->setTime(23, 59, 59);
+            
+            $c = 0;
+            foreach ($bons_travail as $bt) {
+                if ($bt->getDateCreation() >= $start && $bt->getDateCreation() <= $end) {
+                    $c++;
+                }
+            }
+            $btCounts[] = $c;
+        }
+
+        $statsData = [
+            'total_clients' => count($clients),
+            'total_fiches' => count($fiches),
+            'total_bc' => count($bons),
+            'total_bt' => count($bons_travail),
+            'galva_count' => $galvaCount,
+            'cata_count' => $cataCount,
+            'months_labels' => $monthsLabels,
+            'bt_counts' => $btCounts
+        ];
+
         return $this->render('home/admin.html.twig', [
-            'bons' => $bcRepo->findBy([], ['date' => 'DESC']),
-            'fiches' => $ficheRepo->findBy([], ['date' => 'DESC']), 
-            'clients' => $clientRepo->findBy([], ['nom' => 'ASC']),
-            'bons_travail' => $btRepo->findAll(),
+            'bons' => $bons,
+            'fiches' => $fiches, 
+            'clients' => $clients,
+            'bons_travail' => $bons_travail,
             'plannings' => $planningRepo->findBy([], ['datePlanning' => 'DESC']), 
             'users' => $userRepo->findBy([], ['id' => 'ASC']),
             'bons_livraison' => $blRepo->findBy([], ['dateCreation' => 'DESC']),
             'retention_jours' => $retentionJours,
+            'stats_data' => $statsData,
         ]);
     }
 
