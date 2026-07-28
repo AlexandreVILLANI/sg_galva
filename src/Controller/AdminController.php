@@ -25,6 +25,7 @@ use App\Repository\FicheDechargementRepository;
 use App\Repository\BonTravailRepository;
 use App\Repository\UserRepository;
 use App\Repository\EmplacementRepository;
+use App\Repository\EmplacementApresProductionRepository;
 use App\Repository\PlanningRepository;
 use App\Repository\BonLivraisonRepository; 
 
@@ -213,9 +214,10 @@ class AdminController extends AbstractController
      * PAGE D'ÉDITION DU BON DE TRAVAIL (Vue Admin)
      */
     #[Route('/bon-travail/{id}/edit', name: 'app_admin_bt_edit', methods: ['GET'])]
-    public function editBonTravail(BonTravail $bt): Response 
+    public function editBonTravail(BonTravail $bt, EmplacementApresProductionRepository $empApresRepo): Response 
     {
         return $this->render('bon_travail/admin.html.twig', [
+            'emplacements_apres' => $empApresRepo->findAll(),
             'bt' => $bt,
             'commande' => $bt->getBonCommande(),
         ]);
@@ -225,7 +227,7 @@ class AdminController extends AbstractController
      * SAUVEGARDE DES MODIFICATIONS DU BON DE TRAVAIL
      */
     #[Route('/bon-travail/{id}/update', name: 'app_admin_bt_update', methods: ['POST'])]
-    public function updateBT(Request $request, BonTravail $bt, EntityManagerInterface $em): Response
+    public function updateBT(Request $request, BonTravail $bt, EntityManagerInterface $em, EmplacementApresProductionRepository $empApresRepo): Response
     {
         // 1. SAUVEGARDE DU TRAITEMENT
         $isCataRequest = $request->request->get('is_cataphorese');
@@ -303,6 +305,12 @@ class AdminController extends AbstractController
                     
                     $prixSaisi = str_replace(',', '.', $data['prixTonne'] ?? '0');
                     $ligne->setPrixTonne((float) $prixSaisi);
+                    
+                    if (!empty($data['emplacement_apres'])) {
+                        $ligne->setEmplacementApresProduction($empApresRepo->find($data['emplacement_apres']));
+                    } else {
+                        $ligne->setEmplacementApresProduction(null);
+                    }
                 }
             }
         }

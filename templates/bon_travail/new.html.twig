@@ -135,6 +135,7 @@
                                 <button type="button" class="copy-btn-mini no-print" onclick="copyValue('{{ ligneForm.vars.value.description|default('Produit non précisé')|escape('js') }}', this)"><i class="far fa-copy"></i></button>
                                 {{ ligneForm.vars.value.description|default('Produit non précisé') }}
                             </strong>
+                            <div class="sub-info">Avant: {{ ligneForm.vars.value.emplacement ? ligneForm.vars.value.emplacement.nom : '-' }} | Après: {{ ligneForm.vars.value.emplacementApresProduction ? ligneForm.vars.value.emplacementApresProduction.nom : '-' }}</div>
                         </td>
                         <td class="p-0">{{ form_widget(ligneForm.u, {'attr': {'class': 'cell-input center'}}) }}</td>
                         <td class="p-0" style="position: relative;">

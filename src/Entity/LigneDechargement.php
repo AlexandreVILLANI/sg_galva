@@ -24,6 +24,9 @@ class LigneDechargement
     #[ORM\JoinColumn(nullable: false)]
     private ?Emplacement $emplacement = null;
 
+    #[ORM\ManyToOne]
+    private ?EmplacementApresProduction $emplacementApresProduction = null;
+
     #[ORM\ManyToOne(inversedBy: 'lignes')]
     #[ORM\JoinColumn(nullable: false)]
     private ?FicheDechargement $fiche = null;
@@ -79,4 +82,15 @@ class LigneDechargement
 
     public function getPrixTonne(): ?float { return $this->prixTonne; }
     public function setPrixTonne(?float $prixTonne): self { $this->prixTonne = $prixTonne; return $this; }
+
+    public function getEmplacementApresProduction(): ?EmplacementApresProduction
+    {
+        return $this->emplacementApresProduction;
+    }
+
+    public function setEmplacementApresProduction(?EmplacementApresProduction $emplacementApresProduction): self
+    {
+        $this->emplacementApresProduction = $emplacementApresProduction;
+        return $this;
+    }
 }

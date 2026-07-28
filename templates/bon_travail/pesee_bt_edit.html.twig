@@ -114,7 +114,7 @@
                             <td class="center bold">{{ ligne.nbPaquets }}</td>
                             <td class="designation">
                                 <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
-                                <div class="sub-info">Emp: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }}</div>
+                                <div class="sub-info">Avant: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }} | Après: {{ ligne.emplacementApresProduction ? ligne.emplacementApresProduction.nom : '-' }}</div>
                             </td>
                             
                             <td class="p-0"><input type="text" class="cell-input center" value="{{ ligne.u|default('') }}" readonly></td>

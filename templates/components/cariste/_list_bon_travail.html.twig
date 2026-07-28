@@ -1,0 +1,217 @@
+<div class="section-header">
+    <h2 class="section-title">Bons de Travail (Rangement)</h2>
+</div>
+
+{# --- BARRE DE FILTRES BT --- #}
+<div class="filter-bar">
+    <div class="filter-form">
+        <div class="filter-group">
+            <i class="fas fa-search"></i>
+            <input type="text" id="filterGeneralBTCariste" placeholder="N° BT, REFI ou Client...">
+        </div>
+        <a href="#" class="btn-reset" id="resetBTCaristeFilters" title="Réinitialiser">
+            <i class="fas fa-sync-alt"></i>
+        </a>
+    </div>
+</div>
+
+{# --- TABLEAU --- #}
+<div class="table-container">
+    <div class="table-grid header bt-grid-template">
+        <span>N° BT / Date</span>
+        <span>REFI Associé</span>
+        <span>Client</span>
+        <span style="text-align: center;">État</span>
+        <span style="text-align: center;">Action</span>
+    </div>
+
+    <div id="btTableBodyCariste">
+        {% for bt in bons_travail %}
+            <div class="table-grid row clickable-row bt-grid-template" 
+                 data-btnum="{{ bt.numero|lower }}"
+                 data-refi="{{ bt.bonCommande.refi|lower }}" 
+                 data-client="{{ bt.bonCommande.client.nom|lower }}" 
+                 onclick="window.location='{{ path('app_cariste_bt_edit', {'id': bt.id}) }}'">
+                
+                <div class="ref-cell-group">
+                    <span class="ref-cell" style="color: #dcb35c;">{{ bt.numero }}</span>
+                    <small class="date-subtext">Créé le {{ bt.dateCreation|date('d/m/Y') }}</small>
+                </div>
+
+                <span class="ref-cell">{{ bt.bonCommande.refi }}</span>
+
+                <span class="client-cell" style="font-weight: 500;">{{ bt.bonCommande.client.nom }}</span>
+
+                {# --- CELLULE : AVANCEMENT --- #}
+                <span class="progress-cell" style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
+                    
+                    {% if bt.type == 'CATA' %}
+                        <span class="status-badge" style="background-color: #8b5cf6; color: white; padding: 6px 12px;" title="Cataphorèse (Rangement direct)">
+                            <i class="fas fa-layer-group"></i> CATA - PRÊT
+                        </span>
+                    {% else %}
+                        {# 1. BADGE PESÉE #}
+                        {% if bt.isPeseeValidee %}
+                            <span class="status-badge success" title="Pesée terminée"><i class="fas fa-weight"></i> Pesée OK</span>
+                        {% else %}
+                            <span class="status-badge pending" title="Pesée en attente"><i class="fas fa-weight"></i> Pesée...</span>
+                        {% endif %}
+
+                        {# 2. BADGE PLANNING #}
+                        {% set isTermineAtelier = false %}
+                        
+                        {% if bt.planningLignes is defined and bt.planningLignes|length > 0 %}
+                            {% set isPlanifie = true %}
+                            {% set nbLignes = bt.planningLignes|length %}
+                            {% set nbTermine = 0 %}
+                            {% for lignePlanning in bt.planningLignes %}
+                                {% if lignePlanning.avancement == true %}
+                                    {% set nbTermine = nbTermine + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if nbTermine == nbLignes %}
+                                {% set isTermineAtelier = true %}
+                            {% endif %}
+                        {% endif %}
+
+                        {% if isTermineAtelier %}
+                            <span class="status-badge success" title="Terminé dans l'atelier"><i class="fas fa-check-double"></i> Atelier OK</span>
+                        {% else %}
+                            <span class="status-badge pending" title="En cours dans l'atelier"><i class="fas fa-tools"></i> En cours</span>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {# 3. BADGE RANGEMENT #}
+                    {% set totalLignes = bt.lignes|length %}
+                    {% set lignesRangees = 0 %}
+                    {% for ligne in bt.lignes %}
+                        {% if ligne.emplacementApresProduction is not null %}
+                            {% set lignesRangees = lignesRangees + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if totalLignes > 0 and lignesRangees == totalLignes %}
+                        <span class="status-badge" style="background-color: #3b82f6; color: white; padding: 6px 12px; border: 1px solid #2563eb;" title="Toutes les pièces sont rangées">
+                            <i class="fas fa-box"></i> RANGÉ
+                        </span>
+                    {% elseif lignesRangees > 0 %}
+                        <span class="status-badge warning" style="padding: 6px 12px;" title="Rangement en cours">
+                            <i class="fas fa-box-open"></i> PARTIEL ({{ lignesRangees }}/{{ totalLignes }})
+                        </span>
+                    {% endif %}
+                </span>
+
+                <span class="actions-cell" style="display: flex; justify-content: center; gap: 10px;">
+                    <a href="{{ path('app_cariste_bt_edit', {'id': bt.id}) }}" class="btn-edit-simple" title="Ranger les pièces">
+                        <i class="fas fa-box-open" style="color: var(--primary-gold); font-size: 1.2rem;"></i>
+                    </a>
+                </span>
+            </div>
+        {% else %}
+            <div class="no-data">
+                <i class="fas fa-tools" style="font-size: 24px; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+                <span>Aucun bon de travail trouvé.</span>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function setupBTCaristeFilters() {
+    const inputSearch = document.getElementById('filterGeneralBTCariste');
+    const btnReset = document.getElementById('resetBTCaristeFilters');
+    const rows = document.querySelectorAll('#btTableBodyCariste .row');
+
+    if (!inputSearch || rows.length === 0) return;
+
+    function filterTable() {
+        const valSearch = inputSearch.value.toLowerCase().trim();
+
+        rows.forEach(row => {
+            const rowBt = row.dataset.btnum || "";
+            const rowRefi = row.dataset.refi || "";
+            const rowClient = row.dataset.client || "";
+
+            const matchesSearch = rowBt.includes(valSearch) || rowRefi.includes(valSearch) || rowClient.includes(valSearch);
+            row.style.display = matchesSearch ? 'grid' : 'none';
+        });
+    }
+
+    inputSearch.addEventListener('input', filterTable);
+
+    if (btnReset) {
+        btnReset.addEventListener('click', (e) => {
+            e.preventDefault();
+            inputSearch.value = '';
+            filterTable();
+        });
+    }
+}
+
+document.addEventListener('turbo:load', setupBTCaristeFilters);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupBTCaristeFilters);
+} else {
+    setupBTCaristeFilters();
+}
+</script>
+
+<style>
+    .bt-grid-template { 
+        grid-template-columns: 160px 140px 1fr 140px 80px !important; 
+        align-items: center; 
+    }
+    
+    .status-badge {
+        font-size: 10px;
+        font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 12px;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        width: 105px; 
+        justify-content: center;
+    }
+    
+    .status-badge.success {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+    
+    .status-badge.pending {
+        background-color: #f3f4f6;
+        color: #6b7280;
+        border: 1px solid #e5e7eb;
+    }
+
+    .status-badge.warning {
+        background-color: #fef08a;
+        color: #854d0e;
+        border: 1px solid #fde047;
+    }
+</style>
+
+<style>
+    .table-container { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: white; }
+    .table-grid { display: grid; padding: 12px 15px; border-bottom: 1px solid #f1f5f9; }
+    .table-grid.header { background: #f8fafc; font-weight: 700; font-size: 11px; text-transform: uppercase; color: #475569; }
+    .table-grid.row { font-size: 13px; transition: background 0.2s; }
+    .table-grid.row:hover { background: #f8fafc; }
+    .clickable-row { cursor: pointer; }
+    .ref-cell-group { display: flex; flex-direction: column; gap: 4px; }
+    .ref-cell { font-weight: 700; color: #111827; }
+    .date-subtext { font-size: 11px; color: #94a3b8; }
+    .client-cell { color: #334155; }
+
+    /* Barre de filtres simple */
+    .filter-bar { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
+    .filter-form { display: flex; gap: 15px; align-items: center; }
+    .filter-group { display: flex; align-items: center; gap: 10px; flex: 1; background: white; padding: 8px 15px; border-radius: 6px; border: 1px solid #cbd5e1; }
+    .filter-group input { border: none; outline: none; width: 100%; font-size: 13px; }
+    .filter-group i { color: #94a3b8; }
+    .btn-reset { color: #94a3b8; text-decoration: none; padding: 10px; transition: 0.2s; }
+    .btn-reset:hover { color: #ef4444; }
+</style>

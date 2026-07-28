@@ -77,8 +77,8 @@
                         <td class="center fw-bold text-blue">{{ ligne.nbPaquets }}</td>
                         <td class="designation">
                             <strong class="fw-bold">{{ ligne.description|default('-') }}</strong>
-                            {% if ligne.emplacement %}
-                                <div class="sub-info">Emp: {{ ligne.emplacement.nom }}</div>
+                            {% if ligne.emplacement or ligne.emplacementApresProduction %}
+                                <div class="sub-info">Avant: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }} | Après: {{ ligne.emplacementApresProduction ? ligne.emplacementApresProduction.nom : '-' }}</div>
                             {% endif %}
                         </td>
                         <td class="center">{{ ligne.u|default('-') }}</td>

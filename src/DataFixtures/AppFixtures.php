@@ -9,6 +9,7 @@ use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use App\Entity\Client;
 use App\Entity\Emplacement;
+use App\Entity\EmplacementApresProduction;
 
 class AppFixtures extends Fixture
 {
@@ -152,9 +153,18 @@ class AppFixtures extends Fixture
         $manager->persist($commercial);
 
         // 11. Emplacements 
-        $zones = ['12A', '12B', '12C', '15', '16', '17', '18', '19', '20', '21', '22', '23', 'produit finit GALVA', 'produit finit CATA'];
+        $zones = ['101', '102', '103', '104', '105', '1', '2', '3', '4', '5', 'S.N.C.F'];
         foreach ($zones as $nomZone) {
             $emplacement = new Emplacement();
+            $emplacement->setNom($nomZone);
+            $manager->persist($emplacement);
+        }
+
+        
+        // 11b. Emplacements Après Production
+        $zonesApres = ['12A', '12B', '12C', '15', '16', '17', '18', '19', '20', '21', '22', '23', 'produit finit GALVA', 'produit finit CATA'];
+        foreach ($zonesApres as $nomZone) {
+            $emplacement = new EmplacementApresProduction();
             $emplacement->setNom($nomZone);
             $manager->persist($emplacement);
         }

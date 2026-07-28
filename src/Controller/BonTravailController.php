@@ -12,7 +12,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Repository\BonTravailRepository; 
+use App\Repository\BonTravailRepository;
+use App\Repository\EmplacementApresProductionRepository; 
 
 class BonTravailController extends AbstractController
 {
@@ -218,5 +219,45 @@ class BonTravailController extends AbstractController
         }
 
         return $this->redirectToRoute('app_reception_ordonnancement_home', ['section' => 'list-bons-travail']);
+    }
+
+
+    /**
+     * VUE CARISTE DU BON DE TRAVAIL (Lecture seule + Emplacement Après)
+     */
+    #[Route('/bon-travail/{id}/cariste', name: 'app_cariste_bt_edit', methods: ['GET'])]
+    public function caristeEditBonTravail(BonTravail $bt, EmplacementApresProductionRepository $empApresRepo): Response 
+    {
+        return $this->render('bon_travail/cariste_edit.html.twig', [
+            'bt' => $bt,
+            'emplacements_apres' => $empApresRepo->findAll(),
+        ]);
+    }
+
+    /**
+     * MISE A JOUR PAR LE CARISTE (Seulement l'emplacement après)
+     */
+    #[Route('/bon-travail/{id}/cariste-update', name: 'app_cariste_bt_update', methods: ['POST'])]
+    public function caristeUpdateBonTravail(Request $request, BonTravail $bt, EntityManagerInterface $em, EmplacementApresProductionRepository $empApresRepo): Response
+    {
+        $lignesData = $request->request->all('lignes');
+        
+        if (!empty($lignesData)) {
+            foreach ($bt->getLignes() as $ligne) {
+                $ligneId = $ligne->getId();
+                if (isset($lignesData[$ligneId])) {
+                    $data = $lignesData[$ligneId];
+                    if (!empty($data['emplacement_apres'])) {
+                        $ligne->setEmplacementApresProduction($empApresRepo->find($data['emplacement_apres']));
+                    } else {
+                        $ligne->setEmplacementApresProduction(null);
+                    }
+                }
+            }
+            $em->flush();
+            $this->addFlash('success', 'Les emplacements de stockage ont bien été enregistrés !');
+        }
+
+        return $this->redirectToRoute('app_home');
     }
 }

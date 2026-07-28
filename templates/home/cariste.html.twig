@@ -16,6 +16,10 @@
                     <i class="fas fa-box-open"></i>
                     <span>Fiches de Déchargement</span>
                 </a>
+                <a href="#" class="nav-item" data-target="cariste-travail">
+                    <i class="fas fa-tools"></i>
+                    <span>Bons de Travail</span>
+                </a>
                 <a href="#" class="nav-item" data-target="cariste-livraison">
                     <i class="fas fa-truck-loading"></i>
                     <span>Bons de Livraison</span>
@@ -62,10 +66,16 @@
                 {{ include('components/cariste/_list_fiche_dechargement.html.twig') }}
             </div>
 
+            <div id="cariste-travail" class="content-section">
+                {{ include('components/cariste/_list_bon_travail.html.twig', {'bons_travail': bons_travail}) }}
+            </div>
+
             <div id="cariste-livraison" class="content-section">
                 {# On appelle le fichier qu'on vient de créer #}
                 {{ include('components/cariste/_list_bon_livraison.html.twig', {'bons_livraison': bons_livraison}) }}
             </div>
+
+            
         </div>
     </main>
 </div>
@@ -164,7 +174,8 @@
     /* Gère la couleur des onglets actifs du cariste */
     .nav-item[data-target="cariste-dechargement"].active,
     .nav-item[data-target="cariste-chargement"].active,
-    .nav-item[data-target="cariste-livraison"].active { 
+    .nav-item[data-target="cariste-livraison"].active,
+    .nav-item[data-target="cariste-travail"].active { 
         color: var(--primary-gold); 
         font-weight: 600; 
         background: #fdfbf5; /* Léger fond doré/jaune */

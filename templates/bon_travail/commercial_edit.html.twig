@@ -117,7 +117,7 @@
                         <td class="center bold bg-gray">{{ ligne.nbPaquets }}</td>
                         <td class="designation bg-gray">
                             <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
-                            <div class="sub-info">Emp: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }}</div>
+                            <div class="sub-info">Avant: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }} | Après: {{ ligne.emplacementApresProduction ? ligne.emplacementApresProduction.nom : '-' }}</div>
                         </td>
                         
                         {# --- ON UTILISE FORM_WIDGET POUR QUE SYMFONY RECONNAISSE LES CHAMPS --- #}

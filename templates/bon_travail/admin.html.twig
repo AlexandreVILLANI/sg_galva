@@ -100,7 +100,17 @@
                             <td class="center bold bg-gray">{{ ligne.nbPaquets }}</td>
                             <td class="designation bg-gray">
                                 <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
-                                <div class="sub-info">Emp: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }}</div>
+                                <div class="sub-info">
+                                    Avant: <strong>{{ ligne.emplacement ? ligne.emplacement.nom : '-' }}</strong> 
+                                    <br>
+                                    <label style="margin-top: 4px; display: inline-block;">Après:</label>
+                                    <select name="lignes[{{ ligne.id }}][emplacement_apres]" style="font-size: 11px; padding: 2px; max-width: 120px;">
+                                        <option value="">- Sélectionner -</option>
+                                        {% for emp in emplacements_apres %}
+                                            <option value="{{ emp.id }}" {% if ligne.emplacementApresProduction and ligne.emplacementApresProduction.id == emp.id %}selected{% endif %}>{{ emp.nom }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                             </td>
                             
                             <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][u]" class="cell-input center" value="{{ ligne.u }}"></td>
