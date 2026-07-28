@@ -146,7 +146,8 @@ class AdminController extends AbstractController
         BonDeCommande $bon, 
         EntityManagerInterface $em,
         LigneDechargementRepository $ligneRepo,
-        ClientRepository $clientRepo 
+        ClientRepository $clientRepo,
+        \App\Repository\EmplacementRepository $empRepo
     ): Response {
         $form = $this->createForm(BonDeCommandeType::class, $bon);
         $form->handleRequest($request);
@@ -168,6 +169,9 @@ class AdminController extends AbstractController
                     if ($ligne) {
                         $ligne->setNbPaquets((int) $data['qte']);
                         $ligne->setDescription($data['desc']);
+                        if (!empty($data['emplacement'])) {
+                            $ligne->setEmplacement($empRepo->find($data['emplacement']));
+                        }
                         $nouveauTotal += (int) $data['qte'];
                     }
                 }
@@ -183,6 +187,7 @@ class AdminController extends AbstractController
             'form' => $form->createView(),
             'bon' => $bon,
             'fiche' => $bon->getFiche(),
+            'emplacements' => $empRepo->findAll(),
             'clients' => $clientRepo->findBy([], ['nom' => 'ASC']),
         ]);
     }

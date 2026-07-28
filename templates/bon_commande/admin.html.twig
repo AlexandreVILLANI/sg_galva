@@ -93,6 +93,7 @@
                         <tr>
                             <th style="border-bottom: 1px solid #ccc; padding-bottom: 5px;">Qté</th>
                             <th style="border-bottom: 1px solid #ccc; padding-bottom: 5px;">Description du produit</th>
+                            <th style="border-bottom: 1px solid #ccc; padding-bottom: 5px;">Emplacement</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -104,6 +105,16 @@
                                 </td>
                                 <td style="padding: 5px 0;">
                                     <input type="text" name="lignes[{{ ligne.id }}][desc]" class="ghost-input editable-field" value="{{ ligne.description|default('') }}" style="width: 95%;">
+                                </td>
+                                <td style="padding: 5px 0;">
+                                    <select name="lignes[{{ ligne.id }}][emplacement]" class="ghost-select editable-field" style="width: 95%; padding: 4px;">
+                                        <option value="">-- Choisir --</option>
+                                        {% for emp in emplacements %}
+                                            <option value="{{ emp.id }}" {% if ligne.emplacement and ligne.emplacement.id == emp.id %}selected{% endif %}>
+                                                {{ emp.nom }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
                                 </td>
                             </tr>
                         {% endfor %}
