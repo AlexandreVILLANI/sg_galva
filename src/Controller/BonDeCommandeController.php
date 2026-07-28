@@ -175,7 +175,7 @@ class BonDeCommandeController extends AbstractController
                         $em->persist($photo); 
                         
                     } catch (\Exception $e) {
-                        dd("Erreur lors de la compression : " . $e->getMessage());
+                        $this->addFlash('error', "Erreur lors de la compression de l'image : " . $e->getMessage());
                     }
                 } elseif ($mimeType === 'application/pdf') {
                     $newFilename = uniqid().'.pdf';

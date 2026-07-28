@@ -235,8 +235,6 @@ class AdminController extends AbstractController
     #[IsGranted('ROLE_ADMIN')]
     public function editClient(Request $request, Client $client, EntityManagerInterface $em): Response
     {
-        // C'est ici que la magie opère : Symfony voit que $client n'est pas vide,
-        // donc il pré-remplit le formulaire avec les données de la BDD.
         $form = $this->createForm(ClientType::class, $client);
         $form->handleRequest($request);
 
