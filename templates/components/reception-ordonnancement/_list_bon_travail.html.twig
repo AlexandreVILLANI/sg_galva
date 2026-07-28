@@ -110,6 +110,23 @@
                                 <span class="status-badge pending" title="Non planifié"><i class="fas fa-calendar-alt"></i> À planifier</span>
                             {% endif %}
                         {% endif %}
+                        
+                        {# 3. BADGE STOCKAGE #}
+                        {% set isStocke = true %}
+                        {% set totalLignes = bt.lignes|length %}
+                        {% if totalLignes == 0 %}
+                            {% set isStocke = false %}
+                        {% else %}
+                            {% for ligne in bt.lignes %}
+                                {% if not ligne.emplacementApresProduction %}
+                                    {% set isStocke = false %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+
+                        {% if isStocke %}
+                            <span class="status-badge success" title="Emplacements finaux définis"><i class="fas fa-boxes"></i> Stocké</span>
+                        {% endif %}
                     </span>
 
                     <span class="actions-cell" style="display: flex; justify-content: center; gap: 10px;">
