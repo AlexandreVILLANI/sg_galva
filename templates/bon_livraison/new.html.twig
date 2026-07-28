@@ -161,7 +161,10 @@
 
 <script>
     // --- SCRIPT POUR LE PAD DE SIGNATURE ---
-    document.addEventListener('DOMContentLoaded', function() {
+    function initBLSignature() {
+        const canvas = document.getElementById('signature-pad');
+        if (!canvas || canvas.dataset.initialized) return;
+        canvas.dataset.initialized = 'true';
         const canvas = document.getElementById('signature-pad');
         const ctx = canvas.getContext('2d');
         const clearBtn = document.getElementById('clear-signature');
@@ -176,6 +179,7 @@
 
         function startPosition(e) {
             isDrawing = true;
+                ctx.beginPath();
             draw(e);
         }
 
@@ -227,7 +231,10 @@
                 signatureInput.value = canvas.toDataURL('image/png');
             }
         });
-    });
+    }
+
+    document.addEventListener('turbo:load', initBLSignature);
+    initBLSignature();
 </script>
 
 <style>

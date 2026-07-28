@@ -249,8 +249,11 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    function initBLSignature() {
         const canvas = document.getElementById('signature-pad');
+        if (!canvas || canvas.dataset.initialized) return;
+        canvas.dataset.initialized = 'true';
+        
         const ctx = canvas ? canvas.getContext('2d') : null;
         const form = document.getElementById('form-bl');
         const signatureInput = document.getElementById('bon_livraison_signature'); 
@@ -290,6 +293,7 @@
 
             function startPosition(e) {
                 isDrawing = true;
+                ctx.beginPath();
                 draw(e);
             }
 
@@ -376,7 +380,11 @@
                 }
             });
         });
-    });
+    }
+
+    // Initialisation
+    document.addEventListener('turbo:load', initBLSignature);
+    initBLSignature();
 </script>
 
 <style>
