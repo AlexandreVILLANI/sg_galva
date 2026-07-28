@@ -1,78 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Modification  Bon de commande - {{ fiche.client.nom }}<script>
-    function applyBcGalvaLogic() {
-        const checkGalva = document.getElementById("bon_de_commande_isGalvanisation") || document.querySelector('input[name="bon_de_commande[isGalvanisation]"]');
-        const checkCata = document.getElementById("bon_de_commande_isCataphorese") || document.querySelector('input[name="bon_de_commande[isCataphorese]"]');
-        const selectType = document.getElementById("bon_de_commande_typeGalva") || document.querySelector('select[name="bon_de_commande[typeGalva]"]');
-
-        if (checkGalva && checkCata && selectType) {
-            const allOptions = Array.from(selectType.options).map(opt => ({
-                value: opt.value,
-                text: opt.text,
-                selected: opt.selected
-            }));
-
-            function updateSelect() {
-                const currentValue = selectType.value;
-                selectType.innerHTML = '';
-
-                let allowedValues = [];
-                if (checkGalva.checked) {
-                    allowedValues.push('GB (Grand Bain)', 'PB (Petit Bain)', 'Mixte (GB + PB)', 'GB', 'PB', 'Mixte');
-                }
-                if (checkCata.checked) {
-                    allowedValues.push('Cataphorèse', 'CATA');
-                }
-                if (!checkGalva.checked && !checkCata.checked) {
-                    allowedValues = allOptions.map(o => o.value);
-                }
-
-                allOptions.forEach(opt => {
-                    if (allowedValues.includes(opt.value) || allowedValues.includes(opt.text)) {
-                        const newOpt = document.createElement('option');
-                        newOpt.value = opt.value;
-                        newOpt.text = opt.text;
-                        if (opt.value === currentValue) {
-                            newOpt.selected = true;
-                        }
-                        selectType.appendChild(newOpt);
-                    }
-                });
-            }
-
-            checkGalva.addEventListener('change', function(e) {
-                if (this.checked) {
-                    checkCata.checked = false;
-                } else if (!checkCata.checked) {
-                    this.checked = true;
-                }
-                updateSelect();
-            });
-
-            checkCata.addEventListener('change', function(e) {
-                if (this.checked) {
-                    checkGalva.checked = false;
-                } else if (!checkGalva.checked) {
-                    this.checked = true;
-                }
-                updateSelect();
-            });
-
-            if (checkGalva.checked && checkCata.checked) {
-                checkCata.checked = false;
-            } else if (!checkGalva.checked && !checkCata.checked) {
-                checkGalva.checked = true;
-            }
-            
-            updateSelect();
-        }
-    }
-    
-    // Execute immediately
-    applyBcGalvaLogic();
-</script>
-{% endblock %}
+{% block title %}Modification  Bon de commande - {{ fiche.client.nom }}{% endblock %}
 
 {% block body %}
 <div class="bc-wrapper">
@@ -254,6 +182,82 @@
         document.getElementById('client-telephone-display').textContent = newPhone;
     });
     }
+</script>
+
+<script>
+    function applyBcGalvaLogic() {
+        const checkGalva = document.getElementById("bon_de_commande_isGalvanisation") || document.querySelector('input[name="bon_de_commande[isGalvanisation]"]');
+        const checkCata = document.getElementById("bon_de_commande_isCataphorese") || document.querySelector('input[name="bon_de_commande[isCataphorese]"]');
+        const selectType = document.getElementById("bon_de_commande_typeGalva") || document.querySelector('select[name="bon_de_commande[typeGalva]"]');
+
+        if (checkGalva && checkCata && selectType) {
+            if (checkGalva.dataset.initialized) return;
+            checkGalva.dataset.initialized = 'true';
+
+            const allOptions = Array.from(selectType.options).map(opt => ({
+                value: opt.value,
+                text: opt.text,
+                selected: opt.selected
+            }));
+
+            function updateSelect() {
+                const currentValue = selectType.value;
+                selectType.innerHTML = '';
+
+                let allowedValues = [];
+                if (checkGalva.checked) {
+                    allowedValues.push('GB (Grand Bain)', 'PB (Petit Bain)', 'Mixte (GB + PB)', 'GB', 'PB', 'Mixte');
+                }
+                if (checkCata.checked) {
+                    allowedValues.push('Cataphorèse', 'CATA');
+                }
+                if (!checkGalva.checked && !checkCata.checked) {
+                    allowedValues = allOptions.map(o => o.value);
+                }
+
+                allOptions.forEach(opt => {
+                    if (allowedValues.includes(opt.value) || allowedValues.includes(opt.text)) {
+                        const newOpt = document.createElement('option');
+                        newOpt.value = opt.value;
+                        newOpt.text = opt.text;
+                        if (opt.value === currentValue) {
+                            newOpt.selected = true;
+                        }
+                        selectType.appendChild(newOpt);
+                    }
+                });
+            }
+
+            checkGalva.addEventListener('change', function(e) {
+                if (this.checked) {
+                    checkCata.checked = false;
+                } else if (!checkCata.checked) {
+                    this.checked = true;
+                }
+                updateSelect();
+            });
+
+            checkCata.addEventListener('change', function(e) {
+                if (this.checked) {
+                    checkGalva.checked = false;
+                } else if (!checkGalva.checked) {
+                    this.checked = true;
+                }
+                updateSelect();
+            });
+
+            if (checkGalva.checked && checkCata.checked) {
+                checkCata.checked = false;
+            } else if (!checkGalva.checked && !checkCata.checked) {
+                checkGalva.checked = true;
+            }
+            
+            updateSelect();
+        }
+    }
+    
+    document.addEventListener('turbo:load', applyBcGalvaLogic);
+    applyBcGalvaLogic();
 </script>
 
 <style>
