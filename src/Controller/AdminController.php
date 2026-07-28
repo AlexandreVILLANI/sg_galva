@@ -8,10 +8,9 @@ use App\Entity\FicheDechargement;
 use App\Entity\BonTravail;
 use App\Entity\User;
 use App\Entity\BonLivraison;
-use App\Entity\DocumentBonLivraison;
-
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver;
+    use App\Entity\DocumentBonLivraison;
+    use Intervention\Image\ImageManager;
+    use Intervention\Image\Drivers\Gd\Driver;
 
 use App\Form\BonDeCommandeType;
 use App\Form\ClientType;
@@ -102,6 +101,8 @@ class AdminController extends AbstractController
                 $bon->getFiche()->setTotalPaquets($nouveauTotal);
             }
 
+            $this->handleDocumentsUpload($form, $bl, $em);
+
             $em->flush();
             $this->addFlash('success', 'Mise à jour réussie.');
             return $this->redirectToRoute('app_admin_home', ['section' => 'admin-bc']);
@@ -125,6 +126,8 @@ class AdminController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($client);
+            $this->handleDocumentsUpload($form, $bl, $em);
+
             $em->flush();
 
             $this->addFlash('success', 'Le client a bien été créé.');
@@ -147,7 +150,9 @@ class AdminController extends AbstractController
             try {
                 // On essaie de supprimer le client
                 $em->remove($client);
-                $em->flush();
+                $this->handleDocumentsUpload($form, $bl, $em);
+
+            $em->flush();
                 $this->addFlash('success', 'Le client "' . $client->getNom() . '" a été supprimé.');
                 
             } catch (\Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException $e) {
@@ -171,6 +176,8 @@ class AdminController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             // Pas besoin de faire $em->persist($client) car l'objet vient déjà de la BDD.
             // On a juste à flush pour enregistrer les modifications.
+            $this->handleDocumentsUpload($form, $bl, $em);
+
             $em->flush();
 
             $this->addFlash('success', 'Le client a été mis à jour.');
@@ -192,6 +199,8 @@ class AdminController extends AbstractController
         if ($this->isCsrfTokenValid('delete_fiche'.$fiche->getId(), $request->request->get('_token'))) {
             // Attention : Supprimer une fiche supprimera les photos liées si tu as mis "orphanRemoval=true"
             $em->remove($fiche);
+            $this->handleDocumentsUpload($form, $bl, $em);
+
             $em->flush();
 
             $this->addFlash('success', 'La fiche n°' . $fiche->getId() . ' a été supprimée.');
@@ -343,6 +352,8 @@ class AdminController extends AbstractController
                 $fiche->setTotalPaquets($nouveauTotal);
             }
 
+            $this->handleDocumentsUpload($form, $bl, $em);
+
             $em->flush();
             $this->addFlash('success', 'Fiche mise à jour avec succès.');
             return $this->redirectToRoute('app_admin_home', ['section' => 'admin-fd']);
@@ -382,6 +393,8 @@ class AdminController extends AbstractController
             
             // On applique le rôle technique à l'utilisateur
             $user->setRoles([$roleTechnique]);
+
+            $this->handleDocumentsUpload($form, $bl, $em);
 
             $em->flush();
             $this->addFlash('success', 'Le compte de ' . $user->getPrenom() . ' a été mis à jour.');
@@ -428,6 +441,8 @@ class AdminController extends AbstractController
 
             // 3. SAUVEGARDE EN BASE DE DONNÉES
             $em->persist($user);
+            $this->handleDocumentsUpload($form, $bl, $em);
+
             $em->flush();
 
             $this->addFlash('success', 'Le compte de ' . $user->getPrenom() . ' a été créé avec succès.');
@@ -454,7 +469,9 @@ class AdminController extends AbstractController
             try {
                 // 3. Essai de suppression
                 $em->remove($user);
-                $em->flush();
+                $this->handleDocumentsUpload($form, $bl, $em);
+
+            $em->flush();
                 $this->addFlash('success', 'Le compte de ' . $user->getPrenom() . ' a été supprimé définitivement.');
                 
             } catch (\Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException $e) {
@@ -486,6 +503,8 @@ class AdminController extends AbstractController
             // if ($bl->getSignature()) {
             //     $bl->setStatut('Signé'); 
             // }
+
+            $this->handleDocumentsUpload($form, $bl, $em);
 
             $this->handleDocumentsUpload($form, $bl, $em);
 
@@ -584,6 +603,8 @@ class AdminController extends AbstractController
             }
 
             $em->remove($doc);
+            $this->handleDocumentsUpload($form, $bl, $em);
+
             $em->flush();
 
             return new JsonResponse(['success' => true]);

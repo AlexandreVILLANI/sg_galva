@@ -25,6 +25,16 @@
     </div>
 
     {# --- GRILLE MILIEU : ADRESSES --- #}
+    <div class="bc-top-grid" style="margin-bottom: 20px;">
+        <div class="bc-box treatment-box" style="padding: 10px; border: 1px solid #ccc; background: #f9f9f9;">
+            <p class="box-label" style="font-weight: bold; margin-bottom: 5px;">TRAITEMENT :</p>
+            <div class="checkbox-group" style="display: flex; gap: 20px;">
+                <label><input type="checkbox" {% if not commande.isCataphorese %}checked="checked"{% endif %} disabled> Galvanisation {% if commande.typeGalva and commande.typeGalva != 'CATA' %}- {{ commande.typeGalva }}{% endif %}</label>
+                <label><input type="checkbox" {% if commande.isCataphorese %}checked="checked"{% endif %} disabled> Cataphorèse</label>
+            </div>
+        </div>
+    </div>
+
     <div class="bc-middle-grid">
         <div class="bc-box client-box">
             <p class="box-label">ADRESSE DE FACTURATION</p>

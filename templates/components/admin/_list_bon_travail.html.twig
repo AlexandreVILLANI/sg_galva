@@ -27,9 +27,10 @@
 
     {# --- TABLEAU STYLE GRID --- #}
     <div class="table-container" style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-        <div class="table-grid header admin-bt-grid" style="background: #f3f4f6; color: #6b7280; font-weight: 600; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; display: grid; grid-template-columns: 160px 140px 1fr 140px 60px; padding: 15px 20px;">
+        <div class="table-grid header admin-bt-grid" style="background: #f3f4f6; color: #6b7280; font-weight: 600; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; display: grid; grid-template-columns: 160px 140px 100px 1fr 140px 60px; padding: 15px 20px;">
             <span>N° BT</span>
             <span>REFI</span>
+            <span>Type</span>
             <span>Client</span>
             <span>Délai Prévu</span>
             <span style="text-align: right;"></span>
@@ -40,14 +41,15 @@
                 {% set isUrgent = bt.delaiClient and bt.delaiClient|date('Y-m-d') <= "now"|date_modify("+1 day")|date('Y-m-d') %}
                 
                 <div class="table-grid row admin-bt-grid" 
-                    style="display: grid; grid-template-columns: 160px 140px 1fr 140px 60px; padding: 15px 20px; align-items: center; border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: 0.2s;"
+                    style="display: grid; grid-template-columns: 160px 140px 100px 1fr 140px 60px; padding: 15px 20px; align-items: center; border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: 0.2s;"
                     data-btnum="{{ bt.numero|lower }}"
                     data-refi="{{ bt.bonCommande.refi|lower }}" 
                     data-client="{{ bt.bonCommande.client.nom|lower }}" 
                     data-urgence="{{ isUrgent ? 'urgent' : 'normal' }}"
                     onmouseover="this.style.background='#f9fafb'" 
                     onmouseout="this.style.background='transparent'"
-                    onclick="window.location.href='{{ path('app_admin_bt_edit', {'id': bt.id}) }}'"                     
+                    onclick="window.location.href='{{ path('app_admin_bt_edit', {'id': bt.id}) }}'">
+                    
                     <span style="font-weight: bold; color: var(--primary-admin);">
                         {{ bt.numero }}
                         {% if isUrgent %}
@@ -57,10 +59,16 @@
 
                     <span style="font-size: 13px;">{{ bt.bonCommande.refi }}</span>
 
+                    <span>
+                        <span style="font-size: 11px; font-weight: 600; background: #e5e7eb; color: #4b5563; padding: 3px 8px; border-radius: 12px; white-space: nowrap;">
+                            {{ bt.bonCommande.typeGalva|default('-') }}
+                        </span>
+                    </span>
+
                     <span style="font-size: 13px; font-weight: 500;">{{ bt.bonCommande.client.nom }}</span>
 
                     <span>
-                        <span style="background: {{ isUrgent ? '#fef2f2' : '#f0f9ff' }}; color: {{ isUrgent ? '#dc2626' : '#0369a1' }}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                        <span style="background: {{ isUrgent ? '#fef2f2' : '#f0f9ff' }}; color: {{ isUrgent ? '#dc2626' : '#0369a1' }}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; white-space: nowrap;">
                             <i class="far fa-clock"></i> {{ bt.delaiClient ? bt.delaiClient|date('d/m/Y') : 'N/C' }}
                         </span>
                     </span>

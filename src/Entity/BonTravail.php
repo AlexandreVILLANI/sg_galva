@@ -63,6 +63,9 @@ class BonTravail
     #[ORM\Column(type: Types::FLOAT, nullable: true)]
     private ?float $prixForfait = null;
 
+    #[ORM\Column(length: 10, options: ["default" => 'GALVA'])]
+    private ?string $type = 'GALVA';
+
     // ---------------------------------------
 
     public function __construct()
@@ -72,7 +75,20 @@ class BonTravail
         $this->isTermine = false;
         $this->demandeCertificat = false;
         $this->isForfait = false; // Initialisation du forfait à false
+        $this->type = 'GALVA';
         $this->planningLignes = new ArrayCollection(); 
+    }
+
+    public function getType(): ?string
+    {
+        return $this->type;
+    }
+
+    public function setType(string $type): static
+    {
+        $this->type = $type;
+
+        return $this;
     }
 
     public function getId(): ?int { return $this->id; }

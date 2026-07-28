@@ -1,6 +1,78 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Bon de commande - {{ fiche.client.nom }}{% endblock %}
+{% block title %}Bon de commande - {{ fiche.client.nom }}<script>
+    function applyBcGalvaLogic() {
+        const checkGalva = document.getElementById("bon_de_commande_isGalvanisation") || document.querySelector('input[name="bon_de_commande[isGalvanisation]"]');
+        const checkCata = document.getElementById("bon_de_commande_isCataphorese") || document.querySelector('input[name="bon_de_commande[isCataphorese]"]');
+        const selectType = document.getElementById("bon_de_commande_typeGalva") || document.querySelector('select[name="bon_de_commande[typeGalva]"]');
+
+        if (checkGalva && checkCata && selectType) {
+            const allOptions = Array.from(selectType.options).map(opt => ({
+                value: opt.value,
+                text: opt.text,
+                selected: opt.selected
+            }));
+
+            function updateSelect() {
+                const currentValue = selectType.value;
+                selectType.innerHTML = '';
+
+                let allowedValues = [];
+                if (checkGalva.checked) {
+                    allowedValues.push('GB (Grand Bain)', 'PB (Petit Bain)', 'Mixte (GB + PB)', 'GB', 'PB', 'Mixte');
+                }
+                if (checkCata.checked) {
+                    allowedValues.push('Cataphorèse', 'CATA');
+                }
+                if (!checkGalva.checked && !checkCata.checked) {
+                    allowedValues = allOptions.map(o => o.value);
+                }
+
+                allOptions.forEach(opt => {
+                    if (allowedValues.includes(opt.value) || allowedValues.includes(opt.text)) {
+                        const newOpt = document.createElement('option');
+                        newOpt.value = opt.value;
+                        newOpt.text = opt.text;
+                        if (opt.value === currentValue) {
+                            newOpt.selected = true;
+                        }
+                        selectType.appendChild(newOpt);
+                    }
+                });
+            }
+
+            checkGalva.addEventListener('change', function(e) {
+                if (this.checked) {
+                    checkCata.checked = false;
+                } else if (!checkCata.checked) {
+                    this.checked = true;
+                }
+                updateSelect();
+            });
+
+            checkCata.addEventListener('change', function(e) {
+                if (this.checked) {
+                    checkGalva.checked = false;
+                } else if (!checkGalva.checked) {
+                    this.checked = true;
+                }
+                updateSelect();
+            });
+
+            if (checkGalva.checked && checkCata.checked) {
+                checkCata.checked = false;
+            } else if (!checkGalva.checked && !checkCata.checked) {
+                checkGalva.checked = true;
+            }
+            
+            updateSelect();
+        }
+    }
+    
+    // Execute immediately
+    applyBcGalvaLogic();
+</script>
+{% endblock %}
 
 {% block body %}
 {# --- DEPENDANCES RECHERCHE CLIENT --- #}
@@ -214,163 +286,14 @@
         </div>        
         
         <div style="display: none;">
-            {{ form_widget(form.lignes) }}
+            {% for ligneForm in form.lignes %}
+                {{ form_rest(ligneForm) }}
+            {% endfor %}
         </div>
 
         {{ form_rest(form) }}
     {{ form_end(form) }}
 </div>
-
-<script>
-    let clientSelectSearch = null;
-
-    function toggleClientEdit() {
-        const displayArea = document.getElementById('client-display-area');
-        const editArea = document.getElementById('client-edit-area');
-        
-        if (editArea.style.display === 'none') {
-            displayArea.style.display = 'none';
-            editArea.style.display = 'block';
-            
-            if (!clientSelectSearch) {
-                clientSelectSearch = new TomSelect("#new-client-select", {
-                    create: false,
-                    sortField: { field: "text", direction: "asc" }
-                });
-            }
-        } else {
-            editArea.style.display = 'none';
-            displayArea.style.display = 'block';
-        }
-    }
-
-    async function saveNewClient(ficheId) {
-        const clientId = document.getElementById('new-client-select').value;
-        if (!clientId) return alert("Veuillez sélectionner un client dans la liste.");
-
-        const btn = document.querySelector('.btn-save-client-bc');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...';
-        btn.disabled = true;
-
-        try {
-            const response = await fetch(`/reception/dechargement/${ficheId}/update-client`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest' 
-                },
-                body: JSON.stringify({ client_id: clientId })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                // LE RECHARGEMENT REMPLIRA AUTOMATIQUEMENT ADRESSE / TEL / FAX
-                window.location.reload(); 
-            } else {
-                alert("Erreur : " + data.message);
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        } catch (e) {
-            alert("Une erreur technique est survenue.");
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    }
-
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('{{ form.imageFiles.vars.id }}');
-    const preview = document.getElementById('file-preview');
-    // We don't strictly need a global DataTransfer if we are just previewing what's currently in the input,
-    // but it's useful if we want to allow appending multiple times. Let's keep it and fix its usage.
-    let dataTransfer = new DataTransfer();
-
-    fileInput.addEventListener('change', (e) => {
-        // Clear existing previews if you want to replace them, or comment out the next line to append
-        // preview.innerHTML = ''; 
-        // dataTransfer = new DataTransfer(); // Rest if replacing
-
-        handleFiles(e.target.files);
-    });
-
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classLi st.remove('dragover'));
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        handleFiles(e.datTransfer.files);
-    });
-
-    function handleFiles(files) {
-        Array.from(files).forEach(file => {
-            // Check if it's an image or PDF
-            if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-                console.warn('File format not supported:', file.name);
-                return; 
-            }
-
-            // Add to our DataTransfer object
-            dataTransfer.items.add(file);
-
-            // Create preview
-            const container = document.createElement('div');
-            container.className = 'photo-item';
-            
-            if (file.type === 'application/pdf') {
-                container.style.textAlign = 'center';
-                container.innerHTML = `
-                    <div style="padding-top:20px;">
-                        <i class="fas fa-file-pdf" style="font-size: 40px; color: #e06e54;"></i>
-                        <div style="margin-top: 10px; font-size: 12px; color: #2e46a6; word-break: break-all;">${file.name}</div>
-                    </div>
-                    <button type="button" class="btn-remove-photo local-photo" data-name="${file.name}">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-                preview.appendChild(container);
-            } else {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    container.innerHTML = `
-                        <img src="${event.target.result}" alt="Preview of ${file.name}">
-                        <button type="button" class="btn-remove-photo local-photo" data-name="${file.name}">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    `;
-                    preview.appendChild(container);
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // Update the actual file input with our accumulated files
-        fileInput.files = dataTransfer.files;
-    }
-
-    preview.addEventListener('click', (e) => {
-        const btn = e.target.closest('.btn-remove-photo');
-        if (!btn) return;
-        
-        const fileName = btn.getAttribute('data-name');
-        
-        // Create a new DataTransfer to hold the remaining files
-        const newDataTransfer = new DataTransfer();
-        Array.from(dataTransfer.files).forEach(file => {
-            if (file.name !== fileName) {
-                newDataTransfer.items.add(file);
-            }
-        });
-        
-        // Update our global DataTransfer and the input
-        dataTransfer = newDataTransfer; 
-        fileInput.files = dataTransfer.files;
-        
-        // Remove the visual preview
-        btn.parentElement.remove();
-    });
-</script>
 
 <style>
     /* Styles spécifiques Client BC */
@@ -494,4 +417,76 @@
         border: 1px solid #bbf7d0;
     }
 </style>
+<script>
+    function applyBcGalvaLogic() {
+        const checkGalva = document.getElementById("bon_de_commande_isGalvanisation") || document.querySelector('input[name="bon_de_commande[isGalvanisation]"]');
+        const checkCata = document.getElementById("bon_de_commande_isCataphorese") || document.querySelector('input[name="bon_de_commande[isCataphorese]"]');
+        const selectType = document.getElementById("bon_de_commande_typeGalva") || document.querySelector('select[name="bon_de_commande[typeGalva]"]');
+
+        if (checkGalva && checkCata && selectType) {
+            const allOptions = Array.from(selectType.options).map(opt => ({
+                value: opt.value,
+                text: opt.text,
+                selected: opt.selected
+            }));
+
+            function updateSelect() {
+                const currentValue = selectType.value;
+                selectType.innerHTML = '';
+
+                let allowedValues = [];
+                if (checkGalva.checked) {
+                    allowedValues.push('GB (Grand Bain)', 'PB (Petit Bain)', 'Mixte (GB + PB)', 'GB', 'PB', 'Mixte');
+                }
+                if (checkCata.checked) {
+                    allowedValues.push('Cataphorèse', 'CATA');
+                }
+                if (!checkGalva.checked && !checkCata.checked) {
+                    allowedValues = allOptions.map(o => o.value);
+                }
+
+                allOptions.forEach(opt => {
+                    if (allowedValues.includes(opt.value) || allowedValues.includes(opt.text)) {
+                        const newOpt = document.createElement('option');
+                        newOpt.value = opt.value;
+                        newOpt.text = opt.text;
+                        if (opt.value === currentValue) {
+                            newOpt.selected = true;
+                        }
+                        selectType.appendChild(newOpt);
+                    }
+                });
+            }
+
+            checkGalva.addEventListener('change', function(e) {
+                if (this.checked) {
+                    checkCata.checked = false;
+                } else if (!checkCata.checked) {
+                    this.checked = true;
+                }
+                updateSelect();
+            });
+
+            checkCata.addEventListener('change', function(e) {
+                if (this.checked) {
+                    checkGalva.checked = false;
+                } else if (!checkGalva.checked) {
+                    this.checked = true;
+                }
+                updateSelect();
+            });
+
+            if (checkGalva.checked && checkCata.checked) {
+                checkCata.checked = false;
+            } else if (!checkGalva.checked && !checkCata.checked) {
+                checkGalva.checked = true;
+            }
+            
+            updateSelect();
+        }
+    }
+    
+    // Execute immediately
+    applyBcGalvaLogic();
+</script>
 {% endblock %}

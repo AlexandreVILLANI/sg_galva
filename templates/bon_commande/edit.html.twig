@@ -1,6 +1,78 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Bon de commande - {{ fiche.client.nom }}{% endblock %}
+{% block title %}Bon de commande - {{ fiche.client.nom }}<script>
+    function applyBcGalvaLogic() {
+        const checkGalva = document.getElementById("bon_de_commande_isGalvanisation") || document.querySelector('input[name="bon_de_commande[isGalvanisation]"]');
+        const checkCata = document.getElementById("bon_de_commande_isCataphorese") || document.querySelector('input[name="bon_de_commande[isCataphorese]"]');
+        const selectType = document.getElementById("bon_de_commande_typeGalva") || document.querySelector('select[name="bon_de_commande[typeGalva]"]');
+
+        if (checkGalva && checkCata && selectType) {
+            const allOptions = Array.from(selectType.options).map(opt => ({
+                value: opt.value,
+                text: opt.text,
+                selected: opt.selected
+            }));
+
+            function updateSelect() {
+                const currentValue = selectType.value;
+                selectType.innerHTML = '';
+
+                let allowedValues = [];
+                if (checkGalva.checked) {
+                    allowedValues.push('GB (Grand Bain)', 'PB (Petit Bain)', 'Mixte (GB + PB)', 'GB', 'PB', 'Mixte');
+                }
+                if (checkCata.checked) {
+                    allowedValues.push('Cataphorèse', 'CATA');
+                }
+                if (!checkGalva.checked && !checkCata.checked) {
+                    allowedValues = allOptions.map(o => o.value);
+                }
+
+                allOptions.forEach(opt => {
+                    if (allowedValues.includes(opt.value) || allowedValues.includes(opt.text)) {
+                        const newOpt = document.createElement('option');
+                        newOpt.value = opt.value;
+                        newOpt.text = opt.text;
+                        if (opt.value === currentValue) {
+                            newOpt.selected = true;
+                        }
+                        selectType.appendChild(newOpt);
+                    }
+                });
+            }
+
+            checkGalva.addEventListener('change', function(e) {
+                if (this.checked) {
+                    checkCata.checked = false;
+                } else if (!checkCata.checked) {
+                    this.checked = true;
+                }
+                updateSelect();
+            });
+
+            checkCata.addEventListener('change', function(e) {
+                if (this.checked) {
+                    checkGalva.checked = false;
+                } else if (!checkGalva.checked) {
+                    this.checked = true;
+                }
+                updateSelect();
+            });
+
+            if (checkGalva.checked && checkCata.checked) {
+                checkCata.checked = false;
+            } else if (!checkGalva.checked && !checkCata.checked) {
+                checkGalva.checked = true;
+            }
+            
+            updateSelect();
+        }
+    }
+    
+    // Execute immediately
+    applyBcGalvaLogic();
+</script>
+{% endblock %}
 
 {% block body %}
 <div class="bc-wrapper">
@@ -179,120 +251,6 @@
         {{ form_rest(form) }}
     {{ form_end(form) }}
 </div>
-
-<script>
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('{{ form.imageFiles.vars.id }}');
-    const preview = document.getElementById('file-preview');
-    let dataTransfer = new DataTransfer();
-
-    // Gestion de la sélection
-    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
-
-    // Drag & Drop
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        handleFiles(e.dataTransfer.files);
-    });
-
-    const serverPhotosGrid = document.getElementById('server-photos-grid');
-    if (serverPhotosGrid) {
-        serverPhotosGrid.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.server-photo');
-            if (!btn) return;
-
-            if (!confirm("Voulez-vous vraiment supprimer cette photo ? Cette action est définitive.")) {
-                return;
-            }
-
-            const photoId = btn.getAttribute('data-id');
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-
-            try {
-                const response = await fetch(`/reception-terrain/bon-commande/photo/${photoId}/supprimer`, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    const photoItem = document.getElementById(`photo-${photoId}`);
-                    photoItem.style.transition = "opacity 0.3s";
-                    photoItem.style.opacity = "0";
-                    setTimeout(() => photoItem.remove(), 300);
-                } else {
-                    alert("Erreur lors de la suppression : " + (data.message || 'Erreur inconnue.'));
-                    btn.innerHTML = originalHtml;
-                    btn.disabled = false;
-                }
-            } catch (error) {
-                alert("Une erreur de communication est survenue.");
-                btn.innerHTML = originalHtml;
-                btn.disabled = false;
-            }
-        });
-    }
-
-    function handleFiles(files) {
-        Array.from(files).forEach(file => {
-            if (!file.type.startsWith('image/') && file.type !== 'application/pdf') return;
-
-            dataTransfer.items.add(file);
-            const container = document.createElement('div');
-            container.className = 'photo-item';
-
-            if (file.type === 'application/pdf') {
-                container.style.textAlign = 'center';
-                container.innerHTML = `
-                    <div style="padding-top:20px;">
-                        <i class="fas fa-file-pdf" style="font-size: 40px; color: #e06e54;"></i>
-                        <div style="margin-top: 10px; font-size: 12px; color: #2e46a6; word-break: break-all;">${file.name}</div>
-                    </div>
-                    <button type="button" class="btn-remove-photo local-photo" data-name="${file.name}">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-                preview.appendChild(container);
-            } else {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    container.innerHTML = `
-                        <img src="${event.target.result}">
-                        <button type="button" class="btn-remove-photo local-photo" data-name="${file.name}">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    `;
-                    preview.appendChild(container);
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-        fileInput.files = dataTransfer.files;
-    }
-
-    preview.addEventListener('click', (e) => {
-        const btn = e.target.closest('.local-photo');
-        if (!btn) return;
-
-        const fileName = btn.getAttribute('data-name');
-        const newDataTransfer = new DataTransfer();
-        Array.from(dataTransfer.files).forEach(file => {
-            if (file.name !== fileName) newDataTransfer.items.add(file);
-        });
-
-        dataTransfer = newDataTransfer;
-        fileInput.files = dataTransfer.files;
-        btn.parentElement.remove();
-    });
-</script>
 
 <style>
     /* --- STRUCTURE BASE --- */
@@ -499,4 +457,76 @@
         }
     }
 </style>
+<script>
+    function applyBcGalvaLogic() {
+        const checkGalva = document.getElementById("bon_de_commande_isGalvanisation") || document.querySelector('input[name="bon_de_commande[isGalvanisation]"]');
+        const checkCata = document.getElementById("bon_de_commande_isCataphorese") || document.querySelector('input[name="bon_de_commande[isCataphorese]"]');
+        const selectType = document.getElementById("bon_de_commande_typeGalva") || document.querySelector('select[name="bon_de_commande[typeGalva]"]');
+
+        if (checkGalva && checkCata && selectType) {
+            const allOptions = Array.from(selectType.options).map(opt => ({
+                value: opt.value,
+                text: opt.text,
+                selected: opt.selected
+            }));
+
+            function updateSelect() {
+                const currentValue = selectType.value;
+                selectType.innerHTML = '';
+
+                let allowedValues = [];
+                if (checkGalva.checked) {
+                    allowedValues.push('GB (Grand Bain)', 'PB (Petit Bain)', 'Mixte (GB + PB)', 'GB', 'PB', 'Mixte');
+                }
+                if (checkCata.checked) {
+                    allowedValues.push('Cataphorèse', 'CATA');
+                }
+                if (!checkGalva.checked && !checkCata.checked) {
+                    allowedValues = allOptions.map(o => o.value);
+                }
+
+                allOptions.forEach(opt => {
+                    if (allowedValues.includes(opt.value) || allowedValues.includes(opt.text)) {
+                        const newOpt = document.createElement('option');
+                        newOpt.value = opt.value;
+                        newOpt.text = opt.text;
+                        if (opt.value === currentValue) {
+                            newOpt.selected = true;
+                        }
+                        selectType.appendChild(newOpt);
+                    }
+                });
+            }
+
+            checkGalva.addEventListener('change', function(e) {
+                if (this.checked) {
+                    checkCata.checked = false;
+                } else if (!checkCata.checked) {
+                    this.checked = true;
+                }
+                updateSelect();
+            });
+
+            checkCata.addEventListener('change', function(e) {
+                if (this.checked) {
+                    checkGalva.checked = false;
+                } else if (!checkGalva.checked) {
+                    this.checked = true;
+                }
+                updateSelect();
+            });
+
+            if (checkGalva.checked && checkCata.checked) {
+                checkCata.checked = false;
+            } else if (!checkGalva.checked && !checkCata.checked) {
+                checkGalva.checked = true;
+            }
+            
+            updateSelect();
+        }
+    }
+    
+    // Execute immediately
+    applyBcGalvaLogic();
+</script>
 {% endblock %}

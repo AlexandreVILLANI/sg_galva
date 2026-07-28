@@ -18,7 +18,7 @@ class BonLivraison
     private ?int $id = null;
 
     #[ORM\OneToOne(targetEntity: BonTravail::class, cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?BonTravail $bonTravail = null;
 
     #[ORM\Column(length: 50, unique: true)]

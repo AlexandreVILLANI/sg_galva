@@ -46,7 +46,9 @@ class PlanningController extends AbstractController
             $bt = $btRepo->createQueryBuilder('bt')
                 ->join('bt.bonCommande', 'bc')
                 ->where('bc.refi = :refi')
+                ->andWhere('bt.type = :type')
                 ->setParameter('refi', $ligneData['refi'])
+                ->setParameter('type', 'GALVA')
                 ->setMaxResults(1)
                 ->getQuery()
                 ->getOneOrNullResult();
@@ -112,7 +114,9 @@ class PlanningController extends AbstractController
         $bt = $btRepo->createQueryBuilder('bt')
             ->join('bt.bonCommande', 'bc')
             ->where('bc.refi = :refi')
+            ->andWhere('bt.type = :type')
             ->setParameter('refi', $refi)
+            ->setParameter('type', 'GALVA')
             ->getQuery()
             ->getOneOrNullResult();
 
@@ -134,7 +138,9 @@ class PlanningController extends AbstractController
             ->join('bt.bonCommande', 'bc')
             ->join('bc.client', 'c')
             ->where('bc.refi LIKE :term')
+            ->andWhere('bt.type = :type')
             ->setParameter('term', '%' . $term . '%')
+            ->setParameter('type', 'GALVA')
             ->setMaxResults(8)
             ->getQuery()
             ->getResult();
@@ -165,7 +171,9 @@ class PlanningController extends AbstractController
             $bt = $btRepo->createQueryBuilder('bt')
                 ->join('bt.bonCommande', 'bc')
                 ->where('bc.refi = :refi')
+                ->andWhere('bt.type = :type')
                 ->setParameter('refi', $ligneData['refi'])
+                ->setParameter('type', 'GALVA')
                 ->setMaxResults(1)
                 ->getQuery()
                 ->getOneOrNullResult();

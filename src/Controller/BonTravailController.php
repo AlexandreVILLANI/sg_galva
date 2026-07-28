@@ -30,8 +30,10 @@ class BonTravailController extends AbstractController
 
             if ($commande->isCataphorese()) {
                 $commande->setIsGalvanisation(false);
+                $bt->setType('CATA');
             } elseif ($commande->isGalvanisation()) {
                 $commande->setIsCataphorese(false);
+                $bt->setType('GALVA');
             }
 
             $lastNumero = $btRepo->findLastNumero();

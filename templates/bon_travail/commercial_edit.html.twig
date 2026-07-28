@@ -36,7 +36,7 @@
             <p class="box-label">TRAITEMENT :</p>
             <div class="checkbox-group">
                 <label>
-                    <input type="checkbox" {% if not commande.isCataphorese %}checked="checked"{% endif %} disabled> Galvanisation
+                    <input type="checkbox" {% if not commande.isCataphorese %}checked="checked"{% endif %} disabled> Galvanisation {% if commande.typeGalva and commande.typeGalva != 'CATA' %}({{ commande.typeGalva }}){% endif %}
                 </label>
                 <label>
                     <input type="checkbox" {% if commande.isCataphorese %}checked="checked"{% endif %} disabled> Cataphorèse

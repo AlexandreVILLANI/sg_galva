@@ -205,7 +205,7 @@ class HomeController extends AbstractController
         BonTravailRepository $btRepository,
         PlanningRepository $planningRepository 
     ): Response {
-        $bons_travail = $btRepository->findBy([], ['dateCreation' => 'DESC']);
+        $bons_travail = $btRepository->findBy(['type' => 'GALVA'], ['dateCreation' => 'DESC']);
         $plannings = $planningRepository->findBy([], ['datePlanning' => 'DESC']);
         
         return $this->render('home/ordonnancement.html.twig', [

@@ -27,7 +27,7 @@
             <div class="bc-box treatment-box">
                 <p class="box-label">TRAITEMENT :</p>
                 <div class="checkbox-group">
-                    <label><input type="checkbox" checked disabled> (Galvanisation)</label>
+                    <label><input type="checkbox" checked disabled> (Galvanisation {% if commande.typeGalva and commande.typeGalva != 'CATA' %}- {{ commande.typeGalva }}{% endif %})</label>
                     <label><input type="checkbox" disabled> (Cataphorèse)</label>
                 </div>
             </div>

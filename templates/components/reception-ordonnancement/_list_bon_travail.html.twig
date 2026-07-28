@@ -77,32 +77,38 @@
                     {# --- CELLULE : AVANCEMENT --- #}
                     <span class="progress-cell" style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
                         
-                        {# 1. BADGE PESÉE #}
-                        {% if bt.isPeseeValidee %}
-                            <span class="status-badge success" title="Pesée terminée"><i class="fas fa-weight"></i> Pesée OK</span>
+                        {% if bt.type == 'CATA' %}
+                            <span class="status-badge" style="background-color: #8b5cf6; color: white; padding: 6px 12px;" title="Cataphorèse">
+                                <i class="fas fa-layer-group"></i> CATAPHORÈSE
+                            </span>
                         {% else %}
-                            <span class="status-badge pending" title="Pesée en attente"><i class="fas fa-weight"></i> Pesée...</span>
-                        {% endif %}
+                            {# 1. BADGE PESÉE #}
+                            {% if bt.isPeseeValidee %}
+                                <span class="status-badge success" title="Pesée terminée"><i class="fas fa-weight"></i> Pesée OK</span>
+                            {% else %}
+                                <span class="status-badge pending" title="Pesée en attente"><i class="fas fa-weight"></i> Pesée...</span>
+                            {% endif %}
 
-                        {# 2. BADGE PLANNING #}
-                        {% set isTermineAtelier = false %}
-                        {% set isPlanifie = false %}
-                        
-                        {% if bt.planningLignes is defined and bt.planningLignes|length > 0 %}
-                            {% set isPlanifie = true %}
-                            {% for lignePlanning in bt.planningLignes %}
-                                {% if lignePlanning.avancement == true %}
-                                    {% set isTermineAtelier = true %}
-                                {% endif %}
-                            {% endfor %}
-                        {% endif %}
+                            {# 2. BADGE PLANNING #}
+                            {% set isTermineAtelier = false %}
+                            {% set isPlanifie = false %}
+                            
+                            {% if bt.planningLignes is defined and bt.planningLignes|length > 0 %}
+                                {% set isPlanifie = true %}
+                                {% for lignePlanning in bt.planningLignes %}
+                                    {% if lignePlanning.avancement == true %}
+                                        {% set isTermineAtelier = true %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
 
-                        {% if isTermineAtelier %}
-                            <span class="status-badge success" title="Terminé dans l'atelier"><i class="fas fa-check-double"></i> Fait (Atelier)</span>
-                        {% elseif isPlanifie %}
-                            <span class="status-badge warning" title="Dans le planning, en attente de réalisation"><i class="fas fa-calendar-check"></i> Planifié</span>
-                        {% else %}
-                            <span class="status-badge pending" title="Non planifié"><i class="fas fa-calendar-alt"></i> À planifier</span>
+                            {% if isTermineAtelier %}
+                                <span class="status-badge success" title="Terminé dans l'atelier"><i class="fas fa-check-double"></i> Fait (Atelier)</span>
+                            {% elseif isPlanifie %}
+                                <span class="status-badge warning" title="Dans le planning, en attente de réalisation"><i class="fas fa-calendar-check"></i> Planifié</span>
+                            {% else %}
+                                <span class="status-badge pending" title="Non planifié"><i class="fas fa-calendar-alt"></i> À planifier</span>
+                            {% endif %}
                         {% endif %}
                     </span>
 

@@ -66,7 +66,9 @@ class BonDeCommandeType extends AbstractType
                     'GB' => 'GB (Grand Bain)',
                     'PB' => 'PB (Petit Bain)',
                     'Mixte' => 'Mixte (GB + PB)',
+                    'Cataphorèse' => 'Cataphorèse',
                 ],
+                'attr' => ['class' => 'type-galva-select'],
             ])
 
             ->add('lignes', CollectionType::class, [
