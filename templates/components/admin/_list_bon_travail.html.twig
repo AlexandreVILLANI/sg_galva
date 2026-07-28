@@ -27,7 +27,7 @@
 
     {# --- TABLEAU STYLE GRID --- #}
     <div class="table-container" style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-        <div class="table-grid header admin-bt-grid" style="background: #f3f4f6; color: #6b7280; font-weight: 600; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; display: grid; grid-template-columns: 200px 140px 100px 1fr 140px 60px; padding: 15px 20px;">
+        <div class="table-grid header admin-bt-grid" style="background: #f3f4f6; color: #6b7280; font-weight: 600; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; display: grid; grid-template-columns: 160px 140px 100px 1fr 140px 60px; padding: 15px 20px;">
             <span>N° BT</span>
             <span>REFI</span>
             <span>Type</span>
@@ -40,20 +40,8 @@
             {% for bt in bons_travail|default([]) %}
                 {% set isUrgent = bt.delaiClient and bt.delaiClient|date('Y-m-d') <= "now"|date_modify("+1 day")|date('Y-m-d') %}
                 
-                {% set isStocke = true %}
-                {% set totalLignes = bt.lignes|length %}
-                {% if totalLignes == 0 %}
-                    {% set isStocke = false %}
-                {% else %}
-                    {% for ligne in bt.lignes %}
-                        {% if not ligne.emplacementApresProduction %}
-                            {% set isStocke = false %}
-                        {% endif %}
-                    {% endfor %}
-                {% endif %}
-                
                 <div class="table-grid row admin-bt-grid" 
-                    style="display: grid; grid-template-columns: 200px 140px 100px 1fr 140px 60px; padding: 15px 20px; align-items: center; border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: 0.2s;"
+                    style="display: grid; grid-template-columns: 160px 140px 100px 1fr 140px 60px; padding: 15px 20px; align-items: center; border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: 0.2s;"
                     data-btnum="{{ bt.numero|lower }}"
                     data-refi="{{ bt.bonCommande.refi|lower }}" 
                     data-client="{{ bt.bonCommande.client.nom|lower }}" 
@@ -65,12 +53,7 @@
                     <span style="font-weight: bold; color: var(--primary-admin);">
                         {{ bt.numero }}
                         {% if isUrgent %}
-                            <span style="background: #fee2e2; color: #dc2626; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-left: 5px;" title="Urgent">!</span>
-                        {% endif %}
-                        {% if isStocke %}
-                            <span style="background: #dcfce7; color: #166534; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-left: 5px;" title="Tous les emplacements finaux ont été définis">
-                                <i class="fas fa-check-double"></i> STOCKÉ
-                            </span>
+                            <span style="background: #fee2e2; color: #dc2626; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-left: 5px;">!</span>
                         {% endif %}
                     </span>
 
