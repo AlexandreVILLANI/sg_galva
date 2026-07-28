@@ -15,6 +15,12 @@
         {% endblock %}
     </head>
     <body>
+        {% set bannerMessage = get_config('global_banner_message') %}
+        {% if bannerMessage %}
+            <div style="background-color: #f59e0b; color: white; text-align: center; padding: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 9999; position: relative;">
+                <i class="fas fa-bullhorn" style="margin-right: 8px;"></i> {{ bannerMessage }}
+            </div>
+        {% endif %}
         {% block body %}{% endblock %}
     </body>
 </html>
