@@ -63,9 +63,6 @@ class AdminController extends AbstractController
         $configRetention = $configRepo->findOneBy(['cle' => 'retention_photos_jours']);
         $retentionJours = $configRetention ? $configRetention->getValeur() : '30';
 
-        $configBanner = $configRepo->findOneBy(['cle' => 'global_banner_message']);
-        $bannerMessage = $configBanner ? $configBanner->getValeur() : '';
-
         $bons = $bcRepo->findBy([], ['date' => 'DESC']);
         $fiches = $ficheRepo->findBy([], ['date' => 'DESC']); 
         $clients = $clientRepo->findBy([], ['nom' => 'ASC']);
@@ -118,7 +115,6 @@ class AdminController extends AbstractController
             'users' => $userRepo->findBy([], ['id' => 'ASC']),
             'bons_livraison' => $blRepo->findBy([], ['dateCreation' => 'DESC']),
             'retention_jours' => $retentionJours,
-            'banner_message' => $bannerMessage,
             'stats_data' => $statsData,
         ]);
     }
@@ -126,7 +122,6 @@ class AdminController extends AbstractController
     #[Route('/settings/update', name: 'app_admin_settings_update', methods: ['POST'])]
     public function updateSettings(Request $request, EntityManagerInterface $em, ConfigurationRepository $configRepo): Response
     {
-        // 1. Rétention des photos
         $jours = $request->request->get('retention_jours');
         if (is_numeric($jours) && $jours > 0) {
             $config = $configRepo->findOneBy(['cle' => 'retention_photos_jours']);
@@ -136,22 +131,11 @@ class AdminController extends AbstractController
                 $em->persist($config);
             }
             $config->setValeur((string)$jours);
+            $em->flush();
+            $this->addFlash('success', 'Les paramètres système ont été mis à jour.');
         } else {
             $this->addFlash('error', 'Valeur invalide pour le délai de rétention.');
         }
-
-        // 2. Bannière d'information
-        $banner = $request->request->get('global_banner_message');
-        $configBanner = $configRepo->findOneBy(['cle' => 'global_banner_message']);
-        if (!$configBanner) {
-            $configBanner = new Configuration();
-            $configBanner->setCle('global_banner_message');
-            $em->persist($configBanner);
-        }
-        $configBanner->setValeur(trim((string)$banner));
-
-        $em->flush();
-        $this->addFlash('success', 'Les paramètres système ont été mis à jour.');
 
         return $this->redirectToRoute('app_admin_home', ['section' => 'admin-settings']);
     }
