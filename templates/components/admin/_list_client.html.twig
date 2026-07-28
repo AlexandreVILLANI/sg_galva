@@ -16,10 +16,6 @@
             <input type="file" id="csv-upload" name="csv_file" accept=".csv" style="display: none;" onchange="if(this.value) { this.form.submit(); }">
         </form>
 
-        <a href="{{ path('app_admin_client_merge') }}" class="btn-secondary-admin" style="text-decoration: none; color: #b45309; border-color: #fef3c7; background: #fffbeb;">
-            <i class="fas fa-object-group"></i> Fusionner
-        </a>
-
         <a href="{{ path('app_admin_client_new') }}" class="btn-primary-admin" style="text-decoration: none;">
             <i class="fas fa-plus"></i> Nouveau
         </a>
