@@ -153,7 +153,7 @@ class AppFixtures extends Fixture
         $manager->persist($commercial);
 
         // 11. Emplacements 
-        $zones = ['101', '102', '103', '104', '105', '1', '2', '3', '4', '5', 'S.N.C.F'];
+        $zones = ['101', '102', '103', '104', '105', '1', '2', '3', '4', '5', 'S.N.C.F', 'produit à traiter CATA'];
         foreach ($zones as $nomZone) {
             $emplacement = new Emplacement();
             $emplacement->setNom($nomZone);
