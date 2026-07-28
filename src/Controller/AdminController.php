@@ -28,6 +28,8 @@ use App\Repository\EmplacementRepository;
 use App\Repository\EmplacementApresProductionRepository;
 use App\Repository\PlanningRepository;
 use App\Repository\BonLivraisonRepository; 
+use App\Repository\ConfigurationRepository;
+use App\Entity\Configuration;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
@@ -55,8 +57,12 @@ class AdminController extends AbstractController
         BonTravailRepository $btRepo,
         PlanningRepository $planningRepo,
         UserRepository $userRepo,
-        BonLivraisonRepository $blRepo
+        BonLivraisonRepository $blRepo,
+        ConfigurationRepository $configRepo
     ): Response {
+        $configRetention = $configRepo->findOneBy(['cle' => 'retention_photos_jours']);
+        $retentionJours = $configRetention ? $configRetention->getValeur() : '30';
+
         return $this->render('home/admin.html.twig', [
             'bons' => $bcRepo->findBy([], ['date' => 'DESC']),
             'fiches' => $ficheRepo->findBy([], ['date' => 'DESC']), 
@@ -65,7 +71,29 @@ class AdminController extends AbstractController
             'plannings' => $planningRepo->findBy([], ['datePlanning' => 'DESC']), 
             'users' => $userRepo->findBy([], ['id' => 'ASC']),
             'bons_livraison' => $blRepo->findBy([], ['dateCreation' => 'DESC']),
+            'retention_jours' => $retentionJours,
         ]);
+    }
+
+    #[Route('/settings/update', name: 'app_admin_settings_update', methods: ['POST'])]
+    public function updateSettings(Request $request, EntityManagerInterface $em, ConfigurationRepository $configRepo): Response
+    {
+        $jours = $request->request->get('retention_jours');
+        if (is_numeric($jours) && $jours > 0) {
+            $config = $configRepo->findOneBy(['cle' => 'retention_photos_jours']);
+            if (!$config) {
+                $config = new Configuration();
+                $config->setCle('retention_photos_jours');
+                $em->persist($config);
+            }
+            $config->setValeur((string)$jours);
+            $em->flush();
+            $this->addFlash('success', 'Les paramètres système ont été mis à jour.');
+        } else {
+            $this->addFlash('error', 'Valeur invalide pour le délai de rétention.');
+        }
+
+        return $this->redirectToRoute('app_admin_home', ['section' => 'admin-settings']);
     }
 
     #[Route('/bon-commande/{id}/edit', name: 'app_admin_bc_edit', methods: ['GET', 'POST'])]

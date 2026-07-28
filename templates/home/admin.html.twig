@@ -39,6 +39,10 @@
                     <i class="fas fa-truck"></i>
                     <span>Bon de livraison</span>
                 </a>
+                <a href="#" class="nav-item" data-target="admin-settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Paramètres</span>
+                </a>
             </nav>
         </div>
 
@@ -107,6 +111,22 @@
 
             <section id="admin-bl" class="content-section">
                 {{ include('components/admin/_list_bon_livraison.html.twig') }}
+            </section>
+
+            <section id="admin-settings" class="content-section">
+                <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; max-width: 600px;">
+                    <h2 style="margin-top: 0; font-size: 18px; color: #111827; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Paramètres Système</h2>
+                    <p style="color: var(--text-gray); font-size: 14px; margin-bottom: 20px;">Configuration globale de l'application.</p>
+                    
+                    <form action="{{ path('app_admin_settings_update') }}" method="POST">
+                        <div style="margin-bottom: 15px;">
+                            <label for="retention_jours" style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px;">Délai de conservation des photos (en jours)</label>
+                            <input type="number" id="retention_jours" name="retention_jours" value="{{ retention_jours|default('30') }}" min="1" max="3650" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                            <p style="font-size: 12px; color: #6b7280; margin-top: 5px;">Les photos de Fiches et Bons de Commande plus anciennes que ce délai seront automatiquement supprimées du serveur.</p>
+                        </div>
+                        <button type="submit" style="background: var(--primary-admin); color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='var(--primary-admin)'"><i class="fas fa-save" style="margin-right: 8px;"></i>Enregistrer</button>
+                    </form>
+                </div>
             </section>
         </div>
     </main>
