@@ -1,0 +1,87 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Fusionner des Clients - SG Galva{% endblock %}
+
+{% block body %}
+<div class="admin-form-container">
+    <div class="form-card large">
+        <header class="form-card-header" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            <a href="{{ path('app_admin_home', {'section': 'admin-cl'}) }}" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+            <h1><i class="fas fa-object-group"></i> Fusionner des Clients</h1>
+        </header>
+
+        <div style="padding: 30px;">
+            <div class="alert-box" style="background-color: #fffbeb; border: 1px solid #fef3c7; color: #92400e; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 16px;"><i class="fas fa-exclamation-triangle"></i> Attention, action irréversible !</h4>
+                <p style="margin: 0; font-size: 14px;">Cette action transférera <strong>tout l'historique</strong> (Fiches de déchargement, Bons de commande, etc.) du client "Doublon" vers le client "Principal".<br>Une fois le transfert effectué, le client "Doublon" sera <strong>définitivement supprimé</strong> de la base de données.</p>
+            </div>
+
+            {% for message in app.flashes('error') %}
+                <div class="alert-box alert-error" style="margin-bottom: 20px;">
+                    <i class="fas fa-exclamation-triangle"></i> {{ message }}
+                </div>
+            {% endfor %}
+
+            <form action="{{ path('app_admin_client_merge') }}" method="POST" class="modern-form" onsubmit="return confirm('Êtes-vous absolument sûr de vouloir fusionner ces deux clients ? Le client doublon sera supprimé.');">
+                
+                <div class="form-block" style="border: 2px solid #3b82f6; background: #eff6ff;">
+                    <h3 class="block-title" style="color: #1d4ed8; border-bottom-color: #bfdbfe;"><i class="fas fa-check-circle"></i> Étape 1 : Choisissez le Client Principal</h3>
+                    <p style="font-size: 13px; color: #475569; margin-bottom: 15px;">Sélectionnez le compte client que vous souhaitez <strong>conserver</strong>.</p>
+                    <div class="form-grid">
+                        <div class="full-width">
+                            <label for="target_client_id" style="font-weight: bold; color: #1e3a8a;">Client Principal (à conserver)</label>
+                            <select name="target_client_id" id="target_client_id" class="form-input" required>
+                                <option value="">-- Sélectionnez un client --</option>
+                                {% for c in clients %}
+                                    <option value="{{ c.id }}">{{ c.nom }} ({{ c.ville|default('Sans ville') }}) - Réf: {{ c.refInterne|default('Aucune') }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-block" style="border: 2px dashed #ef4444; background: #fef2f2; margin-top: 25px;">
+                    <h3 class="block-title" style="color: #b91c1c; border-bottom-color: #fecaca;"><i class="fas fa-trash-alt"></i> Étape 2 : Choisissez le Doublon</h3>
+                    <p style="font-size: 13px; color: #7f1d1d; margin-bottom: 15px;">Sélectionnez le compte client en double. Son historique rejoindra le compte principal et ce compte sera <strong>supprimé</strong>.</p>
+                    <div class="form-grid">
+                        <div class="full-width">
+                            <label for="source_client_id" style="font-weight: bold; color: #991b1b;">Client Doublon (à supprimer)</label>
+                            <select name="source_client_id" id="source_client_id" class="form-input" required>
+                                <option value="">-- Sélectionnez un client --</option>
+                                {% for c in clients %}
+                                    <option value="{{ c.id }}">{{ c.nom }} ({{ c.ville|default('Sans ville') }}) - Réf: {{ c.refInterne|default('Aucune') }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 30px; display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn-submit" style="background: #f59e0b; border-color: #d97706; padding: 12px 24px; font-size: 16px;">
+                        <i class="fas fa-magic"></i> Lancer la fusion
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Optionnel : Utiliser Select2 ou un style pour les selects si la liste est longue */
+select.form-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: white;
+}
+select.form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+}
+</style>
+{% endblock %}

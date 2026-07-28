@@ -255,6 +255,47 @@ class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/admin/client/fusion', name: 'app_admin_client_merge', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function mergeClients(Request $request, EntityManagerInterface $em, \App\Repository\ClientRepository $clientRepo, \App\Repository\FicheDechargementRepository $ficheRepo, \App\Repository\BonDeCommandeRepository $bcRepo): Response
+    {
+        if ($request->isMethod('POST')) {
+            $targetId = $request->request->get('target_client_id');
+            $sourceId = $request->request->get('source_client_id');
+
+            if ($targetId && $sourceId && $targetId !== $sourceId) {
+                $target = $clientRepo->find($targetId);
+                $source = $clientRepo->find($sourceId);
+
+                if ($target && $source) {
+                    // 1. Transférer toutes les Fiches de déchargement
+                    $fiches = $ficheRepo->findBy(['client' => $source]);
+                    foreach ($fiches as $fiche) {
+                        $fiche->setClient($target);
+                    }
+
+                    // 2. Transférer tous les Bons de Commande
+                    $bcs = $bcRepo->findBy(['client' => $source]);
+                    foreach ($bcs as $bc) {
+                        $bc->setClient($target);
+                    }
+
+                    // 3. Supprimer le doublon
+                    $em->remove($source);
+                    $em->flush();
+
+                    $this->addFlash('success', 'La fusion a été effectuée avec succès ! L\'historique complet a été rattaché à ' . $target->getNom() . ' et le doublon a été supprimé.');
+                    return $this->redirectToRoute('app_admin_home', ['section' => 'admin-cl']);
+                }
+            }
+            $this->addFlash('error', 'Erreur : Veuillez sélectionner deux clients différents et valides.');
+        }
+
+        return $this->render('client/merge.html.twig', [
+            'clients' => $clientRepo->findBy([], ['nom' => 'ASC']),
+        ]);
+    }
+
     /**
      * SUPPRIMER UNE FICHE DE DECHARGEMENT
      */
