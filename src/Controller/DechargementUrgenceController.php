@@ -86,5 +86,23 @@ class DechargementUrgenceController extends AbstractController
                 }
             }
         }
+    #[Route('/{id}', name: 'app_urgence_show', methods: ['GET'])]
+    public function show(DechargementUrgence $urgence): Response
+    {
+        return $this->render('urgence/show.html.twig', [
+            'urgence' => $urgence,
+        ]);
+    }
+
+    #[Route('/{id}/delete', name: 'app_urgence_delete', methods: ['POST'])]
+    public function delete(Request $request, DechargementUrgence $urgence, EntityManagerInterface $em): Response
+    {
+        if ($this->isCsrfTokenValid('delete_urgence' . $urgence->getId(), $request->request->get('_token'))) {
+            $em->remove($urgence);
+            $em->flush();
+            $this->addFlash('success', 'Le déchargement d\'urgence a été supprimé.');
+        }
+
+        return $this->redirectToRoute('app_home', ['section' => 'cariste-urgence']);
     }
 }

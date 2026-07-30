@@ -46,10 +46,16 @@
                         <span class="center">
                             <span class="paquet-chip">{{ urgence.lignes|length }}</span>
                         </span>
-                        <span class="right">
-                            <a href="#" class="btn-delete" title="Voir les détails" style="background: var(--indigo-50); color: var(--indigo-600); display:inline-flex;">
+                        <span class="right" style="display: flex; justify-content: flex-end; gap: 8px;">
+                            <a href="{{ path('app_urgence_show', {'id': urgence.id}) }}" class="btn-view" title="Voir les détails" style="background: var(--indigo-50); color: var(--indigo-600); display:inline-flex; padding: 6px 10px; border-radius: 4px; text-decoration: none;">
                                 <i class="fas fa-eye"></i>
                             </a>
+                            <form method="post" action="{{ path('app_urgence_delete', {'id': urgence.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette fiche d\'urgence ?');" style="display:inline-block;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete_urgence' ~ urgence.id) }}">
+                                <button type="submit" class="btn-delete" title="Supprimer la fiche" onclick="event.stopPropagation();">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
                         </span>
                     </div>
                 {% else %}

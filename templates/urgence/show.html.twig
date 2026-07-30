@@ -1,0 +1,93 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Détails Déchargement Urgence{% endblock %}
+
+{% block body %}
+<div class="bc-container">
+    <div class="bc-header">
+        <h1 class="bc-title">DÉCHARGEMENT D'URGENCE</h1>
+        <p class="bc-subtitle">Détails du bon provisoire #{{ urgence.id }}</p>
+    </div>
+
+    <div class="bc-grid">
+        <div class="bc-box client-box">
+            <span class="label">CLIENT</span>
+            <div class="val">{{ urgence.client ? urgence.client.nom : 'Non renseigné' }}</div>
+        </div>
+        
+        <div class="bc-box date-box">
+            <span class="label">DATE DE CRÉATION</span>
+            <div class="val">{{ urgence.dateCreation|date('d/m/Y à H:i') }}</div>
+        </div>
+    </div>
+
+    <div class="bc-box mt-3">
+        <p class="box-label">LIGNES DE PRODUITS</p>
+        <table class="bc-table mt-2">
+            <thead>
+                <tr>
+                    <th width="15%">Nb Palettes</th>
+                    <th width="35%">Désignation</th>
+                    <th width="25%">Poids</th>
+                    <th width="25%">Bac</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ligne in urgence.lignes %}
+                    <tr>
+                        <td class="center"><strong>{{ ligne.nbPalettes }}</strong></td>
+                        <td>{{ ligne.nomProduit }}</td>
+                        <td>{{ ligne.poids }}</td>
+                        <td>{{ ligne.bac }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4" class="center">Aucune ligne enregistrée.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if urgence.photos|length > 0 %}
+    <div class="bc-box mt-3">
+        <p class="box-label">PHOTOS ATTACHÉES</p>
+        <div class="photo-grid mt-2" style="display: flex; gap: 15px; flex-wrap: wrap;">
+            {% for photo in urgence.photos %}
+                <a href="{{ asset('uploads/urgences/' ~ photo.nomFichier) }}" target="_blank">
+                    <img src="{{ asset('uploads/urgences/' ~ photo.nomFichier) }}" alt="Photo urgence" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0;">
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="bc-actions mt-4">
+        <a href="{{ path('app_home', {'section': 'cariste-urgence'}) }}" class="btn-cancel"><i class="fas fa-arrow-left"></i> Retour</a>
+    </div>
+</div>
+
+<style>
+    .bc-container { max-width: 900px; margin: 0 auto; padding: 20px; font-family: 'Inter', sans-serif; }
+    .bc-header { margin-bottom: 20px; border-bottom: 2px solid #ef4444; padding-bottom: 10px; }
+    .bc-title { font-size: 24px; font-weight: 800; color: #1e293b; margin: 0; }
+    .bc-subtitle { font-size: 14px; color: #64748b; margin: 0; }
+    
+    .bc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    
+    .bc-box { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .box-label, .label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px; display: block;}
+    .val { font-size: 16px; font-weight: 600; color: #1e293b; }
+    
+    .bc-table { width: 100%; border-collapse: collapse; }
+    .bc-table th { background: #f8fafc; padding: 10px; text-align: left; font-size: 12px; color: #64748b; border-bottom: 1px solid #e2e8f0; }
+    .bc-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; color: #1e293b; }
+    
+    .center { text-align: center; }
+    
+    .btn-cancel { background: #f1f5f9; color: #475569; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; }
+    .btn-cancel:hover { background: #e2e8f0; }
+    .mt-3 { margin-top: 15px; }
+    .mt-4 { margin-top: 25px; }
+</style>
+{% endblock %}
