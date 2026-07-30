@@ -47,7 +47,12 @@ class HomeController extends AbstractController
      */
     #[Route('/home', name: 'app_home')]
     #[IsGranted('ROLE_USER')]
-    public function home(FicheDechargementRepository $ficheRepo, BonLivraisonRepository $blRepo, BonTravailRepository $btRepo): Response
+    public function home(
+        FicheDechargementRepository $ficheRepo, 
+        BonLivraisonRepository $blRepo, 
+        BonTravailRepository $btRepo,
+        \App\Repository\DechargementUrgenceRepository $urgenceRepo
+    ): Response
     {
         if ($this->isGranted('ROLE_ADMIN')) return $this->redirectToRoute('app_admin_home');
         if ($this->isGranted('ROLE_ORDONNANCEMENT')) return $this->redirectToRoute('app_ordonnancement_home');
@@ -60,12 +65,14 @@ class HomeController extends AbstractController
         $fiches = $ficheRepo->findBy([], ['date' => 'DESC']);
         $bons_livraison = $blRepo->findBy([], ['id' => 'DESC']);
         $bons_travail = $btRepo->findBy([], ['dateCreation' => 'DESC']);
+        $urgences = $urgenceRepo->findBy([], ['dateCreation' => 'DESC']);
 
         return $this->render('home/cariste.html.twig', [
             'controller_name' => 'Espace Cariste',
             'fiches' => $fiches,
             'bons_livraison' => $bons_livraison,
             'bons_travail' => $bons_travail,
+            'urgences' => $urgences,
         ]);
     }
 

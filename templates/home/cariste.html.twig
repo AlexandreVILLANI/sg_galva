@@ -24,6 +24,10 @@
                     <i class="fas fa-truck-loading"></i>
                     <span>Bons de Livraison</span>
                 </a>
+                <a href="#" class="nav-item" data-target="cariste-urgence">
+                    <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+                    <span style="color: #ef4444;">Déchargement d'Urgence</span>
+                </a>
             </nav>
         </div>
 
@@ -75,6 +79,9 @@
                 {{ include('components/cariste/_list_bon_livraison.html.twig', {'bons_livraison': bons_livraison}) }}
             </div>
 
+            <div id="cariste-urgence" class="content-section" style="display: none;">
+                {{ include('components/cariste/_list_urgence.html.twig', {'urgences': urgences|default([])}) }}
+            </div>
             
         </div>
     </main>
@@ -180,6 +187,13 @@
         font-weight: 600; 
         background: #fdfbf5; /* Léger fond doré/jaune */
         border-right: 3px solid var(--primary-gold); 
+    }
+    
+    .nav-item[data-target="cariste-urgence"].active {
+        color: #ef4444 !important;
+        font-weight: 600;
+        background: #fef2f2;
+        border-right: 3px solid #ef4444;
     }
 
     .sidebar-footer { padding: 15px 20px; border-top: 1px solid var(--border-color); }
