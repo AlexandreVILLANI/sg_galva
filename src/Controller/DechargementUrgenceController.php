@@ -86,6 +86,8 @@ class DechargementUrgenceController extends AbstractController
                 }
             }
         }
+    }
+
     #[Route('/{id}', name: 'app_urgence_show', methods: ['GET'])]
     public function show(DechargementUrgence $urgence): Response
     {
