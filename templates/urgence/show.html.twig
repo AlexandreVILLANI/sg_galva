@@ -13,7 +13,8 @@
             <h1 class="bc-title">Déchargement d'Urgence</h1>
             <p class="bc-subtitle">Enregistré le {{ urgence.dateCreation|date('d/m/Y') }} à {{ urgence.dateCreation|date('H:i') }}</p>
         </div>
-        <div class="header-actions">
+        <div class="header-actions" style="display: flex; gap: 10px;">
+            <a href="{{ path('app_urgence_edit', {'id': urgence.id}) }}" class="btn-edit-premium"><i class="fas fa-edit"></i> Modifier</a>
             <form method="post" action="{{ path('app_urgence_delete', {'id': urgence.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer définitivement cette urgence ?');">
                 <input type="hidden" name="_token" value="{{ csrf_token('delete_urgence' ~ urgence.id) }}">
                 <button type="submit" class="btn-delete-premium"><i class="fas fa-trash-alt"></i> Supprimer</button>
@@ -162,6 +163,9 @@
     .photo-item:hover .photo-overlay { opacity: 1; }
     
     /* BUTTONS */
+    .btn-edit-premium { background: var(--c-white); color: var(--c-indigo); border: 1px solid var(--c-indigo); padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+    .btn-edit-premium:hover { background: var(--c-indigo); color: white; }
+    
     .btn-delete-premium { background: var(--c-white); color: var(--c-red); border: 1px solid var(--c-red); padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
     .btn-delete-premium:hover { background: var(--c-red); color: white; }
     

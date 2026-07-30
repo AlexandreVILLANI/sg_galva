@@ -1,0 +1,197 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier Déchargement d'Urgence #{{ urgence.id }}{% endblock %}
+
+{% block body %}
+<div class="bc-container">
+    <div class="bc-header">
+        <h1 class="bc-title">MODIFIER L'URGENCE #{{ urgence.id }}</h1>
+        <p class="bc-subtitle">Modification d'un bon provisoire</p>
+    </div>
+
+    {{ form_start(form, {'attr': {'id': 'urgence-form', 'enctype': 'multipart/form-data'}}) }}
+        <div class="bc-grid">
+            <div class="bc-box client-box">
+                <span class="label">CLIENT</span>
+                {{ form_widget(form.client) }}
+            </div>
+        </div>
+
+        <div class="bc-box mt-3 table-wrapper">
+            <p class="box-label">LIGNES DE PRODUITS</p>
+            <table class="bc-table mt-2">
+                <thead>
+                    <tr>
+                        <th width="15%">Nb Palettes</th>
+                        <th width="45%">Désignation</th>
+                        <th width="30%">Poids</th>
+                        <th width="10%">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="lignes-wrapper" data-prototype="
+                    &lt;tr&gt;
+                        &lt;td&gt;{{ form_widget(form.lignes.vars.prototype.nbPalettes)|e }}&lt;/td&gt;
+                        &lt;td&gt;{{ form_widget(form.lignes.vars.prototype.nomProduit)|e }}&lt;/td&gt;
+                        &lt;td&gt;{{ form_widget(form.lignes.vars.prototype.poids)|e }}&lt;/td&gt;
+                        &lt;td class='center'&gt;&lt;button type='button' class='btn-delete-ligne'&gt;&lt;i class='fas fa-trash'&gt;&lt;/i&gt;&lt;/button&gt;&lt;/td&gt;
+                    &lt;/tr&gt;
+                ">
+                    {% for ligne in form.lignes %}
+                        <tr>
+                            <td>{{ form_widget(ligne.nbPalettes) }}</td>
+                            <td>{{ form_widget(ligne.nomProduit) }}</td>
+                            <td>{{ form_widget(ligne.poids) }}</td>
+                            <td class="center"><button type="button" class="btn-delete-ligne"><i class="fas fa-trash"></i></button></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button type="button" id="add-ligne-btn" class="btn-primary" style="margin: 10px; padding: 6px 12px; font-size: 0.9em;"><i class="fas fa-plus"></i> Ajouter une ligne</button>
+        </div>
+
+        <div class="bc-box mt-3 file-upload-box">
+            <p class="box-label">PHOTOS (Optionnel)</p>
+            <div class="drop-zone" id="drop-zone">
+                <i class="fas fa-cloud-upload-alt drop-icon"></i>
+                <p>Cliquez ou glissez vos photos ici</p>
+                <input type="file" name="imageFiles[]" id="file-input" multiple accept="image/*" style="display:none;">
+            </div>
+            <div id="preview-container" class="preview-container mt-2"></div>
+        </div>
+
+        <div class="bc-actions mt-4">
+            <a href="{{ path('app_urgence_show', {'id': urgence.id}) }}" class="btn-cancel">Annuler</a>
+            <button type="submit" class="btn-confirm"><i class="fas fa-save"></i> MODIFIER L'URGENCE</button>
+        </div>
+
+    {{ form_end(form) }}
+</div>
+
+<script>
+    document.addEventListener('turbo:load', () => {
+        if (typeof $ !== 'undefined' && $.fn.select2) {
+            $('.select2').select2({ width: '100%' });
+        }
+
+        // --- 1. GESTION DES LIGNES (COLLECTION) ---
+        const wrapper = document.getElementById('lignes-wrapper');
+        const btnAdd = document.getElementById('add-ligne-btn');
+        if (!wrapper || !btnAdd) return;
+
+        let index = wrapper.children.length;
+
+        btnAdd.addEventListener('click', () => {
+            const prototype = wrapper.dataset.prototype;
+            const newForm = prototype.replace(/__name__/g, index);
+            wrapper.insertAdjacentHTML('beforeend', newForm);
+            index++;
+        });
+
+        wrapper.addEventListener('click', (e) => {
+            if (e.target.closest('.btn-delete-ligne')) {
+                e.target.closest('tr').remove();
+            }
+        });
+
+        // S'assurer qu'il y a au moins une ligne au départ
+        if (index === 0) {
+            btnAdd.click();
+        }
+
+        // --- 2. GESTION DES PHOTOS (DRAG & DROP) ---
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const previewContainer = document.getElementById('preview-container');
+        
+        let allFiles = []; // Stocker les fichiers pour les envoyer au formulaire
+
+        if (dropZone && fileInput) {
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+
+        function handleFiles(files) {
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].type.startsWith('image/')) {
+                    allFiles.push(files[i]);
+                    renderPreview(files[i], allFiles.length - 1);
+                }
+            }
+            updateFileInput();
+        }
+
+        function renderPreview(file, index) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const div = document.createElement('div');
+                div.className = 'preview-item';
+                div.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview">
+                    <button type="button" class="btn-remove-img" data-index="${index}"><i class="fas fa-times"></i></button>
+                `;
+                previewContainer.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        previewContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-remove-img');
+            if (btn) {
+                const idx = parseInt(btn.dataset.index);
+                allFiles[idx] = null; // Marquer comme supprimé
+                btn.closest('.preview-item').remove();
+                updateFileInput();
+            }
+        });
+
+        function updateFileInput() {
+            const dataTransfer = new DataTransfer();
+            allFiles.forEach(file => {
+                if (file) dataTransfer.items.add(file);
+            });
+            fileInput.files = dataTransfer.files;
+        }
+    });
+</script>
+
+<style>
+    .bc-container { max-width: 900px; margin: 0 auto; padding: 20px; font-family: 'Inter', sans-serif; }
+    .bc-header { margin-bottom: 20px; border-bottom: 2px solid #ef4444; padding-bottom: 10px; }
+    .bc-title { font-size: 24px; font-weight: 800; color: #1e293b; margin: 0; }
+    .bc-subtitle { font-size: 14px; color: #64748b; margin: 0; }
+    .bc-box { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .box-label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 10px; }
+    .bc-table { width: 100%; border-collapse: collapse; }
+    .bc-table th { background: #f8fafc; padding: 10px; text-align: left; font-size: 12px; color: #64748b; }
+    .bc-table td { padding: 8px; border-bottom: 1px solid #e2e8f0; }
+    .bc-table input { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; }
+    .btn-delete-ligne { background: #fee2e2; color: #ef4444; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+    .btn-primary { background: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-confirm { background: #ef4444; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .btn-cancel { background: #f1f5f9; color: #475569; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; }
+    
+    /* Upload Drag & Drop */
+    .drop-zone { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 30px; text-align: center; color: #64748b; cursor: pointer; background: #f8fafc; transition: 0.2s; }
+    .drop-zone:hover, .drop-zone.dragover { background: #f1f5f9; border-color: #94a3b8; }
+    .drop-icon { font-size: 32px; color: #94a3b8; margin-bottom: 10px; }
+    .preview-container { display: flex; flex-wrap: wrap; gap: 10px; }
+    .preview-item { position: relative; width: 100px; height: 100px; border-radius: 6px; overflow: hidden; border: 1px solid #cbd5e1; }
+    .preview-item img { width: 100%; height: 100%; object-fit: cover; }
+    .btn-remove-img { position: absolute; top: 5px; right: 5px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+</style>
+{% endblock %}

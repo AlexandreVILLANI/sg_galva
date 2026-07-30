@@ -88,6 +88,26 @@ class DechargementUrgenceController extends AbstractController
         }
     }
 
+    #[Route('/{id}/edit', name: 'app_urgence_edit', methods: ['GET', 'POST'])]
+    public function edit(Request $request, DechargementUrgence $urgence, EntityManagerInterface $em): Response
+    {
+        $form = $this->createForm(DechargementUrgenceType::class, $urgence);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $this->handlePhotosUpload($request, $urgence, $em);
+            $em->flush();
+
+            $this->addFlash('success', 'Déchargement d\'urgence modifié avec succès.');
+            return $this->redirectToRoute('app_urgence_show', ['id' => $urgence->getId()]);
+        }
+
+        return $this->render('urgence/edit.html.twig', [
+            'urgence' => $urgence,
+            'form' => $form->createView(),
+        ]);
+    }
+
     #[Route('/{id}', name: 'app_urgence_show', methods: ['GET'])]
     public function show(DechargementUrgence $urgence): Response
     {

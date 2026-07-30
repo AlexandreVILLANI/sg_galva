@@ -32,7 +32,7 @@
 
             <div id="urgenceTableBody">
                 {% for urgence in urgences %}
-                    <div class="grid-row clickable-row" data-client="{{ urgence.client ? urgence.client.nom|lower : '' }}" >
+                    <div class="grid-row clickable-row" data-client="{{ urgence.client ? urgence.client.nom|lower : '' }}" onclick="window.location.href='{{ path('app_urgence_show', {'id': urgence.id}) }}'" style="cursor: pointer;">
                         <span class="date-cell">
                             {{ urgence.dateCreation|date('d/m/Y') }}
                             <small>{{ urgence.dateCreation|date('H:i') }}</small>
