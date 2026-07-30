@@ -40,7 +40,7 @@ class DechargementUrgenceController extends AbstractController
             $em->flush();
 
             $this->addFlash('success', 'Déchargement d\'urgence enregistré avec succès.');
-            return $this->redirectToRoute('app_cariste_home', ['section' => 'cariste-urgence']);
+            return $this->redirectToRoute('app_home', ['section' => 'cariste-urgence']);
         }
 
         return $this->render('urgence/new.html.twig', [
