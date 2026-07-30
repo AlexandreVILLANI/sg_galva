@@ -22,9 +22,6 @@ class LigneDechargementUrgence
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $poids = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $bac = null;
-
     #[ORM\ManyToOne(inversedBy: 'lignes')]
     #[ORM\JoinColumn(nullable: false)]
     private ?DechargementUrgence $dechargementUrgence = null;
@@ -64,17 +61,6 @@ class LigneDechargementUrgence
     public function setPoids(?string $poids): static
     {
         $this->poids = $poids;
-        return $this;
-    }
-
-    public function getBac(): ?string
-    {
-        return $this->bac;
-    }
-
-    public function setBac(?string $bac): static
-    {
-        $this->bac = $bac;
         return $this;
     }
 

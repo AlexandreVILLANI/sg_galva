@@ -26,10 +26,6 @@ class LigneDechargementUrgenceType extends AbstractType
                 'required' => false,
                 'label' => false,
             ])
-            ->add('bac', TextType::class, [
-                'required' => false,
-                'label' => false,
-            ])
         ;
     }
 

@@ -23,9 +23,8 @@
                 <thead>
                     <tr>
                         <th width="15%">Nb Palettes</th>
-                        <th width="35%">Désignation</th>
-                        <th width="20%">Poids</th>
-                        <th width="20%">Bac</th>
+                        <th width="45%">Désignation</th>
+                        <th width="30%">Poids</th>
                         <th width="10%">Action</th>
                     </tr>
                 </thead>
@@ -34,7 +33,6 @@
                         &lt;td&gt;{{ form_widget(form.lignes.vars.prototype.nbPalettes)|e }}&lt;/td&gt;
                         &lt;td&gt;{{ form_widget(form.lignes.vars.prototype.nomProduit)|e }}&lt;/td&gt;
                         &lt;td&gt;{{ form_widget(form.lignes.vars.prototype.poids)|e }}&lt;/td&gt;
-                        &lt;td&gt;{{ form_widget(form.lignes.vars.prototype.bac)|e }}&lt;/td&gt;
                         &lt;td class='center'&gt;&lt;button type='button' class='btn-delete-ligne'&gt;&lt;i class='fas fa-trash'&gt;&lt;/i&gt;&lt;/button&gt;&lt;/td&gt;
                     &lt;/tr&gt;
                 ">
@@ -43,7 +41,6 @@
                             <td>{{ form_widget(ligne.nbPalettes) }}</td>
                             <td>{{ form_widget(ligne.nomProduit) }}</td>
                             <td>{{ form_widget(ligne.poids) }}</td>
-                            <td>{{ form_widget(ligne.bac) }}</td>
                             <td class="center"><button type="button" class="btn-delete-ligne"><i class="fas fa-trash"></i></button></td>
                         </tr>
                     {% endfor %}
