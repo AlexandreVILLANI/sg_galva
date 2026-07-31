@@ -228,12 +228,14 @@ class HomeController extends AbstractController
      */
     #[Route('/pesee', name: 'app_pesee_home')]
     #[IsGranted('ROLE_PESEE')]
-    public function peseeIndex(PlanningRepository $planningRepository): Response
+    public function peseeIndex(PlanningRepository $planningRepository, \App\Repository\DechargementUrgenceRepository $urgenceRepo): Response
     {
         $plannings = $planningRepository->findBy([], ['datePlanning' => 'DESC'], 15);
+        $urgences = $urgenceRepo->findBy([], ['dateCreation' => 'DESC']);
 
         return $this->render('home/pesee.html.twig', [
             'plannings' => $plannings,
+            'urgences' => $urgences,
         ]);
     }
     

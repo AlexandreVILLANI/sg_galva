@@ -25,6 +25,9 @@ class DechargementUrgence
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $statut = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $observations = null;
+
     #[ORM\OneToMany(mappedBy: 'dechargementUrgence', targetEntity: LigneDechargementUrgence::class, orphanRemoval: true, cascade: ['persist'])]
     private Collection $lignes;
 
@@ -73,6 +76,17 @@ class DechargementUrgence
     public function setStatut(?string $statut): static
     {
         $this->statut = $statut;
+        return $this;
+    }
+
+    public function getObservations(): ?string
+    {
+        return $this->observations;
+    }
+
+    public function setObservations(?string $observations): static
+    {
+        $this->observations = $observations;
         return $this;
     }
 
