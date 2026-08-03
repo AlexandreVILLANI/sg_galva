@@ -21,7 +21,8 @@
 
     <div id="btTableBodyCata">
         {% for bt in bonsTravail %}
-            <div class="table-grid row bt-grid-template-cata"
+            <div class="table-grid row bt-grid-template-cata clickable-row"
+                 onclick="window.location.href='{{ path('app_chef_cataphorese_bt_edit', {'id': bt.id}) }}'"
                  data-btnum="{{ bt.numero|lower }}"
                  data-refi="{{ bt.bonCommande.refi|default('')|lower }}"
                  data-client="{{ bt.bonCommande.client.nom|default('')|lower }}">
@@ -138,6 +139,7 @@ if (document.readyState === 'loading') {
     .table-grid.header { background: #f8fafc; font-weight: 700; font-size: 11px; text-transform: uppercase; color: #475569; }
     .table-grid.row { font-size: 13px; transition: background 0.2s; }
     .table-grid.row:hover { background: #f8fafc; }
+    .clickable-row { cursor: pointer; }
     .ref-cell-group { display: flex; flex-direction: column; gap: 4px; }
     .ref-cell { font-weight: 700; color: #111827; }
     .date-subtext { font-size: 11px; color: #94a3b8; }
