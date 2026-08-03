@@ -458,7 +458,10 @@ class AdminController extends AbstractController
                 'Réception Ordonnancement' => 'ROLE_RECEPTION_ORDONNANCEMENT',
                 'Ordonnancement Planning' => 'ROLE_ORDONNANCEMENT',
                 'Chef d\'Équipe' => 'ROLE_CHEF_EQUIPE',
+                'Chef d\'Équipe Cataphorèse' => 'ROLE_CHEF_CATAPHORESE',
                 'Équipe Colisage' => 'ROLE_COLISAGE',
+                'Équipe Pesée' => 'ROLE_PESEE',
+                'Commercial' => 'ROLE_COMMERCIAL',
                 default => 'ROLE_USER'
             };
             
@@ -503,7 +506,10 @@ class AdminController extends AbstractController
                 'Réception Ordonnancement' => 'ROLE_RECEPTION_ORDONNANCEMENT',
                 'Ordonnancement Planning' => 'ROLE_ORDONNANCEMENT',
                 'Chef d\'Équipe' => 'ROLE_CHEF_EQUIPE',
+                'Chef d\'Équipe Cataphorèse' => 'ROLE_CHEF_CATAPHORESE',
                 'Équipe Colisage' => 'ROLE_COLISAGE',
+                'Équipe Pesée' => 'ROLE_PESEE',
+                'Commercial' => 'ROLE_COMMERCIAL',
                 default => 'ROLE_USER'
             };
             $user->setRoles([$roleTechnique]);

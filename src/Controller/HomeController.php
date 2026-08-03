@@ -33,6 +33,7 @@ class HomeController extends AbstractController
         
         if ($this->isGranted('ROLE_ADMIN')) return $this->redirectToRoute('app_admin_home');
         if ($this->isGranted('ROLE_CHEF_EQUIPE')) return $this->redirectToRoute('app_chef_equipe_home');
+        if ($this->isGranted('ROLE_CHEF_CATAPHORESE')) return $this->redirectToRoute('app_chef_cataphorese_home');
         if ($this->isGranted('ROLE_ORDONNANCEMENT')) return $this->redirectToRoute('app_ordonnancement_home');
         if ($this->isGranted('ROLE_RECEPTION_ORDONNANCEMENT')) return $this->redirectToRoute('app_reception_ordonnancement_home');
         if ($this->isGranted('ROLE_RECEPTION_TERRAIN')) return $this->redirectToRoute('app_reception_terrain_home');
@@ -55,6 +56,8 @@ class HomeController extends AbstractController
     ): Response
     {
         if ($this->isGranted('ROLE_ADMIN')) return $this->redirectToRoute('app_admin_home');
+        if ($this->isGranted('ROLE_CHEF_EQUIPE')) return $this->redirectToRoute('app_chef_equipe_home');
+        if ($this->isGranted('ROLE_CHEF_CATAPHORESE')) return $this->redirectToRoute('app_chef_cataphorese_home');
         if ($this->isGranted('ROLE_ORDONNANCEMENT')) return $this->redirectToRoute('app_ordonnancement_home');
         if ($this->isGranted('ROLE_RECEPTION_ORDONNANCEMENT')) return $this->redirectToRoute('app_reception_ordonnancement_home');
         if ($this->isGranted('ROLE_RECEPTION_TERRAIN')) return $this->redirectToRoute('app_reception_terrain_home');
@@ -171,7 +174,28 @@ class HomeController extends AbstractController
     }
 
     /**
-     * Espace RÉCEPTION ORDONNANCEMENT (Dali)
+     * Espace CHEF D'EQUIPE CATAPHORESE
+     */
+    #[Route('/chef-cataphorese', name: 'app_chef_cataphorese_home')]
+    #[IsGranted('ROLE_CHEF_CATAPHORESE')]
+    public function chefCataphoreseIndex(BonTravailRepository $btRepo): Response
+    {
+        // On récupère tous les bons de travail qui sont des Cataphorèse
+        $qb = $btRepo->createQueryBuilder('bt')
+            ->join('bt.bonCommande', 'bc')
+            ->where('bc.isCataphorese = :isCata')
+            ->setParameter('isCata', true)
+            ->orderBy('bt.dateCreation', 'DESC');
+            
+        $bonsTravail = $qb->getQuery()->getResult();
+
+        return $this->render('home/chef_cataphorese.html.twig', [
+            'bonsTravail' => $bonsTravail,
+        ]);
+    }
+
+    /**
+     * Espace ORDONNANCEMENT (ROLE_ORDONNANCEMENT) (Dali)
      */
     #[Route('/reception-ordonnancement', name: 'app_reception_ordonnancement_home')]
     #[IsGranted('ROLE_RECEPTION_ORDONNANCEMENT')]

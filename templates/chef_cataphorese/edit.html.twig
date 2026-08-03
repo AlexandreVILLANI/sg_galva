@@ -1,0 +1,220 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Saisie Cataphorèse - BT {{ bonTravail.numero }}{% endblock %}
+
+{% block body %}
+<div class="edit-urgence-wrapper">
+    <div class="edit-header">
+        <a href="{{ path('app_chef_cataphorese_home') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Retour au tableau de bord
+        </a>
+        <h1>Saisie Cataphorèse - Bon de Travail <span class="highlight">{{ bonTravail.numero }}</span></h1>
+    </div>
+
+    <div class="edit-content">
+        <div class="info-card">
+            <h3><i class="fas fa-info-circle"></i> Informations de la commande</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">Client</span>
+                    <span class="value">{{ bonTravail.bonCommande.client.nom }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Référence</span>
+                    <span class="value">{{ bonTravail.bonCommande.refi }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Date de création</span>
+                    <span class="value">{{ bonTravail.dateCreation|date('d/m/Y') }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <h3><i class="fas fa-edit"></i> Observations et Validation</h3>
+            {{ form_start(form, {'attr': {'class': 'modern-form'}}) }}
+
+                <div class="form-group-checkbox">
+                    {{ form_widget(form.isCataphoreseTermine) }}
+                    {{ form_label(form.isCataphoreseTermine) }}
+                </div>
+
+                <div class="form-group">
+                    {{ form_label(form.observationsCataphorese) }}
+                    {{ form_widget(form.observationsCataphorese, {'attr': {'class': 'modern-input'}}) }}
+                    <div class="form-error">{{ form_errors(form.observationsCataphorese) }}</div>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-save"></i> Enregistrer
+                </button>
+            {{ form_end(form) }}
+        </div>
+    </div>
+</div>
+
+<style>
+    .edit-urgence-wrapper {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 0 20px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .edit-header {
+        margin-bottom: 30px;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #6b7280;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 15px;
+        transition: color 0.2s;
+    }
+
+    .btn-back:hover {
+        color: #111827;
+    }
+
+    .edit-header h1 {
+        font-size: 24px;
+        color: #111827;
+        margin: 0;
+    }
+
+    .highlight {
+        color: #8b5cf6;
+    }
+
+    .info-card, .form-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        margin-bottom: 25px;
+    }
+
+    .info-card h3, .form-card h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #374151;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 10px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .info-item .label {
+        font-size: 12px;
+        color: #6b7280;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .info-item .value {
+        font-size: 15px;
+        color: #111827;
+        font-weight: 500;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-group-checkbox {
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f5f3ff;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #ddd6fe;
+    }
+    
+    .form-group-checkbox input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #8b5cf6;
+        cursor: pointer;
+    }
+    
+    .form-group-checkbox label {
+        font-weight: 600;
+        color: #4c1d95;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .form-group label:not(.form-group-checkbox label) {
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .modern-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        font-family: inherit;
+    }
+
+    .modern-input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+
+    .form-error {
+        color: #ef4444;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .btn-submit {
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        transition: background-color 0.2s;
+    }
+
+    .btn-submit:hover {
+        background: #7c3aed;
+    }
+</style>
+{% endblock %}

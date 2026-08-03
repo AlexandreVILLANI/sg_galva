@@ -66,6 +66,12 @@ class BonTravail
     #[ORM\Column(length: 10, options: ["default" => 'GALVA'])]
     private ?string $type = 'GALVA';
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $observationsCataphorese = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $isCataphoreseTermine = null;
+
     // ---------------------------------------
 
     public function __construct()
@@ -198,6 +204,30 @@ class BonTravail
     public function setPrixForfait(?float $prixForfait): self
     {
         $this->prixForfait = $prixForfait;
+        return $this;
+    }
+
+    public function getObservationsCataphorese(): ?string
+    {
+        return $this->observationsCataphorese;
+    }
+
+    public function setObservationsCataphorese(?string $observationsCataphorese): static
+    {
+        $this->observationsCataphorese = $observationsCataphorese;
+
+        return $this;
+    }
+
+    public function isCataphoreseTermine(): ?bool
+    {
+        return $this->isCataphoreseTermine;
+    }
+
+    public function setIsCataphoreseTermine(?bool $isCataphoreseTermine): static
+    {
+        $this->isCataphoreseTermine = $isCataphoreseTermine;
+
         return $this;
     }
 }

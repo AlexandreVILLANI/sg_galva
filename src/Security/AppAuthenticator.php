@@ -48,6 +48,8 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
             $target = 'app_admin_home';
         } elseif (in_array('ROLE_CHEF_EQUIPE', $roles)) {
             $target = 'app_chef_equipe_home'; 
+        } elseif (in_array('ROLE_CHEF_CATAPHORESE', $roles)) {
+            $target = 'app_chef_cataphorese_home';
         } elseif (in_array('ROLE_ORDONNANCEMENT', $roles)) {
             $target = 'app_ordonnancement_home';
         } elseif (in_array('ROLE_RECEPTION_TERRAIN', $roles)) {

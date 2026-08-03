@@ -1,0 +1,153 @@
+<div class="filter-bar">
+    <form class="filter-form" onsubmit="event.preventDefault();">
+        <div class="filter-group">
+            <i class="fas fa-search"></i>
+            <input type="text" id="filterGeneralBTCata" placeholder="Rechercher par N° BT, REFI ou Client...">
+        </div>
+        <a href="#" id="resetBTCataFilters" class="btn-reset" title="Réinitialiser">
+            <i class="fas fa-times"></i>
+        </a>
+    </form>
+</div>
+
+<div class="table-container">
+    <div class="table-grid header bt-grid-template-cata">
+        <div>N° BON TRAVAIL</div>
+        <div>REFI COMMANDE</div>
+        <div>CLIENT</div>
+        <div style="text-align: center;">STATUT CATA.</div>
+        <div style="text-align: center;">ACTION</div>
+    </div>
+
+    <div id="btTableBodyCata">
+        {% for bt in bonsTravail %}
+            <div class="table-grid row bt-grid-template-cata"
+                 data-btnum="{{ bt.numero|lower }}"
+                 data-refi="{{ bt.bonCommande.refi|default('')|lower }}"
+                 data-client="{{ bt.bonCommande.client.nom|default('')|lower }}">
+                
+                <div class="ref-cell-group">
+                    <span class="ref-cell" style="color: #8b5cf6;">{{ bt.numero }}</span>
+                    <small class="date-subtext">Créé le {{ bt.dateCreation|date('d/m/Y') }}</small>
+                </div>
+
+                <span class="ref-cell">{{ bt.bonCommande.refi }}</span>
+
+                <span class="client-cell" style="font-weight: 500;">{{ bt.bonCommande.client.nom }}</span>
+
+                <span class="progress-cell" style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
+                    {% if bt.isCataphoreseTermine %}
+                        <span class="status-badge success" title="Cataphorèse terminée">
+                            <i class="fas fa-check-circle"></i> TERMINÉ
+                        </span>
+                    {% else %}
+                        <span class="status-badge pending" title="En attente de traitement">
+                            <i class="fas fa-hourglass-half"></i> EN ATTENTE
+                        </span>
+                    {% endif %}
+                </span>
+
+                <span class="actions-cell" style="display: flex; justify-content: center; gap: 10px;">
+                    <a href="{{ path('app_chef_cataphorese_bt_edit', {'id': bt.id}) }}" class="btn-edit-simple" title="Mettre à jour">
+                        <i class="fas fa-edit" style="color: #8b5cf6; font-size: 1.2rem;"></i>
+                    </a>
+                </span>
+            </div>
+        {% else %}
+            <div class="no-data" style="padding: 20px; text-align: center;">
+                <i class="fas fa-layer-group" style="font-size: 24px; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+                <span>Aucun bon de travail cataphorèse trouvé.</span>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function setupBTCataFilters() {
+    const inputSearch = document.getElementById('filterGeneralBTCata');
+    const btnReset = document.getElementById('resetBTCataFilters');
+    const rows = document.querySelectorAll('#btTableBodyCata .row');
+
+    if (!inputSearch || rows.length === 0) return;
+
+    function filterTable() {
+        const valSearch = inputSearch.value.toLowerCase().trim();
+
+        rows.forEach(row => {
+            const rowBt = row.dataset.btnum || "";
+            const rowRefi = row.dataset.refi || "";
+            const rowClient = row.dataset.client || "";
+
+            const matchesSearch = rowBt.includes(valSearch) || rowRefi.includes(valSearch) || rowClient.includes(valSearch);
+            row.style.display = matchesSearch ? 'grid' : 'none';
+        });
+    }
+
+    inputSearch.addEventListener('input', filterTable);
+
+    if (btnReset) {
+        btnReset.addEventListener('click', (e) => {
+            e.preventDefault();
+            inputSearch.value = '';
+            filterTable();
+        });
+    }
+}
+
+document.addEventListener('turbo:load', setupBTCataFilters);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupBTCataFilters);
+} else {
+    setupBTCataFilters();
+}
+</script>
+
+<style>
+    .bt-grid-template-cata { 
+        grid-template-columns: 160px 140px 1fr 140px 80px !important; 
+        align-items: center; 
+    }
+    
+    .status-badge {
+        font-size: 10px;
+        font-weight: bold;
+        padding: 6px 10px;
+        border-radius: 12px;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        width: 115px; 
+        justify-content: center;
+    }
+    
+    .status-badge.success {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+    
+    .status-badge.pending {
+        background-color: #f3f4f6;
+        color: #6b7280;
+        border: 1px solid #e5e7eb;
+    }
+
+    .table-container { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: white; }
+    .table-grid { display: grid; padding: 12px 15px; border-bottom: 1px solid #f1f5f9; }
+    .table-grid.header { background: #f8fafc; font-weight: 700; font-size: 11px; text-transform: uppercase; color: #475569; }
+    .table-grid.row { font-size: 13px; transition: background 0.2s; }
+    .table-grid.row:hover { background: #f8fafc; }
+    .ref-cell-group { display: flex; flex-direction: column; gap: 4px; }
+    .ref-cell { font-weight: 700; color: #111827; }
+    .date-subtext { font-size: 11px; color: #94a3b8; }
+    .client-cell { color: #334155; }
+
+    .filter-bar { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
+    .filter-form { display: flex; gap: 15px; align-items: center; }
+    .filter-group { display: flex; align-items: center; gap: 10px; flex: 1; background: white; padding: 8px 15px; border-radius: 6px; border: 1px solid #cbd5e1; }
+    .filter-group input { border: none; outline: none; width: 100%; font-size: 13px; }
+    .filter-group i { color: #94a3b8; }
+    .btn-reset { color: #94a3b8; text-decoration: none; padding: 10px; transition: 0.2s; }
+    .btn-reset:hover { color: #ef4444; }
+</style>
