@@ -44,6 +44,7 @@
             <span>N° BT / Date</span>
             <span>REFI Associé</span>
             <span>Client</span>
+            <span>Traitement</span>
             <span>Délai Client</span>
             <span style="text-align: center;">Avancement</span>
             <span style="text-align: center;">Actions</span>
@@ -67,6 +68,23 @@
                     <span class="ref-cell">{{ bt.bonCommande.refi }}</span>
 
                     <span class="client-cell" style="font-weight: 500;">{{ bt.bonCommande.client.nom }}</span>
+
+                    <span>
+                        <span class="badge-info" style="font-weight: 600; font-size: 11px; padding: 4px 8px; background: #f3f4f6; border-radius: 4px; display: inline-block;">
+                            {% if bt.type == 'CATA' %}
+                                <i class="fas fa-layer-group" style="color: #8b5cf6;"></i> Cataphorèse
+                            {% else %}
+                                <i class="fas fa-tint" style="color: #3b82f6;"></i> Galvanisation 
+                                {% if bt.bonCommande.typeGalva == 'GB' %}
+                                    <span style="color: #6b7280; font-weight: normal;">(Grand Bain)</span>
+                                {% elseif bt.bonCommande.typeGalva == 'PB' %}
+                                    <span style="color: #6b7280; font-weight: normal;">(Petit Bain)</span>
+                                {% elseif bt.bonCommande.typeGalva %}
+                                    <span style="color: #6b7280; font-weight: normal;">({{ bt.bonCommande.typeGalva }})</span>
+                                {% endif %}
+                            {% endif %}
+                        </span>
+                    </span>
 
                     <span>
                         <span class="badge-info">
@@ -250,7 +268,7 @@ document.addEventListener('turbo:load', () => {
     }
 
     .bt-grid-template { 
-        grid-template-columns: 160px 140px 1fr 140px 120px 80px !important; 
+        grid-template-columns: 160px 130px 1fr 180px 110px 120px 80px !important; 
         align-items: center; 
     }
 
