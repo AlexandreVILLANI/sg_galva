@@ -24,6 +24,15 @@
             </div>
 
             <div class="filter-group">
+                <i class="fas fa-layer-group"></i>
+                <select id="filterTraitementBT">
+                    <option value="">Tous les traitements</option>
+                    <option value="cata">Cataphorèse</option>
+                    <option value="galva">Galvanisation</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
                 <i class="fas fa-tasks"></i>
                 <select id="filterStatusBT">
                     <option value="">Tous les états</option>
@@ -57,6 +66,7 @@
                      data-refi="{{ bt.bonCommande.refi|lower }}" 
                      data-client="{{ bt.bonCommande.client.nom|lower }}" 
                      data-date="{{ bt.dateCreation|date('Y-m-d') }}"
+                     data-traitement="{{ bt.type|lower }}"
                      data-status="{{ bt.exigenceParticuliere ? 'urgent' : 'normal' }}"
                      onclick="window.location='{{ path('app_bon_travail_new', {'id': bt.bonCommande.id}) }}'">
                     
@@ -205,6 +215,7 @@ function setupBTFilters() {
     const inputSearch = document.getElementById('filterGeneralBT');
     const inputDate = document.getElementById('filterDateBT');
     const selectStatus = document.getElementById('filterStatusBT');
+    const selectTraitement = document.getElementById('filterTraitementBT');
     const btnReset = document.getElementById('resetBTFilters');
     
     const rows = document.querySelectorAll('#btTableBody .row');
@@ -215,6 +226,7 @@ function setupBTFilters() {
         const valSearch = inputSearch.value.toLowerCase().trim();
         const valDate = inputDate.value;
         const valStatus = selectStatus.value;
+        const valTraitement = selectTraitement.value;
 
         rows.forEach(row => {
             const rowBt = row.dataset.btnum || "";
@@ -222,16 +234,18 @@ function setupBTFilters() {
             const rowClient = row.dataset.client || "";
             const rowDate = row.dataset.date || "";
             const rowStatus = row.dataset.status || "";
+            const rowTraitement = row.dataset.traitement || "";
 
             const matchesSearch = rowBt.includes(valSearch) || rowRefi.includes(valSearch) || rowClient.includes(valSearch);
             const matchesDate = valDate === "" || rowDate === valDate;
             const matchesStatus = valStatus === "" || rowStatus === valStatus;
+            const matchesTraitement = valTraitement === "" || rowTraitement === valTraitement;
 
-            row.style.display = (matchesSearch && matchesDate && matchesStatus) ? 'grid' : 'none';
+            row.style.display = (matchesSearch && matchesDate && matchesStatus && matchesTraitement) ? 'grid' : 'none';
         });
     }
 
-    [inputSearch, inputDate, selectStatus].forEach(el => {
+    [inputSearch, inputDate, selectStatus, selectTraitement].forEach(el => {
         el.addEventListener(el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input', filterTable);
     });
 
@@ -241,6 +255,7 @@ function setupBTFilters() {
             inputSearch.value = '';
             inputDate.value = '';
             selectStatus.value = '';
+            selectTraitement.value = '';
             filterTable();
         });
     }

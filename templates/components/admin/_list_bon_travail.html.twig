@@ -19,6 +19,14 @@
                 </select>
             </div>
 
+            <div class="filter-group" style="display: flex; align-items: center; background: #f9fafb; border: 1px solid #e5e7eb; padding: 8px 12px; border-radius: 6px; width: 180px;">
+                <select id="filterTraitementAdminBT" style="border: none; background: transparent; font-size: 13px; outline: none; width: 100%; cursor: pointer;">
+                    <option value="">Tous les traitements</option>
+                    <option value="cata">Cataphorèse</option>
+                    <option value="galva">Galvanisation</option>
+                </select>
+            </div>
+
             <a href="#" class="btn-reset" id="resetAdminBTFilters" style="color: #6b7280; background: #f3f4f6; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #e5e7eb; text-decoration: none;">
                 <i class="fas fa-sync-alt"></i>
             </a>
@@ -45,6 +53,7 @@
                     data-btnum="{{ bt.numero|lower }}"
                     data-refi="{{ bt.bonCommande.refi|lower }}" 
                     data-client="{{ bt.bonCommande.client.nom|lower }}" 
+                    data-traitement="{{ bt.type|lower }}"
                     data-urgence="{{ isUrgent ? 'urgent' : 'normal' }}"
                     onmouseover="this.style.background='#f9fafb'" 
                     onmouseout="this.style.background='transparent'"
@@ -102,6 +111,7 @@
 function setupAdminBTFilters() {
     const inputSearch = document.getElementById('filterGeneralAdminBT');
     const selectUrgence = document.getElementById('filterUrgenceAdminBT');
+    const selectTraitement = document.getElementById('filterTraitementAdminBT');
     const btnReset = document.getElementById('resetAdminBTFilters');
     const rows = document.querySelectorAll('#adminBtTableBody .admin-bt-grid');
 
@@ -110,23 +120,28 @@ function setupAdminBTFilters() {
     function filter() {
         const valSearch = inputSearch.value.toLowerCase().trim();
         const valUrgence = selectUrgence.value;
+        const valTraitement = selectTraitement.value;
 
         rows.forEach(row => {
             const matchesSearch = row.dataset.btnum.includes(valSearch) || 
                                 row.dataset.refi.includes(valSearch) || 
                                 row.dataset.client.includes(valSearch);
             const matchesUrgence = valUrgence === "" || row.dataset.urgence === valUrgence;
+            const matchesTraitement = valTraitement === "" || row.dataset.traitement === valTraitement;
 
-            row.style.display = (matchesSearch && matchesUrgence) ? 'grid' : 'none';
+            row.style.display = (matchesSearch && matchesUrgence && matchesTraitement) ? 'grid' : 'none';
         });
     }
 
     inputSearch.addEventListener('input', filter);
     selectUrgence.addEventListener('change', filter);
+    selectTraitement.addEventListener('change', filter);
     
     btnReset.addEventListener('click', (e) => {
         e.preventDefault();
-        inputSearch.value = ''; selectUrgence.value = '';
+        inputSearch.value = ''; 
+        selectUrgence.value = '';
+        selectTraitement.value = '';
         filter();
     });
 }
