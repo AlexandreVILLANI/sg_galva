@@ -13,7 +13,11 @@
     {% endif %}
     
     {% set isPretPourLivraison = false %}
-    {% if bt.type == 'CATA' or (bt.isPeseeValidee and isTermineAtelier) %}
+    {% if bt.type == 'CATA' %}
+        {% if bt.isCataphoreseTermine %}
+            {% set isPretPourLivraison = true %}
+        {% endif %}
+    {% elseif bt.isPeseeValidee and isTermineAtelier %}
         {% set isPretPourLivraison = true %}
     {% endif %}
 

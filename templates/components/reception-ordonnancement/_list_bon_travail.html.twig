@@ -78,9 +78,15 @@
                     <span class="progress-cell" style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
                         
                         {% if bt.type == 'CATA' %}
-                            <span class="status-badge" style="background-color: #8b5cf6; color: white; padding: 6px 12px;" title="Cataphorèse">
-                                <i class="fas fa-layer-group"></i> CATAPHORÈSE
-                            </span>
+                            {% if bt.isCataphoreseTermine %}
+                                <span class="status-badge success" title="Terminé en cataphorèse">
+                                    <i class="fas fa-check-double"></i> Fait (Cata.)
+                                </span>
+                            {% else %}
+                                <span class="status-badge pending" title="En attente cataphorèse">
+                                    <i class="fas fa-hourglass-half"></i> En cours
+                                </span>
+                            {% endif %}
                         {% else %}
                             {# 1. BADGE PESÉE #}
                             {% if bt.isPeseeValidee %}
