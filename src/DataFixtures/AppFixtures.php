@@ -54,6 +54,10 @@ class AppFixtures extends Fixture
         $peseeRole = new Role();
         $peseeRole->setNom("Équipe Pesée");
         $manager->persist($peseeRole);
+        
+        $cataphoreseRole = new Role();
+        $cataphoreseRole->setNom("Chef d'Équipe Cataphorèse");
+        $manager->persist($cataphoreseRole);
 
         // --- NOUVEAU ROLE COMMERCIAL ---
         $commercialRole = new Role();
