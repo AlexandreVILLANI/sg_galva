@@ -114,16 +114,38 @@ class AppFixtures extends Fixture
         $userChef->setPassword($this->hasher->hashPassword($userChef, 'chef'));
         $manager->persist($userChef);
 
-        // 7. Création d'un Cariste (Jean)
-        $cariste = new User();
-        $cariste->setUsername('cariste_nord');
-        $cariste->setPrenom('Jean Cariste');
-        $cariste->setTypeAcces('LIEN');
-        $cariste->setRoles(['ROLE_CARISTE']);
-        $cariste->setUserRole($caristeRole);
-        $cariste->setToken('cariste123');
-        $cariste->setPassword($this->hasher->hashPassword($cariste, 'cariste'));
-        $manager->persist($cariste);
+        // 7. Création des Caristes
+        $caristesData = [
+            ['nom' => 'LAFARGE Jean-Baptiste', 'username' => 'jlafarge', 'token' => '7fae112b3cd57ec95ef80abaad727e17'],
+            ['nom' => 'ROQUIS Philippe', 'username' => 'proquis', 'token' => '92ca0cbb8023431532410660f9442ff1'],
+            ['nom' => 'MARTIROSSIAN Achot', 'username' => 'amartirossian', 'token' => '39d48f9413e1230147fbd3049b639666'],
+            ['nom' => 'VARDANIAN Roman', 'username' => 'rvardanian', 'token' => 'd48507fb45a784d9362b866137c98c18'],
+            ['nom' => 'RIBEIRO Felipe', 'username' => 'fribeiro', 'token' => 'd107192231739e7326ee34f5aa97e7d7'],
+            ['nom' => 'OLIVEIRA Joaquim', 'username' => 'joliveira', 'token' => '43cd08a09c8c49799124d9e0508da932'],
+            ['nom' => 'FRONTEAU Steve', 'username' => 'sfronteau', 'token' => '540e3fd19d93dfa2170d037e82150dec'],
+            ['nom' => 'FERNANDES Tony', 'username' => 'tfernandes', 'token' => 'ea0a024d712ab884d7d57864c89c037b'],
+            ['nom' => 'PEREIRA Antoine', 'username' => 'apereira', 'token' => 'bb689e675fd7af744b8df03d8237da50'],
+            ['nom' => 'RAOUX Yan', 'username' => 'yraoux', 'token' => 'e6ad616bc083e499e166ecb91ad41711'],
+            ['nom' => 'PEREIRA Nuno', 'username' => 'npereira', 'token' => 'd24d761f77a927ae5f0e725a17f5c730'],
+            ['nom' => 'EL MADANI Jaouad', 'username' => 'mel', 'token' => '37e6c75123497b2043e74a25ae38fb73'],
+            ['nom' => 'NAKOURI Adlen', 'username' => 'anakouri', 'token' => '414274d7f661b5c7f23b20f54bb00df2'],
+            ['nom' => 'AZAOUM Karim', 'username' => 'kazaoum', 'token' => '93a581d3caa466949d5478ea3ddcab3d'],
+            ['nom' => 'NETO SAMPAIO Miguel', 'username' => 'sneto', 'token' => 'b67ef5c31927bbd3e9deead80218fab6'],
+            // L'ancien compte générique de test cariste
+            ['nom' => 'Jean Cariste', 'username' => 'cariste_nord', 'token' => 'cariste123'],
+        ];
+
+        foreach ($caristesData as $data) {
+            $cariste = new User();
+            $cariste->setUsername($data['username']);
+            $cariste->setPrenom($data['nom']); // On met le nom complet dans prénom pour affichage
+            $cariste->setTypeAcces('LIEN');
+            $cariste->setRoles(['ROLE_CARISTE']);
+            $cariste->setUserRole($caristeRole);
+            $cariste->setToken($data['token']);
+            $cariste->setPassword($this->hasher->hashPassword($cariste, 'password123'));
+            $manager->persist($cariste);
+        }
 
         // 8. Création d'un Agent de Colisage (Marc)
         $colisage = new User();
