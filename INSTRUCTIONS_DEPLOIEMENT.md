@@ -46,3 +46,51 @@ L'application est maintenant accessible via un navigateur web à l'adresse IP du
 ### Notes de sécurité (Production)
 - Les mots de passe et configurations par défaut sont inscrits dans le fichier `docker-compose.yml`. Dans un vrai environnement de production, il est conseillé de créer un fichier `.env` à côté du `docker-compose.yml` pour surcharger les variables `APP_SECRET`, `POSTGRES_USER` et `POSTGRES_PASSWORD`.
 - Assurez-vous d'implémenter un certificat SSL (HTTPS) au niveau du réseau ou du reverse proxy pour protéger les mots de passe.
+
+---
+
+## Alternative : Installation manuelle (Sans Docker)
+
+Si vous n'utilisez pas Docker sur votre serveur (ex: Windows Server classique avec WampServer/IIS, ou serveur Linux standard), voici la procédure manuelle complète.
+
+### Étape 1 : Prérequis du serveur
+1. **PHP 8.2 ou supérieur** (extensions requises : pdo_pgsql, intl, mbstring, gd, zip, opcache).
+2. **PostgreSQL 14, 15 ou 16** installé manuellement sur le serveur (depuis *postgresql.org*).
+3. **Composer** installé sur le serveur (pour gérer les dépendances PHP).
+4. Un serveur Web (**Apache** ou **IIS** ou **Nginx**) configuré pour pointer son dossier racine (`DocumentRoot`) vers le sous-dossier `/public` du projet (C'est TRÈS IMPORTANT pour la sécurité).
+
+### Étape 2 : Préparation de l'application
+1. Placez les fichiers de l'application sur le serveur (ex: `C:\wamp64\www\sg_galva` ou `/var/www/sg_galva`).
+2. Ouvrez une invite de commande dans ce dossier et exécutez :
+   ```bash
+   composer install --no-dev --optimize-autoloader
+   ```
+
+### Étape 3 : Configuration
+1. À la racine du projet, créez un fichier `.env.local`.
+2. Ajoutez-y vos identifiants de base de données PostgreSQL fraîchement installée et déclarez l'environnement de production :
+   ```env
+   APP_ENV=prod
+   APP_SECRET=VOTRE_CLE_SECRETE_ALEATOIRE_A_GENERER_ICI
+   DATABASE_URL="postgresql://NOM_UTILISATEUR:MOT_DE_PASSE@127.0.0.1:5432/NOM_DE_LA_BASE?serverVersion=16&charset=utf8"
+   ```
+
+### Étape 4 : Base de données & Cache
+1. Créez la base de données :
+   ```bash
+   php bin/console doctrine:database:create
+   ```
+2. Installez les tables :
+   ```bash
+   php bin/console doctrine:migrations:migrate
+   ```
+3. Chargez les comptes de départ (Caristes, Admin, etc.) :
+   ```bash
+   php bin/console doctrine:fixtures:load
+   ```
+4. Videz le cache et préparez les fichiers :
+   ```bash
+   php bin/console cache:clear
+   ```
+
+L'application est désormais prête à être accédée !
