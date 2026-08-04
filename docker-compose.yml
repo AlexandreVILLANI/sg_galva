@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # L'application Web (Serveur Apache + PHP)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sg_galva_web
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      - APP_ENV=prod
+      # Changez cette clé secrète en production !
+      - APP_SECRET=${APP_SECRET:-9f8b4d83c2e176b9f0a2d5e7c84b1a3d}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-sg_galva}:${POSTGRES_PASSWORD:-SuperSecretPassword}@db:5432/${POSTGRES_DB:-sg_galva_db}?serverVersion=16&charset=utf8
+    depends_on:
+      - db
+    volumes:
+      # Pour conserver les fichiers uploadés ou générés (si besoin)
+      - ./public/uploads:/var/www/html/public/uploads
+
+  # La base de données PostgreSQL
+  db:
+    image: postgres:16-alpine
+    container_name: sg_galva_db
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sg_galva_db}
+      POSTGRES_USER: ${POSTGRES_USER:-sg_galva}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-SuperSecretPassword}
+    volumes:
+      # Persistance des données de la base
+      - db_data:/var/lib/postgresql/data
+    ports:
+      # Optionnel : exposer le port si vous voulez y accéder avec DBeaver/PgAdmin depuis le réseau local
+      - "5432:5432"
+
+volumes:
+  db_data:
