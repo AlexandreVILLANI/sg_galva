@@ -43,7 +43,13 @@
                     
                     <td>
                         {% if user.typeAcces == 'LIEN' %}
-                            <span class="access-tag link-tag"><i class="fas fa-link"></i> Lien d'accès</span>
+                            <span class="access-tag link-tag" style="margin-bottom: 5px; display: inline-block;"><i class="fas fa-link"></i> Lien d'accès</span>
+                            {% if user.token %}
+                                <br>
+                                <button type="button" class="btn-copy-link" onclick="copyToClipboard('{{ url('app_magic_login', {'token': user.token}) }}', this)" title="Copier le lien magique">
+                                    <i class="fas fa-copy"></i> Copier
+                                </button>
+                            {% endif %}
                         {% else %}
                             <span class="access-tag pass-tag"><i class="fas fa-key"></i> Mot de passe</span>
                         {% endif %}
@@ -77,6 +83,27 @@
         </tbody>
     </table>
 </div>
+
+<script>
+function copyToClipboard(text, btnElement) {
+    navigator.clipboard.writeText(text).then(function() {
+        const originalHtml = btnElement.innerHTML;
+        btnElement.innerHTML = '<i class="fas fa-check"></i> Copié !';
+        btnElement.style.background = '#10b981';
+        btnElement.style.color = 'white';
+        btnElement.style.borderColor = '#10b981';
+        setTimeout(function() {
+            btnElement.innerHTML = originalHtml;
+            btnElement.style.background = '';
+            btnElement.style.color = '';
+            btnElement.style.borderColor = '';
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Erreur lors de la copie du lien : ', err);
+        alert("Impossible de copier le lien.");
+    });
+}
+</script>
 
 <style>
     /* Styles spécifiques à l'onglet Utilisateurs */
@@ -114,6 +141,24 @@
     .access-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 4px; }
     .link-tag { background: #f0fdfa; color: #0f766e; border: 1px dashed #0f766e; }
     .pass-tag { background: #fff7ed; color: #c2410c; border: 1px dashed #c2410c; }
+    
+    .btn-copy-link {
+        background: transparent;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-size: 11px;
+        color: #4b5563;
+        cursor: pointer;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .btn-copy-link:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+    }
     
     /* --- STYLES DES BOUTONS D'ACTION --- */
     .actions-cell { 
