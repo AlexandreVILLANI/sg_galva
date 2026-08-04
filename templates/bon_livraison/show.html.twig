@@ -12,6 +12,18 @@
         </div>
     {% endfor %}
 
+    {% if bl.fichierArchivePdf %}
+        <div style="background: #fef2f2; color: #991b1b; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #fecaca; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong><i class="fas fa-lock"></i> Ce Bon de Livraison a été archivé légalement.</strong><br>
+                <span style="font-size: 12px;">Une copie PDF non-modifiable a été générée suite aux signatures du cariste et du transporteur.</span>
+            </div>
+            <a href="{{ asset('uploads/bl_archives/' ~ bl.fichierArchivePdf) }}" target="_blank" style="background: #ef4444; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 13px;">
+                <i class="fas fa-file-pdf"></i> Voir l'Archive PDF
+            </a>
+        </div>
+    {% endif %}
+
     <div class="bc-header">
         <div class="bc-logo-container">
             <img src="{{ asset('images/sg-galva-logo.png') }}" alt="Logo" class="bc-logo">

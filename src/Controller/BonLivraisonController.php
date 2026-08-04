@@ -17,6 +17,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Entity\DocumentBonLivraison;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class BonLivraisonController extends AbstractController
 {
@@ -90,6 +92,11 @@ class BonLivraisonController extends AbstractController
 
             $em->flush();
 
+            // Génération automatique du PDF si signé et chargé
+            if ($bl->isSignatureValide() && $bl->isCaristeValide() && !$bl->getFichierArchivePdf()) {
+                $this->generateAndArchivePdf($bl, $em);
+            }
+
             $this->addFlash('success', 'Informations de livraison et signature enregistrées !');
 
             return $this->redirectToRoute('app_livraison_show', ['id' => $bl->getId()]);
@@ -126,6 +133,11 @@ class BonLivraisonController extends AbstractController
             // ON FORCE DOCTRINE À PRENDRE EN COMPTE L'OBJET
             $em->persist($bl); 
             $em->flush();
+
+            // Génération automatique du PDF si signé et chargé
+            if ($bl->isSignatureValide() && $bl->isCaristeValide() && !$bl->getFichierArchivePdf()) {
+                $this->generateAndArchivePdf($bl, $em);
+            }
 
             $this->addFlash('success', 'Le chargement a bien été validé par vos soins !');
             
@@ -248,5 +260,44 @@ class BonLivraisonController extends AbstractController
         } catch (\Exception $e) {
             return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la suppression.'], 500);
         }
+    }
+
+    private function generateAndArchivePdf(BonLivraison $bl, EntityManagerInterface $em): void
+    {
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Helvetica');
+        
+        $dompdf = new Dompdf($options);
+        
+        $bt = $bl->getBonTravail();
+        $commande = $bt->getBonCommande();
+        
+        $html = $this->renderView('bon_livraison/pdf.html.twig', [
+            'bl' => $bl,
+            'bt' => $bt,
+            'commande' => $commande,
+        ]);
+        
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        
+        $pdfContent = $dompdf->output();
+        
+        $destinationFolder = $this->getParameter('kernel.project_dir') . '/public/uploads/bl_archives';
+        if (!is_dir($destinationFolder)) {
+            mkdir($destinationFolder, 0777, true);
+        }
+        
+        // Nettoyer le numéro pour le nom de fichier (ex: BL-24-0001 -> BL-24-0001)
+        $safeNumber = preg_replace('/[^a-zA-Z0-9\-_]/', '_', $bl->getNumero());
+        $fileName = $safeNumber . '_' . uniqid() . '.pdf';
+        $filePath = $destinationFolder . '/' . $fileName;
+        
+        file_put_contents($filePath, $pdfContent);
+        
+        $bl->setFichierArchivePdf($fileName);
+        $em->flush();
     }
 }

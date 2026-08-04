@@ -60,6 +60,9 @@ class BonLivraison
     #[ORM\OneToMany(mappedBy: 'bonLivraison', targetEntity: DocumentBonLivraison::class, cascade: ['persist', 'remove'])]
     private Collection $documents;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $fichierArchivePdf = null;
+
     public function __construct()
     {
         $this->dateCreation = new \DateTime();
@@ -223,6 +226,17 @@ class BonLivraison
             }
         }
 
+        return $this;
+    }
+
+    public function getFichierArchivePdf(): ?string
+    {
+        return $this->fichierArchivePdf;
+    }
+
+    public function setFichierArchivePdf(?string $fichierArchivePdf): self
+    {
+        $this->fichierArchivePdf = $fichierArchivePdf;
         return $this;
     }
 }

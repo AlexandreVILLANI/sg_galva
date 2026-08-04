@@ -96,6 +96,11 @@
                     <a href="{{ path('app_admin_bl_show', {'id': bl.id}) }}" class="btn-action-view" title="Ouvrir le BL">
                         <i class="fas fa-eye"></i>
                     </a>
+                    {% if bl.fichierArchivePdf %}
+                        <a href="{{ asset('uploads/bl_archives/' ~ bl.fichierArchivePdf) }}" target="_blank" class="btn-action-pdf" title="Télécharger l'archive légale PDF" onclick="event.stopPropagation();">
+                            <i class="fas fa-file-pdf"></i>
+                        </a>
+                    {% endif %}
                 </span>
             </div>
         {% else %}
@@ -180,6 +185,18 @@ document.addEventListener('turbo:load', () => {
     }
     .btn-action-view:hover {
         background: #2e46a6;
+        color: white;
+    }
+
+    .btn-action-pdf {
+        color: #ef4444;
+        background: #fef2f2;
+        padding: 6px 10px;
+        border-radius: 4px;
+        transition: 0.2s;
+    }
+    .btn-action-pdf:hover {
+        background: #ef4444;
         color: white;
     }
 </style>

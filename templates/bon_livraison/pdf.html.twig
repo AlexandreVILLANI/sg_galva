@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Bon de Livraison - {{ bl.numero }}</title>
+    <style>
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #1a1a1a; margin: 0; padding: 0; }
+        .header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+        .header table { width: 100%; }
+        .logo-container { width: 30%; text-align: left; }
+        .title-container { width: 40%; text-align: center; }
+        .title-container h1 { font-size: 20px; font-weight: bold; margin: 0; padding: 0; }
+        .refi-container { width: 30%; text-align: right; }
+        .refi-container h2 { font-size: 16px; margin: 0; }
+        .refi-container p { font-size: 10px; color: #666; margin: 0; }
+        
+        .box { border: 1px solid #000; padding: 10px; margin-bottom: 15px; }
+        .box-title { font-weight: bold; font-size: 10px; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 8px; text-transform: uppercase; }
+        
+        .address-table { width: 100%; margin-bottom: 15px; }
+        .address-table td { width: 50%; vertical-align: top; border: 1px solid #000; padding: 10px; }
+        
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
+        .items-table th { background-color: #f0f0f0; border: 1px solid #000; padding: 5px; text-align: left; }
+        .items-table td { border: 1px solid #000; padding: 5px; }
+        .center { text-align: center; }
+        .right { text-align: right; }
+        
+        .transport-grid { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .transport-grid td { width: 25%; border: 1px solid #000; padding: 8px; vertical-align: top; }
+        .label { font-weight: bold; font-size: 9px; display: block; margin-bottom: 4px; }
+        
+        .signature-box { border: 1px solid #000; padding: 10px; text-align: center; margin-top: 20px; height: 120px; }
+        
+        .footer { position: fixed; bottom: -20px; left: 0; right: 0; font-size: 9px; text-align: center; color: #666; }
+        .page-number:after { content: counter(page); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <table>
+            <tr>
+                <td class="logo-container">
+                    {# Dompdf supporte les images via base64 ou chemins absolus locaux #}
+                    <h2>SG GALVA</h2>
+                </td>
+                <td class="title-container">
+                    <h1>BON DE LIVRAISON</h1>
+                    <p style="color:#2e46a6; font-weight:bold;">Réf. Commande : {{ commande.refi }}</p>
+                </td>
+                <td class="refi-container">
+                    <h2>N° {{ bl.numero }}</h2>
+                    <p>(Issu du BT : {{ bt.numero }})</p>
+                    <p>Date : {{ bl.dateCreation|date('d/m/Y') }}</p>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="box" style="background-color: #f9f9f9;">
+        <div class="box-title">TRAITEMENT</div>
+        {% if not commande.isCataphorese %}
+            Galvanisation {% if commande.typeGalva and commande.typeGalva != 'CATA' %}- {{ commande.typeGalva }}{% endif %}
+        {% endif %}
+        {% if commande.isCataphorese %}
+            Cataphorèse
+        {% endif %}
+    </div>
+
+    <table class="address-table">
+        <tr>
+            <td>
+                <div class="box-title">ADRESSE DE FACTURATION</div>
+                <strong>{{ commande.fiche.client.nom }}</strong><br>
+                {{ commande.fiche.client.adresseFacturation|nl2br }}<br>
+                {{ commande.fiche.client.codePostal }} {{ commande.fiche.client.ville }}
+            </td>
+            <td>
+                <div class="box-title">ADRESSE DE LIVRAISON</div>
+                <strong>{{ commande.fiche.client.nom }}</strong><br>
+                {{ commande.fiche.client.adresseLivraison|default(commande.fiche.client.adresseFacturation)|nl2br }}<br>
+                {{ commande.fiche.client.codePostal }} {{ commande.fiche.client.ville }}
+            </td>
+        </tr>
+    </table>
+
+    <div class="box">
+        <div class="box-title">DÉTAILS DES MARCHANDISES LIVRÉES</div>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th width="8%" class="center">Qté</th>
+                    <th width="30%">Désignation</th>
+                    <th width="15%">Référence</th>
+                    <th width="20%">Trav. Annexes</th>
+                    <th width="12%" class="right">Poids (Kg)</th>
+                    <th width="15%">Observations</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set totalPoids = 0 %}
+                {% for ligne in bt.lignes %}
+                    <tr>
+                        <td class="center">{{ ligne.nbPaquets }}</td>
+                        <td><strong>{{ ligne.description|default('-') }}</strong></td>
+                        <td>{{ ligne.reference|default('-') }}</td>
+                        <td>{{ ligne.travauxAnnexes|default('-') }}</td>
+                        <td class="right">{{ ligne.poids ? ligne.poids|number_format(2, ',', ' ') : '-' }}</td>
+                        <td>{{ ligne.observations|default('-') }}</td>
+                    </tr>
+                    {% set totalPoids = totalPoids + (ligne.poids|default(0)) %}
+                {% else %}
+                    <tr><td colspan="6" class="center">Aucune marchandise trouvée.</td></tr>
+                {% endfor %}
+                <tr style="background-color: #f0f0f0; font-weight: bold;">
+                    <td colspan="4" class="right">Total Poids (Kg) :</td>
+                    <td class="right">{{ totalPoids|number_format(2, ',', ' ') }}</td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="box">
+        <div class="box-title">INFORMATIONS DE TRANSPORT ET ENLÈVEMENT</div>
+        <table class="transport-grid">
+            <tr>
+                <td>
+                    <span class="label">DATE ENLÈVEMENT</span>
+                    {{ bl.dateEnlevement ? bl.dateEnlevement|date('d/m/Y') : '-' }}
+                </td>
+                <td>
+                    <span class="label">TRANSPORTEUR</span>
+                    {{ bl.transporteur|default('-') }}
+                </td>
+                <td>
+                    <span class="label">CHAUFFEUR</span>
+                    {{ bl.chauffeur|default('-') }}
+                </td>
+                <td>
+                    <span class="label">IMMATRICULATION</span>
+                    {{ bl.immatriculation|default('-') }}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="signature-box">
+        <span class="label">SIGNATURE DU CHAUFFEUR</span>
+        {% if bl.signature %}
+            <img src="{{ bl.signature }}" style="max-height: 80px; margin-top: 10px;">
+        {% else %}
+            <br><br><br>
+            <em>Aucune signature enregistrée</em>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        Document d'archive légal - Généré le {{ 'now'|date('d/m/Y H:i') }} - Page <span class="page-number"></span>
+    </div>
+
+</body>
+</html>
