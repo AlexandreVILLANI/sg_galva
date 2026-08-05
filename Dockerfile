@@ -39,6 +39,7 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
 # Compiler les assets pour la production
+ENV APP_ENV=prod
 RUN php bin/console asset-map:compile
 
 # Donner les bonnes permissions aux dossiers de cache et logs
