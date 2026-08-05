@@ -7,6 +7,11 @@ use Symfony\Component\Console\Output\BufferedOutput;
 
 require dirname(__DIR__).'/vendor/autoload.php';
 
+use Symfony\Component\Dotenv\Dotenv;
+if (file_exists(dirname(__DIR__).'/.env')) {
+    (new Dotenv())->bootEnv(dirname(__DIR__).'/.env');
+}
+
 // Création du noyau Symfony
 $env = $_SERVER['APP_ENV'] ?? 'prod';
 $debug = (bool) ($_SERVER['APP_DEBUG'] ?? false);
