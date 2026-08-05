@@ -35,7 +35,7 @@
 
     {# --- TABLEAU STYLE GRID --- #}
     <div class="table-container" style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-        <div class="table-grid header admin-bt-grid" style="background: #f3f4f6; color: #6b7280; font-weight: 600; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; display: grid; grid-template-columns: 160px 140px 100px 1fr 140px 60px; padding: 15px 20px;">
+        <div class="table-grid header admin-bt-grid" style="background: #f3f4f6; color: #6b7280; font-weight: 600; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; display: grid; grid-template-columns: 160px 140px 150px 1fr 140px 60px; padding: 15px 20px;">
             <span>N° BT</span>
             <span>REFI</span>
             <span>Type</span>
@@ -49,7 +49,7 @@
                 {% set isUrgent = bt.delaiClient and bt.delaiClient|date('Y-m-d') <= "now"|date_modify("+1 day")|date('Y-m-d') %}
                 
                 <div class="table-grid row admin-bt-grid" 
-                    style="display: grid; grid-template-columns: 160px 140px 100px 1fr 140px 60px; padding: 15px 20px; align-items: center; border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: 0.2s;"
+                    style="display: grid; grid-template-columns: 160px 140px 150px 1fr 140px 60px; padding: 15px 20px; align-items: center; border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: 0.2s;"
                     data-btnum="{{ bt.numero|lower }}"
                     data-refi="{{ bt.bonCommande.refi|lower }}" 
                     data-client="{{ bt.bonCommande.client.nom|lower }}" 
