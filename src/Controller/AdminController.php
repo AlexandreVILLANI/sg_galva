@@ -119,12 +119,11 @@ class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/settings', name: 'app_admin_settings_update', methods: ['POST'])]
+    #[Route('/settings/update', name: 'app_admin_settings_update', methods: ['POST'])]
     public function updateSettings(Request $request, EntityManagerInterface $em, ConfigurationRepository $configRepo): Response
     {
         $jours = $request->request->get('retention_jours');
-        
-        if ($jours && is_numeric($jours)) {
+        if (is_numeric($jours) && $jours > 0) {
             $config = $configRepo->findOneBy(['cle' => 'retention_photos_jours']);
             if (!$config) {
                 $config = new Configuration();
@@ -133,47 +132,12 @@ class AdminController extends AbstractController
             }
             $config->setValeur((string)$jours);
             $em->flush();
-            $this->addFlash('success', 'Paramètres sauvegardés avec succès !');
+            $this->addFlash('success', 'Les paramètres système ont été mis à jour.');
+        } else {
+            $this->addFlash('error', 'Valeur invalide pour le délai de rétention.');
         }
 
         return $this->redirectToRoute('app_admin_home', ['section' => 'admin-settings']);
-    }
-
-    #[Route('/settings/download-bl-archives', name: 'app_admin_settings_download_bl_archives', methods: ['GET'])]
-    public function downloadBlArchives(): Response
-    {
-        $directory = $this->getParameter('kernel.project_dir') . '/public/uploads/bl_archives';
-        
-        if (!is_dir($directory)) {
-            $this->addFlash('error', 'Le dossier des archives est introuvable ou vide.');
-            return $this->redirectToRoute('app_admin_home', ['section' => 'admin-settings']);
-        }
-
-        $files = glob($directory . '/*.pdf');
-        if (empty($files)) {
-            $this->addFlash('error', 'Aucun Bon de Livraison n\'a été archivé pour le moment.');
-            return $this->redirectToRoute('app_admin_home', ['section' => 'admin-settings']);
-        }
-
-        $zipName = 'BL_Archives_' . date('Y-m-d_H-i') . '.zip';
-        $zipPath = sys_get_temp_dir() . '/' . $zipName;
-
-        $zip = new \ZipArchive();
-        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
-            foreach ($files as $file) {
-                $zip->addFile($file, basename($file));
-            }
-            $zip->close();
-        } else {
-            $this->addFlash('error', 'Impossible de créer le fichier ZIP.');
-            return $this->redirectToRoute('app_admin_home', ['section' => 'admin-settings']);
-        }
-
-        return new \Symfony\Component\HttpFoundation\BinaryFileResponse($zipPath, 200, [
-            'Content-Type' => 'application/zip',
-            'Content-Disposition' => 'attachment; filename="' . $zipName . '"',
-            'Content-Length' => filesize($zipPath),
-        ]);
     }
 
     #[Route('/bon-commande/{id}/edit', name: 'app_admin_bc_edit', methods: ['GET', 'POST'])]
