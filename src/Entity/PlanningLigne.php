@@ -24,7 +24,7 @@ class PlanningLigne
     /**
      * Lien vers le Bon de Travail (permet d'accéder au REFI et au Client)
      */
-    #[ORM\ManyToOne(targetEntity: BonTravail::class)]
+    #[ORM\ManyToOne(targetEntity: BonTravail::class, inversedBy: 'planningLignes')]
     #[ORM\JoinColumn(nullable: false)]
     private ?BonTravail $bonTravail = null;
 
