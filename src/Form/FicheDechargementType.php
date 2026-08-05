@@ -53,14 +53,14 @@ class FicheDechargementType extends AbstractType
                 'required' => false,
                 'constraints' => [
                     // On limite à 3 fichiers maximum au niveau de la validation
-                    new Count(['max' => 3, 'maxMessage' => 'Vous ne pouvez pas envoyer plus de 3 photos']),
-                    new All([
-                        new File([
-                            'maxSize' => '10M',
-                            'mimeTypes' => ['image/jpeg', 'image/png'],
-                            'mimeTypesMessage' => 'Veuillez uploader une image valide (JPG, PNG)',
-                        ])
-                    ])
+                    new Count(max: 3, maxMessage: 'Vous ne pouvez pas envoyer plus de 3 photos'),
+                    new All(
+                        new File(
+                            maxSize: '10M',
+                            mimeTypes: ['image/jpeg', 'image/png'],
+                            mimeTypesMessage: 'Veuillez uploader une image valide (JPG, PNG)'
+                        )
+                    )
                 ],
             ]);
     }

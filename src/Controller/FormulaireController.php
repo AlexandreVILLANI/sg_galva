@@ -42,6 +42,10 @@ class FormulaireController extends AbstractController
                 $manager = new ImageManager(new Driver());
                 $destinationFolder = $this->getParameter('fiches_directory'); // Chemin configuré dans services.yaml
 
+                if (!is_dir($destinationFolder)) {
+                    mkdir($destinationFolder, 0777, true);
+                }
+
                 foreach ($imageFiles as $imageFile) {
                     // Forcer JPG
                     $newFilename = uniqid().'.jpg';
@@ -57,7 +61,8 @@ class FormulaireController extends AbstractController
                         $photo->setNomFichier($newFilename);
                         $fiche->addPhoto($photo);
                     } catch (\Exception $e) {
-                        // Optionnel : tu pourrais logger l'erreur ici
+                        // On relève l'erreur pour ne pas qu'elle soit silencieuse si besoin
+                        error_log("Erreur lors de la sauvegarde de l'image : " . $e->getMessage());
                     }
                 }
             }
@@ -89,6 +94,30 @@ class FormulaireController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $imageFiles = $form->get('imageFiles')->getData();
+            if ($imageFiles) {
+                $manager = new ImageManager(new Driver());
+                $destinationFolder = $this->getParameter('fiches_directory');
+                if (!is_dir($destinationFolder)) {
+                    mkdir($destinationFolder, 0777, true);
+                }
+                foreach ($imageFiles as $imageFile) {
+                    $newFilename = uniqid().'.jpg';
+                    $destinationPath = $destinationFolder . '/' . $newFilename;
+                    try {
+                        $image = $manager->read($imageFile->getPathname());
+                        $image->scaleDown(width: 1200);
+                        $image->save($destinationPath, quality: 75);
+
+                        $photo = new PhotoDechargement();
+                        $photo->setNomFichier($newFilename);
+                        $fiche->addPhoto($photo);
+                    } catch (\Exception $e) {
+                        error_log("Erreur lors de la sauvegarde de l'image (edit) : " . $e->getMessage());
+                    }
+                }
+            }
+
             // On recalcule le total des paquets au cas où
             $total = 0;
             foreach ($fiche->getLignes() as $ligne) {
