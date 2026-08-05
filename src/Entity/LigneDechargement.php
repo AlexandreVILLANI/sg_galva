@@ -49,6 +49,9 @@ class LigneDechargement
     #[ORM\Column(type: Types::FLOAT, nullable: true)]
     private ?float $prixTonne = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $commentairesFacturation = null;
+
     // --- GETTERS ET SETTERS ---
 
     public function getId(): ?int { return $this->id; }
@@ -93,4 +96,7 @@ class LigneDechargement
         $this->emplacementApresProduction = $emplacementApresProduction;
         return $this;
     }
+
+    public function getCommentairesFacturation(): ?string { return $this->commentairesFacturation; }
+    public function setCommentairesFacturation(?string $commentairesFacturation): self { $this->commentairesFacturation = $commentairesFacturation; return $this; }
 }

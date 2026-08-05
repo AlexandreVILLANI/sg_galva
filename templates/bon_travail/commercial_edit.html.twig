@@ -97,13 +97,14 @@
             <thead>
                 <tr>
                     <th width="5%">Qté</th>
-                    <th width="25%">Désignation</th>
+                    <th width="20%">Désignation</th>
                     <th width="5%">U</th>
                     <th width="12%">Référence</th>
-                    <th width="13%">Trav. Annexes</th>
-                    <th width="10%">Poids Kg</th>
+                    <th width="10%">Trav. Annexes</th>
+                    <th width="8%">Poids Kg</th>
                     <th width="10%" class="center" style="background:#e0e7ff; color:#4f46e5;">Prix/T</th>
-                    <th width="20%">Observations</th>
+                    <th width="15%" class="center" style="background:#fee2e2; color:#dc2626;">Comm. Facturation</th>
+                    <th width="15%">Observations</th>
                 </tr>
             </thead>
             <tbody>
@@ -144,6 +145,10 @@
                                 }
                             }) }}
                         </td>
+
+                        <td class="p-0">
+                            {{ form_widget(ligneForm.commentairesFacturation, {'attr': {'class': 'cell-input center'}}) }}
+                        </td>
                         
                         <td class="p-0">
                             {{ form_widget(ligneForm.observations, {'attr': {'class': 'cell-input'}}) }}
@@ -163,13 +168,13 @@
                             {{ form_widget(form.nomForfait, {'attr': {'class': 'cell-input', 'placeholder': 'Ex: Forfait Zingage Complet...', 'style': 'background: white; border: 1px dashed #4f46e5; padding: 5px; border-radius: 3px;'}}) }}
                         </div>
                     </td>
-                    <td colspan="4" class="right bold" style="padding-right: 15px; vertical-align: middle; color: #312e81; text-transform: uppercase;">
+                    <td colspan="5" class="right bold" style="padding-right: 15px; vertical-align: middle; color: #312e81; text-transform: uppercase;">
                         Montant Global du Forfait :
                     </td>
                     <td class="p-0" style="vertical-align: middle;">
                         {{ form_widget(form.prixForfait, {'attr': {'class': 'cell-input center editable-price forfait-prix-input', 'placeholder': '€', 'style': 'color: #312e81; font-weight: bold; background: white; font-size: 14px;'}}) }}
                     </td>
-                    <td style="background: #f0f0f0;"></td>
+                    <td style="background: #f0f0f0;" colspan="2"></td>
                 </tr>
             </tfoot>
         </table>

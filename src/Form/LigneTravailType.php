@@ -49,6 +49,14 @@ class LigneTravailType extends AbstractType
                 'required' => false,
                 'attr' => ['class' => 'cell-input', 'rows' => 1, 'placeholder' => '-']
             ])
+            ->add('commentairesFacturation', TextType::class, [
+                'required' => false,
+                'attr' => [
+                    'class' => 'cell-input', 
+                    'placeholder' => 'Comm. Fact.',
+                    'style' => 'color: #dc2626; font-weight: bold;' // Red styling
+                ]
+            ])
         ;
     }
 
