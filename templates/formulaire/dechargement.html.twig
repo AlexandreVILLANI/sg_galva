@@ -42,6 +42,7 @@
     {# Début du formulaire Symfony #}
     {{ form_start(form, {'attr': {'class': 'main-form', 'id': 'fiche-form'}}) }}
         
+        <div style="color: red; font-weight: bold; margin-bottom: 20px;">{{ form_errors(form) }}</div>
         <div class="form-row">
             <div class="form-group">
                 <label>Nom du cariste</label>
@@ -124,6 +125,7 @@
             {% endif %}
 
             {# --- ZONE POUR AJOUTER DE NOUVELLES PHOTOS --- #}
+            <div style="color: red; font-weight: bold; margin-bottom: 10px;">{{ form_errors(form.imageFiles) }}</div>
             <div class="upload-zone" id="drop-zone" onclick="document.getElementById('{{ form.imageFiles.vars.id }}').click()">
                 {{ form_widget(form.imageFiles, {'attr': {'hidden': 'hidden'}}) }}
                 <i class="fas fa-paperclip"></i>

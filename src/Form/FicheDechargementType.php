@@ -56,9 +56,8 @@ class FicheDechargementType extends AbstractType
                     new Count(max: 3, maxMessage: 'Vous ne pouvez pas envoyer plus de 3 photos'),
                     new All(
                         new File(
-                            maxSize: '10M',
-                            mimeTypes: ['image/jpeg', 'image/png'],
-                            mimeTypesMessage: 'Veuillez uploader une image valide (JPG, PNG)'
+                            maxSize: '15M',
+                            maxSizeMessage: 'Le fichier est trop lourd (15 Mo maximum).'
                         )
                     )
                 ],

@@ -14,6 +14,9 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install intl pdo pdo_pgsql zip opcache gd
 
+# Configurer PHP pour accepter des gros fichiers (photos)
+RUN echo "upload_max_filesize = 20M\npost_max_size = 25M\nmemory_limit = 256M" > /usr/local/etc/php/conf.d/uploads.ini
+
 # Activer le module rewrite d'Apache (nécessaire pour Symfony)
 RUN a2enmod rewrite
 
