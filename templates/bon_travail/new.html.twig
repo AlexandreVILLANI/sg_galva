@@ -159,6 +159,7 @@
                         </td>
                         <td class="p-0">{{ form_widget(ligneForm.observations, {'attr': {'class': 'cell-input', 'rows':'1'}}) }}</td>
                     </tr>
+                    {% do ligneForm.commentairesFacturation.setRendered %}
                 {% endfor %}
 
                 <tr style="background-color: #f8faff; font-weight: bold;">
