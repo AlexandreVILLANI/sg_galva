@@ -121,13 +121,14 @@
             <thead>
                 <tr>
                     <th width="5%">Qté</th>
-                    <th width="25%">Désignation</th>
+                    <th width="20%">Désignation</th>
                     <th width="5%">U</th>
                     <th width="12%">Référence</th>
-                    <th width="13%">Trav. Annexes</th>
-                    <th width="10%">Poids Kg</th>
+                    <th width="10%">Trav. Annexes</th>
+                    <th width="8%">Poids Kg</th>
                     <th width="10%" class="center">Prix/T</th>
-                    <th width="20%">Observations</th>
+                    <th width="15%" class="center" style="background:#fee2e2; color:#dc2626;">Facture à modifier</th>
+                    <th width="15%">Observations</th>
                 </tr>
             </thead>
             <tbody>
@@ -157,15 +158,23 @@
                                 }
                             }) }}
                         </td>
+                        <td class="p-0">
+                            {{ form_widget(ligneForm.commentairesFacturation, {
+                                'attr': {
+                                    'class': 'cell-input center', 
+                                    'style': 'color: #dc2626; font-weight: bold; background: #fef2f2; pointer-events: none;', 
+                                    'readonly': 'readonly'
+                                }
+                            }) }}
+                        </td>
                         <td class="p-0">{{ form_widget(ligneForm.observations, {'attr': {'class': 'cell-input', 'rows':'1'}}) }}</td>
                     </tr>
-                    {% do ligneForm.commentairesFacturation.setRendered %}
                 {% endfor %}
 
                 <tr style="background-color: #f8faff; font-weight: bold;">
                     <td colspan="5" style="text-align: right; padding-right: 15px; text-transform: uppercase;">Total Poids (Kg) :</td>
                     <td style="text-align: right; padding-right: 5px; color: #2e46a6; font-size: 14px;" id="total-poids-display">0.00</td>
-                    <td colspan="2"></td> 
+                    <td colspan="3"></td> 
                 </tr>
             </tbody>
 
@@ -182,11 +191,11 @@
                         </div>
                         {% endif %}
                     </td>
-                    <td colspan="4" class="right bold" style="padding-right: 15px; vertical-align: middle; color: {% if bt.isForfait %}#065f46{% else %}#94a3b8{% endif %}; text-transform: uppercase;">Montant Global :</td>
+                    <td colspan="5" class="right bold" style="padding-right: 15px; vertical-align: middle; color: {% if bt.isForfait %}#065f46{% else %}#94a3b8{% endif %}; text-transform: uppercase;">Montant Global :</td>
                     <td class="p-0" style="vertical-align: middle;">
                         {% if bt.isForfait %}<input type="text" class="cell-input center" readonly style="color: #065f46; font-weight: bold;" value="{{ bt.prixForfait }} €">{% endif %}
                     </td>
-                    <td style="background: #f0f0f0;"></td>
+                    <td style="background: #f0f0f0;" colspan="2"></td>
                 </tr>
             </tfoot>
         </table>
