@@ -53,7 +53,7 @@ class LigneTravailType extends AbstractType
                 'required' => false,
                 'attr' => [
                     'class' => 'cell-input', 
-                    'placeholder' => 'Comm. Fact.',
+                    'placeholder' => 'Facture à modifier',
                     'style' => 'color: #dc2626; font-weight: bold;' // Red styling
                 ]
             ])
