@@ -163,11 +163,12 @@
                                 'attr': {
                                     'class': 'cell-input center', 
                                     'style': 'color: #dc2626; font-weight: bold; background: #fef2f2; pointer-events: none;', 
-                                    'readonly': 'readonly'
+                                    'readonly': 'readonly',
+                                    'title': ligneForm.vars.value.commentairesFacturation|default('')
                                 }
                             }) }}
                         </td>
-                        <td class="p-0">{{ form_widget(ligneForm.observations, {'attr': {'class': 'cell-input', 'rows':'1'}}) }}</td>
+                        <td class="p-0">{{ form_widget(ligneForm.observations, {'attr': {'class': 'cell-input', 'rows':'1', 'title': ligneForm.vars.value.observations|default('')}}) }}</td>
                     </tr>
                 {% endfor %}
 

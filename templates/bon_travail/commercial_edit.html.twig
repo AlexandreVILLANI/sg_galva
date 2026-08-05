@@ -147,11 +147,11 @@
                         </td>
 
                         <td class="p-0">
-                            {{ form_widget(ligneForm.commentairesFacturation, {'attr': {'class': 'cell-input center'}}) }}
+                            {{ form_widget(ligneForm.commentairesFacturation, {'attr': {'class': 'cell-input center', 'title': ligneForm.vars.value.commentairesFacturation|default('')}}) }}
                         </td>
                         
                         <td class="p-0">
-                            {{ form_widget(ligneForm.observations, {'attr': {'class': 'cell-input'}}) }}
+                            {{ form_widget(ligneForm.observations, {'attr': {'class': 'cell-input', 'title': ligneForm.vars.value.observations|default('')}}) }}
                         </td>
                     </tr>
                 {% endfor %}

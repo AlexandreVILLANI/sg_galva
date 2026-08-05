@@ -122,8 +122,8 @@
                             <td class="p-0"><input type="text" class="cell-input" value="{{ ligne.reference }}" readonly></td>
                             <td class="p-0"><input type="text" class="cell-input" value="{{ ligne.travauxAnnexes }}" readonly></td>
                             <td class="p-0"><input type="text" class="cell-input right" value="{{ ligne.poids }}" readonly></td>
-                            <td class="p-0"><input type="text" class="cell-input center" style="color: #dc2626; font-weight: bold; background: #fef2f2;" value="{{ ligne.commentairesFacturation }}" readonly></td>
-                            <td class="p-0"><input type="text" class="cell-input" value="{{ ligne.observations }}" readonly></td>
+                            <td class="p-0"><input type="text" class="cell-input center" style="color: #dc2626; font-weight: bold; background: #fef2f2;" value="{{ ligne.commentairesFacturation }}" title="{{ ligne.commentairesFacturation }}" readonly></td>
+                            <td class="p-0"><input type="text" class="cell-input" value="{{ ligne.observations }}" title="{{ ligne.observations }}" readonly></td>
                         </tr>
                     {% else %}
                         <tr><td colspan="8" class="center muted">Aucune ligne trouvée.</td></tr>
