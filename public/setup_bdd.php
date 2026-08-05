@@ -31,18 +31,17 @@ try {
     echo "<h3>Erreur Migrations :</h3><pre>" . $e->getMessage() . "</pre>";
 }
 
-// 2. Création de l'utilisateur Admin en SQL direct (car doctrine:fixtures n'est pas dispo en prod)
+// 2. Création de l'utilisateur Admin en SQL direct
 try {
-    $dbUrl = $_ENV['DATABASE_URL'] ?? $_SERVER['DATABASE_URL'] ?? null;
+    $dbUrl = $_ENV['DATABASE_URL'] ?? $_SERVER['DATABASE_URL'] ?? getenv('DATABASE_URL');
     if ($dbUrl) {
-        $dbUrl = str_replace('postgresql://', 'pgsql:host=', $dbUrl);
-        $parsed = parse_url($_SERVER['DATABASE_URL']);
+        $parsed = parse_url($dbUrl);
         
-        $host = $parsed['host'];
+        $host = $parsed['host'] ?? '127.0.0.1';
         $port = $parsed['port'] ?? 5432;
-        $dbname = ltrim($parsed['path'], '/');
-        $user = $parsed['user'];
-        $pass = $parsed['pass'];
+        $dbname = isset($parsed['path']) ? ltrim($parsed['path'], '/') : 'sg_galva_db';
+        $user = $parsed['user'] ?? 'sg_galva';
+        $pass = $parsed['pass'] ?? '';
         
         $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', $host, $port, $dbname);
         $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
