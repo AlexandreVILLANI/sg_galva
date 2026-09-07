@@ -110,25 +110,68 @@
                 </thead>
                 <tbody>
                     {% for ligne in bt.lignes %}
-                        <tr>
-                            <td class="center bold">{{ ligne.nbPaquets }}</td>
+                        {% set nb = ligne.nbPaquets|default(1) %}
+                        {% set paquets = ligne.peseePaquets %}
+                        {% set isDetailed = paquets|length > 0 %}
+                        
+                        {# Champs cachés pour le statut global/détaillé #}
+                        <input type="hidden" name="is_detailed_{{ ligne.id }}" id="is_detailed_{{ ligne.id }}" value="{{ isDetailed ? '1' : '0' }}">
+                        
+                        {# --- LIGNE GLOBALE --- #}
+                        <tr id="row_global_{{ ligne.id }}" {% if isDetailed %}style="display: none;"{% endif %}>
+                            <td class="center bold">{{ nb }}</td>
                             <td class="designation">
                                 <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
                                 <div class="sub-info">Avant: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }} | Après: {{ ligne.emplacementApresProduction ? ligne.emplacementApresProduction.nom : '-' }}</div>
+                                {% if nb > 1 %}
+                                    <button type="button" class="btn-detailler" onclick="toggleDetails({{ ligne.id }}, {{ nb }}, true)" style="margin-top: 5px; font-size: 10px; padding: 2px 6px; background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; border-radius: 3px; cursor: pointer;">
+                                        <i class="fas fa-list"></i> Détailler les {{ nb }} paquets
+                                    </button>
+                                {% endif %}
                             </td>
-                            
                             <td class="p-0"><input type="text" class="cell-input center" value="{{ ligne.u|default('') }}" readonly></td>
                             <td class="p-0"><input type="text" class="cell-input" value="{{ ligne.reference|default('') }}" readonly></td>
                             <td class="p-0"><input type="text" class="cell-input" value="{{ ligne.travauxAnnexes|default('') }}" readonly></td>
                             
-                            {# === CHAMPS ÉDITABLES (Avec des name en tableau pour PHP) === #}
                             <td class="p-0">
-                                <input type="number" step="0.01" name="poids[{{ ligne.id }}]" class="cell-input right editable-field" value="{{ ligne.poids|default('') }}" placeholder="0.00">
+                                <input type="number" step="0.01" name="poids_global_{{ ligne.id }}" id="poids_global_{{ ligne.id }}" class="cell-input right editable-field" value="{{ not isDetailed ? ligne.poids|default('') : '' }}" placeholder="Poids global...">
                             </td>
                             <td class="p-0">
-                                <input type="text" name="observations[{{ ligne.id }}]" class="cell-input editable-field" value="{{ ligne.observations|default('') }}" placeholder="Notes de pesée...">
+                                <input type="text" name="obs_global_{{ ligne.id }}" id="obs_global_{{ ligne.id }}" class="cell-input editable-field" value="{{ not isDetailed ? ligne.observations|default('') : '' }}" placeholder="Notes globales...">
                             </td>
                         </tr>
+                        
+                        {# --- LIGNES DÉTAILLÉES --- #}
+                        {% if nb > 1 %}
+                            {% for i in 1..nb %}
+                                {% set paquet = paquets[i-1] ?? null %}
+                                <tr class="row_detail_{{ ligne.id }}" {% if not isDetailed %}style="display: none;"{% endif %}>
+                                    {% if loop.first %}
+                                        <td class="center bold" rowspan="{{ nb }}">{{ nb }}</td>
+                                        <td class="designation" rowspan="{{ nb }}">
+                                            <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
+                                            <div class="sub-info">Avant: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }} | Après: {{ ligne.emplacementApresProduction ? ligne.emplacementApresProduction.nom : '-' }}</div>
+                                            <button type="button" class="btn-global" onclick="toggleDetails({{ ligne.id }}, {{ nb }}, false)" style="margin-top: 5px; font-size: 10px; padding: 2px 6px; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; border-radius: 3px; cursor: pointer;">
+                                                <i class="fas fa-layer-group"></i> Grouper (Poids global)
+                                            </button>
+                                        </td>
+                                        <td class="p-0" rowspan="{{ nb }}"><input type="text" class="cell-input center" value="{{ ligne.u|default('') }}" readonly></td>
+                                        <td class="p-0" rowspan="{{ nb }}"><input type="text" class="cell-input" value="{{ ligne.reference|default('') }}" readonly></td>
+                                        <td class="p-0" rowspan="{{ nb }}"><input type="text" class="cell-input" value="{{ ligne.travauxAnnexes|default('') }}" readonly></td>
+                                    {% endif %}
+                                    
+                                    <td class="p-0">
+                                        <div style="display: flex; align-items: center; height: 100%;">
+                                            <span style="font-size: 10px; color: #666; margin-left: 5px;">P{{ i }}</span>
+                                            <input type="number" step="0.01" name="poids_detail_{{ ligne.id }}[{{ i }}]" class="cell-input right editable-field" value="{{ isDetailed and paquet ? paquet.poids : '' }}" placeholder="0.00">
+                                        </div>
+                                    </td>
+                                    <td class="p-0">
+                                        <input type="text" name="obs_detail_{{ ligne.id }}[{{ i }}]" class="cell-input editable-field" value="{{ isDetailed and paquet ? paquet.observations : '' }}" placeholder="Note P{{ i }}...">
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
                     {% else %}
                         <tr><td colspan="7" class="center muted">Aucune ligne trouvée.</td></tr>
                     {% endfor %}
@@ -153,6 +196,21 @@
 </div>
 
 <script>
+    function toggleDetails(ligneId, nbPaquets, showDetails) {
+        document.getElementById('is_detailed_' + ligneId).value = showDetails ? '1' : '0';
+        
+        const rowGlobal = document.getElementById('row_global_' + ligneId);
+        const rowsDetail = document.querySelectorAll('.row_detail_' + ligneId);
+        
+        if (showDetails) {
+            rowGlobal.style.display = 'none';
+            rowsDetail.forEach(row => row.style.display = 'table-row');
+        } else {
+            rowGlobal.style.display = 'table-row';
+            rowsDetail.forEach(row => row.style.display = 'none');
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.querySelector('form');
         const poidsInputs = document.querySelectorAll('input[name^="poids["]');
@@ -163,23 +221,46 @@
             e.preventDefault(); 
 
             let toutesLesPeseesSontRemplies = true;
-            let aumoinsUneLigne = poidsInputs.length > 0;
+            let aumoinsUneLigne = false; // On l'activera si au moins une ligne existe
 
             console.log("--- DÉBUT DE LA VÉRIFICATION ---");
-            console.log("Nombre de cases de poids trouvées :", poidsInputs.length);
 
-            poidsInputs.forEach(function(input, index) {
-                let stringValue = input.value.trim().replace(',', '.');
-                let valeur = parseFloat(stringValue);
+            // Pour chaque ligne de déchargement, on cherche son input caché is_detailed
+            const detailedInputs = document.querySelectorAll('input[name^="is_detailed_"]');
+            
+            if (detailedInputs.length > 0) {
+                aumoinsUneLigne = true;
+            }
+
+            detailedInputs.forEach(function(input) {
+                let ligneId = input.id.replace('is_detailed_', '');
+                let isDetailed = input.value === '1';
                 
-                let isValide = true;
-                if (stringValue === '' || isNaN(valeur) || valeur <= 0) {
-                    isValide = false;
-                    toutesLesPeseesSontRemplies = false;
+                if (isDetailed) {
+                    // On vérifie les champs de détails
+                    let poidsDetailsInputs = document.querySelectorAll('input[name^="poids_detail_' + ligneId + '"]');
+                    poidsDetailsInputs.forEach(function(pInput, index) {
+                        let stringValue = pInput.value.trim().replace(',', '.');
+                        let valeur = parseFloat(stringValue);
+                        
+                        if (stringValue === '' || isNaN(valeur) || valeur <= 0) {
+                            toutesLesPeseesSontRemplies = false;
+                            console.log(`Ligne ${ligneId} - Paquet ${index + 1} : MANQUANT OU INVALIDE`);
+                        }
+                    });
+                } else {
+                    // On vérifie le champ global
+                    let pInput = document.getElementById('poids_global_' + ligneId);
+                    if (pInput) {
+                        let stringValue = pInput.value.trim().replace(',', '.');
+                        let valeur = parseFloat(stringValue);
+                        
+                        if (stringValue === '' || isNaN(valeur) || valeur <= 0) {
+                            toutesLesPeseesSontRemplies = false;
+                            console.log(`Ligne ${ligneId} - Global : MANQUANT OU INVALIDE`);
+                        }
+                    }
                 }
-
-                // ON AFFICHE L'ÉTAT DE CHAQUE CASE DANS LA CONSOLE
-                console.log(`Case n°${index + 1} (name="${input.name}") : Valeur tapée="${input.value}" -> Valide ? ${isValide}`);
             });
 
             if (toutesLesPeseesSontRemplies && aumoinsUneLigne) {
@@ -192,9 +273,8 @@
 
             console.log("--- FIN DE LA VÉRIFICATION ---");
             
-            // Si vous voulez que le formulaire s'envoie quand même après avoir lu les logs, 
-            // vous pouvez décommenter la ligne ci-dessous :
-            // form.submit();
+            // On soumet le formulaire
+            form.submit();
         });
     });
 </script>

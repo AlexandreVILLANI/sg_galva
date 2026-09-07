@@ -96,30 +96,80 @@
                 </thead>
                 <tbody>
                     {% for ligne in bt.lignes %}
-                        <tr>
-                            <td class="center bold bg-gray">{{ ligne.nbPaquets }}</td>
-                            <td class="designation bg-gray">
-                                <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
-                                <div class="sub-info">
-                                    Avant: <strong>{{ ligne.emplacement ? ligne.emplacement.nom : '-' }}</strong> 
-                                    <br>
-                                    <label style="margin-top: 4px; display: inline-block;">Après:</label>
-                                    <select name="lignes[{{ ligne.id }}][emplacement_apres]" style="font-size: 11px; padding: 2px; max-width: 120px;">
-                                        <option value="">- Sélectionner -</option>
-                                        {% for emp in emplacements_apres %}
-                                            <option value="{{ emp.id }}" {% if ligne.emplacementApresProduction and ligne.emplacementApresProduction.id == emp.id %}selected{% endif %}>{{ emp.nom }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </td>
-                            
-                            <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][u]" class="cell-input center" value="{{ ligne.u }}"></td>
-                            <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][reference]" class="cell-input" value="{{ ligne.reference }}"></td>
-                            <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][travauxAnnexes]" class="cell-input" value="{{ ligne.travauxAnnexes }}"></td>
-                            <td class="p-0"><input type="number" step="0.01" name="lignes[{{ ligne.id }}][poids]" class="cell-input right" value="{{ ligne.poids }}"></td>
-                            <td class="p-0"><input type="number" step="0.01" name="lignes[{{ ligne.id }}][prixTonne]" class="cell-input right" style="color: #10b981; font-weight: bold;" value="{{ ligne.prixTonne }}"></td>
-                            <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][observations]" class="cell-input" value="{{ ligne.observations }}"></td>
-                        </tr>
+                        {% set paquets = ligne.peseePaquets %}
+                        {% set isDetailed = paquets|length > 0 %}
+                        
+                        {% if isDetailed %}
+                            {% for paquet in paquets %}
+                                <tr>
+                                    {% if loop.first %}
+                                        <td class="center bold bg-gray" rowspan="{{ paquets|length }}">{{ ligne.nbPaquets }}</td>
+                                        <td class="designation bg-gray" rowspan="{{ paquets|length }}">
+                                            <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
+                                            <div class="sub-info">
+                                                Avant: <strong>{{ ligne.emplacement ? ligne.emplacement.nom : '-' }}</strong> 
+                                                <br>
+                                                <label style="margin-top: 4px; display: inline-block;">Après:</label>
+                                                <select name="lignes[{{ ligne.id }}][emplacement_apres]" style="font-size: 11px; padding: 2px; max-width: 120px;">
+                                                    <option value="">- Sélectionner -</option>
+                                                    {% for emp in emplacements_apres %}
+                                                        <option value="{{ emp.id }}" {% if ligne.emplacementApresProduction and ligne.emplacementApresProduction.id == emp.id %}selected{% endif %}>{{ emp.nom }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </td>
+                                        
+                                        <td class="p-0" rowspan="{{ paquets|length }}"><input type="text" name="lignes[{{ ligne.id }}][u]" class="cell-input center" value="{{ ligne.u }}"></td>
+                                        <td class="p-0" rowspan="{{ paquets|length }}"><input type="text" name="lignes[{{ ligne.id }}][reference]" class="cell-input" value="{{ ligne.reference }}"></td>
+                                        <td class="p-0" rowspan="{{ paquets|length }}"><input type="text" name="lignes[{{ ligne.id }}][travauxAnnexes]" class="cell-input" value="{{ ligne.travauxAnnexes }}"></td>
+                                    {% endif %}
+                                    
+                                    <td class="p-0" style="display: flex; align-items: center; border: none; border-bottom: 1px solid #ccc; height: 100%;">
+                                        <span style="font-size: 10px; color: #666; padding-left: 5px; width: 20px;">P{{ loop.index }}</span>
+                                        <input type="text" class="cell-input right" value="{{ paquet.poids }}" readonly style="background: transparent;">
+                                        {% if loop.first %}
+                                            <input type="hidden" name="lignes[{{ ligne.id }}][poids]" value="{{ ligne.poids }}">
+                                        {% endif %}
+                                    </td>
+                                    
+                                    {% if loop.first %}
+                                        <td class="p-0" rowspan="{{ paquets|length }}"><input type="number" step="0.01" name="lignes[{{ ligne.id }}][prixTonne]" class="cell-input right" style="color: #10b981; font-weight: bold;" value="{{ ligne.prixTonne }}"></td>
+                                    {% endif %}
+                                    
+                                    <td class="p-0">
+                                        <input type="text" class="cell-input" value="{{ paquet.observations }}" readonly style="background: transparent;">
+                                        {% if loop.first %}
+                                            <input type="hidden" name="lignes[{{ ligne.id }}][observations]" value="{{ ligne.observations }}">
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td class="center bold bg-gray">{{ ligne.nbPaquets }}</td>
+                                <td class="designation bg-gray">
+                                    <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
+                                    <div class="sub-info">
+                                        Avant: <strong>{{ ligne.emplacement ? ligne.emplacement.nom : '-' }}</strong> 
+                                        <br>
+                                        <label style="margin-top: 4px; display: inline-block;">Après:</label>
+                                        <select name="lignes[{{ ligne.id }}][emplacement_apres]" style="font-size: 11px; padding: 2px; max-width: 120px;">
+                                            <option value="">- Sélectionner -</option>
+                                            {% for emp in emplacements_apres %}
+                                                <option value="{{ emp.id }}" {% if ligne.emplacementApresProduction and ligne.emplacementApresProduction.id == emp.id %}selected{% endif %}>{{ emp.nom }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </td>
+                                
+                                <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][u]" class="cell-input center" value="{{ ligne.u }}"></td>
+                                <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][reference]" class="cell-input" value="{{ ligne.reference }}"></td>
+                                <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][travauxAnnexes]" class="cell-input" value="{{ ligne.travauxAnnexes }}"></td>
+                                <td class="p-0"><input type="number" step="0.01" name="lignes[{{ ligne.id }}][poids]" class="cell-input right" value="{{ ligne.poids }}"></td>
+                                <td class="p-0"><input type="number" step="0.01" name="lignes[{{ ligne.id }}][prixTonne]" class="cell-input right" style="color: #10b981; font-weight: bold;" value="{{ ligne.prixTonne }}"></td>
+                                <td class="p-0"><input type="text" name="lignes[{{ ligne.id }}][observations]" class="cell-input" value="{{ ligne.observations }}"></td>
+                            </tr>
+                        {% endif %}
                     {% endfor %}
                 </tbody>
                 

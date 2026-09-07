@@ -38,7 +38,7 @@ class DechargementUrgence
     {
         $this->lignes = new ArrayCollection();
         $this->photos = new ArrayCollection();
-        $this->dateCreation = new \DateTime('now', new \DateTimeZone('Europe/Paris'));
+        $this->dateCreation = new \DateTime();
     }
 
     public function getId(): ?int

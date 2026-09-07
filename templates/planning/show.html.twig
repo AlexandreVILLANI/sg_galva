@@ -105,9 +105,15 @@
                         
                         <td class="center-text" style="font-weight: 800; font-family: monospace; font-size: 14px;">
                             {% if ligne.bonTravail %}
-                                <a href="{{ path('app_pesee_bt_edit', {'id': ligne.bonTravail.id}) }}" style="color: var(--primary-blue); text-decoration: underline;" title="Saisir les poids">
-                                    {{ ligne.bonTravail.bonCommande.refi|default('-') }}
-                                </a>
+                                {% if ligne.bonTravail.isValideParChefEquipe %}
+                                    <a href="{{ path('app_pesee_bt_edit', {'id': ligne.bonTravail.id}) }}" style="color: var(--primary-blue); text-decoration: underline;" title="Saisir les poids">
+                                        {{ ligne.bonTravail.bonCommande.refi|default('-') }}
+                                    </a>
+                                {% else %}
+                                    <span style="color: #6b7280; text-decoration: none; cursor: not-allowed;" title="Travail non validé par le chef d'équipe">
+                                        {{ ligne.bonTravail.bonCommande.refi|default('-') }}
+                                    </span>
+                                {% endif %}
                             {% else %}
                                 -
                             {% endif %}

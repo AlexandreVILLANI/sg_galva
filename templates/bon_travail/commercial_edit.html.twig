@@ -113,47 +113,105 @@
                     
                     {# On récupère l'entité Ligne pour pouvoir afficher les infos textuelles (nom, paquets...) #}
                     {% set ligne = ligneForm.vars.value %}
+                    {% set paquets = ligne.peseePaquets %}
+                    {% set isDetailed = paquets|length > 0 %}
                     
-                    <tr>
-                        <td class="center bold bg-gray">{{ ligne.nbPaquets }}</td>
-                        <td class="designation bg-gray">
-                            <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
-                            <div class="sub-info">Avant: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }} | Après: {{ ligne.emplacementApresProduction ? ligne.emplacementApresProduction.nom : '-' }}</div>
-                        </td>
-                        
-                        {# --- ON UTILISE FORM_WIDGET POUR QUE SYMFONY RECONNAISSE LES CHAMPS --- #}
-                        <td class="p-0">
-                            {{ form_widget(ligneForm.u, {'attr': {'class': 'cell-input center'}}) }}
-                        </td>
-                        <td class="p-0">
-                            {{ form_widget(ligneForm.reference, {'attr': {'class': 'cell-input'}}) }}
-                        </td>
-                        <td class="p-0">
-                            {{ form_widget(ligneForm.travauxAnnexes, {'attr': {'class': 'cell-input'}}) }}
-                        </td>
-                        <td class="p-0">
-                            {{ form_widget(ligneForm.poids, {'attr': {'class': 'cell-input right'}}) }}
-                        </td>
-                        
-                        {# --- CASE PRIX --- #}
-                        <td class="p-0">
-                            {{ form_widget(ligneForm.prixTonne, {
-                                'attr': {
-                                    'class': 'cell-input center editable-price',
-                                    'style': 'color: #4f46e5; font-weight: bold; background: #f8faff;',
-                                    'placeholder': '€/T'
-                                }
-                            }) }}
-                        </td>
+                    {% if isDetailed %}
+                        {% for paquet in paquets %}
+                            <tr>
+                                {% if loop.first %}
+                                    <td class="center bold bg-gray" rowspan="{{ paquets|length }}">{{ ligne.nbPaquets }}</td>
+                                    <td class="designation bg-gray" rowspan="{{ paquets|length }}">
+                                        <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
+                                        <div class="sub-info">Avant: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }} | Après: {{ ligne.emplacementApresProduction ? ligne.emplacementApresProduction.nom : '-' }}</div>
+                                    </td>
+                                    
+                                    <td class="p-0" rowspan="{{ paquets|length }}">
+                                        {{ form_widget(ligneForm.u, {'attr': {'class': 'cell-input center'}}) }}
+                                    </td>
+                                    <td class="p-0" rowspan="{{ paquets|length }}">
+                                        {{ form_widget(ligneForm.reference, {'attr': {'class': 'cell-input'}}) }}
+                                    </td>
+                                    <td class="p-0" rowspan="{{ paquets|length }}">
+                                        {{ form_widget(ligneForm.travauxAnnexes, {'attr': {'class': 'cell-input'}}) }}
+                                    </td>
+                                {% endif %}
+                                
+                                <td class="p-0" style="display: flex; align-items: center; border: none; border-bottom: 1px solid #000;">
+                                    <span style="font-size: 10px; color: #666; padding-left: 5px; width: 20px;">P{{ loop.index }}</span>
+                                    <input type="text" class="cell-input right" value="{{ paquet.poids }}" readonly style="background: transparent;">
+                                    {% if loop.first %}
+                                        <div style="display:none;">{{ form_widget(ligneForm.poids) }}</div>
+                                    {% endif %}
+                                </td>
+                                
+                                {% if loop.first %}
+                                    <td class="p-0" rowspan="{{ paquets|length }}">
+                                        {{ form_widget(ligneForm.prixTonne, {
+                                            'attr': {
+                                                'class': 'cell-input center editable-price',
+                                                'style': 'color: #4f46e5; font-weight: bold; background: #f8faff;',
+                                                'placeholder': '€/T'
+                                            }
+                                        }) }}
+                                    </td>
+                                    <td class="p-0" rowspan="{{ paquets|length }}">
+                                        {{ form_widget(ligneForm.commentairesFacturation, {
+                                            'attr': {
+                                                'class': 'cell-input center',
+                                                'placeholder': 'N° Facture'
+                                            }
+                                        }) }}
+                                    </td>
+                                {% endif %}
+                                <td class="p-0">
+                                    <input type="text" class="cell-input" value="{{ paquet.observations }}" readonly style="background: transparent;">
+                                    {% if loop.first %}
+                                        <div style="display:none;">{{ form_widget(ligneForm.observations) }}</div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td class="center bold bg-gray">{{ ligne.nbPaquets }}</td>
+                            <td class="designation bg-gray">
+                                <strong>{{ ligne.description|default('Produit non précisé') }}</strong>
+                                <div class="sub-info">Avant: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }} | Après: {{ ligne.emplacementApresProduction ? ligne.emplacementApresProduction.nom : '-' }}</div>
+                            </td>
+                            
+                            <td class="p-0">
+                                {{ form_widget(ligneForm.u, {'attr': {'class': 'cell-input center'}}) }}
+                            </td>
+                            <td class="p-0">
+                                {{ form_widget(ligneForm.reference, {'attr': {'class': 'cell-input'}}) }}
+                            </td>
+                            <td class="p-0">
+                                {{ form_widget(ligneForm.travauxAnnexes, {'attr': {'class': 'cell-input'}}) }}
+                            </td>
+                            <td class="p-0">
+                                {{ form_widget(ligneForm.poids, {'attr': {'class': 'cell-input right'}}) }}
+                            </td>
+                            
+                            <td class="p-0">
+                                {{ form_widget(ligneForm.prixTonne, {
+                                    'attr': {
+                                        'class': 'cell-input center editable-price',
+                                        'style': 'color: #4f46e5; font-weight: bold; background: #f8faff;',
+                                        'placeholder': '€/T'
+                                    }
+                                }) }}
+                            </td>
 
-                        <td class="p-0">
-                            {{ form_widget(ligneForm.commentairesFacturation, {'attr': {'class': 'cell-input center', 'title': ligneForm.vars.value.commentairesFacturation|default('')}}) }}
-                        </td>
-                        
-                        <td class="p-0">
-                            {{ form_widget(ligneForm.observations, {'attr': {'class': 'cell-input', 'title': ligneForm.vars.value.observations|default('')}}) }}
-                        </td>
-                    </tr>
+                            <td class="p-0">
+                                {{ form_widget(ligneForm.commentairesFacturation, {'attr': {'class': 'cell-input center', 'title': ligneForm.vars.value.commentairesFacturation|default('')}}) }}
+                            </td>
+                            
+                            <td class="p-0">
+                                {{ form_widget(ligneForm.observations, {'attr': {'class': 'cell-input', 'title': ligneForm.vars.value.observations|default('')}}) }}
+                            </td>
+                        </tr>
+                    {% endif %}
                 {% endfor %}
             </tbody>
             {# --- NOUVELLE LIGNE FORFAIT --- #}

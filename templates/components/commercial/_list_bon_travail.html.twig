@@ -64,8 +64,8 @@
                     {% set prixSaisi = true %} {# On part du principe que c'est bon... #}
                     
                     {% for ligne in bt.lignes %}
-                        {% if ligne.prixTonne is empty or ligne.prixTonne <= 0 %}
-                            {# ... Mais dès qu'une seule ligne est vide ou à zéro, on annule tout ! #}
+                        {% if ligne.prixTonne is null %}
+                            {# ... Mais dès qu'une seule ligne n'a pas de prix (vide), on annule tout ! Un prix de 0 est considéré comme saisi. #}
                             {% set prixSaisi = false %}
                         {% endif %}
                     {% endfor %}

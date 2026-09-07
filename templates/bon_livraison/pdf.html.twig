@@ -101,14 +101,33 @@
             <tbody>
                 {% set totalPoids = 0 %}
                 {% for ligne in bt.lignes %}
-                    <tr>
-                        <td class="center">{{ ligne.nbPaquets }}</td>
-                        <td><strong>{{ ligne.description|default('-') }}</strong></td>
-                        <td>{{ ligne.reference|default('-') }}</td>
-                        <td>{{ ligne.travauxAnnexes|default('-') }}</td>
-                        <td class="right">{{ ligne.poids ? ligne.poids|number_format(2, ',', ' ') : '-' }}</td>
-                        <td>{{ ligne.observations|default('-') }}</td>
-                    </tr>
+                    {% set paquets = ligne.peseePaquets %}
+                    {% if paquets|length > 0 %}
+                        {% for paquet in paquets %}
+                            <tr>
+                                {% if loop.first %}
+                                    <td class="center" rowspan="{{ paquets|length }}">{{ ligne.nbPaquets }}</td>
+                                    <td rowspan="{{ paquets|length }}"><strong>{{ ligne.description|default('-') }}</strong></td>
+                                    <td rowspan="{{ paquets|length }}">{{ ligne.reference|default('-') }}</td>
+                                    <td rowspan="{{ paquets|length }}">{{ ligne.travauxAnnexes|default('-') }}</td>
+                                {% endif %}
+                                <td class="right">
+                                    <span style="font-size: 8px; color: #666;">P{{ loop.index }}</span> 
+                                    {{ paquet.poids ? paquet.poids|number_format(2, ',', ' ') : '-' }}
+                                </td>
+                                <td>{{ paquet.observations|default('-') }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td class="center">{{ ligne.nbPaquets }}</td>
+                            <td><strong>{{ ligne.description|default('-') }}</strong></td>
+                            <td>{{ ligne.reference|default('-') }}</td>
+                            <td>{{ ligne.travauxAnnexes|default('-') }}</td>
+                            <td class="right">{{ ligne.poids ? ligne.poids|number_format(2, ',', ' ') : '-' }}</td>
+                            <td>{{ ligne.observations|default('-') }}</td>
+                        </tr>
+                    {% endif %}
                     {% set totalPoids = totalPoids + (ligne.poids|default(0)) %}
                 {% else %}
                     <tr><td colspan="6" class="center">Aucune marchandise trouvée.</td></tr>

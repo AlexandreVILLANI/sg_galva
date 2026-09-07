@@ -5,6 +5,8 @@ namespace App\Entity;
 use App\Repository\LigneDechargementRepository;
 use Doctrine\DBAL\Types\Types; 
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: LigneDechargementRepository::class)]
 class LigneDechargement
@@ -51,6 +53,14 @@ class LigneDechargement
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $commentairesFacturation = null;
+
+    #[ORM\OneToMany(mappedBy: 'ligneDechargement', targetEntity: PeseePaquet::class, cascade: ['persist', 'remove'])]
+    private Collection $peseePaquets;
+
+    public function __construct()
+    {
+        $this->peseePaquets = new ArrayCollection();
+    }
 
     // --- GETTERS ET SETTERS ---
 
@@ -99,4 +109,34 @@ class LigneDechargement
 
     public function getCommentairesFacturation(): ?string { return $this->commentairesFacturation; }
     public function setCommentairesFacturation(?string $commentairesFacturation): self { $this->commentairesFacturation = $commentairesFacturation; return $this; }
+
+    /**
+     * @return Collection<int, PeseePaquet>
+     */
+    public function getPeseePaquets(): Collection
+    {
+        return $this->peseePaquets;
+    }
+
+    public function addPeseePaquet(PeseePaquet $peseePaquet): self
+    {
+        if (!$this->peseePaquets->contains($peseePaquet)) {
+            $this->peseePaquets->add($peseePaquet);
+            $peseePaquet->setLigneDechargement($this);
+        }
+
+        return $this;
+    }
+
+    public function removePeseePaquet(PeseePaquet $peseePaquet): self
+    {
+        if ($this->peseePaquets->removeElement($peseePaquet)) {
+            // set the owning side to null (unless already changed)
+            if ($peseePaquet->getLigneDechargement() === $this) {
+                $peseePaquet->setLigneDechargement(null);
+            }
+        }
+
+        return $this;
+    }
 }

@@ -61,6 +61,22 @@
 
         <div id="btTableBody">
             {% for bt in bons_travail %}
+                
+                {# --- LOGIQUE POUR SAVOIR SI LE PRIX EST SAISI --- #}
+                {% set prixSaisi = false %}
+
+                {% if bt.isForfait and bt.prixForfait > 0 %}
+                    {% set prixSaisi = true %}
+                {% elseif bt.lignes is defined and bt.lignes|length > 0 %}
+                    {% set prixSaisi = true %}
+                    
+                    {% for ligne in bt.lignes %}
+                        {% if ligne.prixTonne is null %}
+                            {% set prixSaisi = false %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+
                 <div class="table-grid row clickable-row bt-grid-template" 
                      data-btnum="{{ bt.numero|lower }}"
                      data-refi="{{ bt.bonCommande.refi|lower }}" 
@@ -160,6 +176,17 @@
 
                         {% if isStocke %}
                             <span class="status-badge success" title="Emplacements finaux définis"><i class="fas fa-boxes"></i> Stocké</span>
+                        {% endif %}
+
+                        {# 4. BADGE PRIX #}
+                        {% if prixSaisi %}
+                            <span class="status-badge" style="background-color: #e0e7ff; color: #4f46e5; border: 1px solid #c7d2fe;" title="Prix enregistrés">
+                                <i class="fas fa-check"></i> Chiffré
+                            </span>
+                        {% else %}
+                            <span class="status-badge pending" title="Prix manquants">
+                                <i class="fas fa-euro-sign"></i> À chiffrer
+                            </span>
                         {% endif %}
                     </span>
 

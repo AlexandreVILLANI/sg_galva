@@ -230,4 +230,15 @@ class BonTravail
 
         return $this;
     }
+
+    public function isValideParChefEquipe(): bool
+    {
+        foreach ($this->planningLignes as $ligne) {
+            if ($ligne->getDateValidation() !== null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

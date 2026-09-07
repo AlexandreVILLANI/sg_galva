@@ -88,26 +88,59 @@
             <tbody>
                 {% set totalPoids = 0 %}
                 {% for ligne in bt.lignes %}
-                    <tr>
-                        <td class="center fw-bold text-blue">{{ ligne.nbPaquets }}</td>
-                        <td class="designation">
-                            <strong class="fw-bold">{{ ligne.description|default('-') }}</strong>
-                            {% if ligne.emplacement or ligne.emplacementApresProduction %}
-                                <div class="sub-info">Avant: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }} | Après: {{ ligne.emplacementApresProduction ? ligne.emplacementApresProduction.nom : '-' }}</div>
-                            {% endif %}
-                        </td>
-                        <td class="center">{{ ligne.u|default('-') }}</td>
-                        <td>{{ ligne.reference|default('-') }}</td>
-                        <td>{{ ligne.travauxAnnexes|default('-') }}</td>
-                        
-                        <td class="right fw-bold">{{ ligne.poids ? ligne.poids|number_format(2, ',', ' ') : '-' }}</td>
-                        
-                        <td class="center fw-bold text-green">
-                            {{ ligne.prixTonne ? ligne.prixTonne|number_format(2, ',', ' ') ~ ' €' : '-' }}
-                        </td>
-                        
-                        <td><span style="font-size: 11px; color: #64748b;">{{ ligne.observations|default('-') }}</span></td>
-                    </tr>
+                    {% set paquets = ligne.peseePaquets %}
+                    {% if paquets|length > 0 %}
+                        {% for paquet in paquets %}
+                            <tr>
+                                {% if loop.first %}
+                                    <td class="center fw-bold text-blue" rowspan="{{ paquets|length }}">{{ ligne.nbPaquets }}</td>
+                                    <td class="designation" rowspan="{{ paquets|length }}">
+                                        <strong class="fw-bold">{{ ligne.description|default('-') }}</strong>
+                                        {% if ligne.emplacement or ligne.emplacementApresProduction %}
+                                            <div class="sub-info">Avant: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }} | Après: {{ ligne.emplacementApresProduction ? ligne.emplacementApresProduction.nom : '-' }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="center" rowspan="{{ paquets|length }}">{{ ligne.u|default('-') }}</td>
+                                    <td rowspan="{{ paquets|length }}">{{ ligne.reference|default('-') }}</td>
+                                    <td rowspan="{{ paquets|length }}">{{ ligne.travauxAnnexes|default('-') }}</td>
+                                {% endif %}
+                                
+                                <td class="right fw-bold">
+                                    <span style="font-size: 8px; color: #666; margin-right: 5px;">P{{ loop.index }}</span>
+                                    {{ paquet.poids ? paquet.poids|number_format(2, ',', ' ') : '-' }}
+                                </td>
+                                
+                                {% if loop.first %}
+                                    <td class="center fw-bold text-green" rowspan="{{ paquets|length }}">
+                                        {{ ligne.prixTonne ? ligne.prixTonne|number_format(2, ',', ' ') ~ ' €' : '-' }}
+                                    </td>
+                                {% endif %}
+                                
+                                <td><span style="font-size: 11px; color: #64748b;">{{ paquet.observations|default(ligne.observations|default('-')) }}</span></td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td class="center fw-bold text-blue">{{ ligne.nbPaquets }}</td>
+                            <td class="designation">
+                                <strong class="fw-bold">{{ ligne.description|default('-') }}</strong>
+                                {% if ligne.emplacement or ligne.emplacementApresProduction %}
+                                    <div class="sub-info">Avant: {{ ligne.emplacement ? ligne.emplacement.nom : '-' }} | Après: {{ ligne.emplacementApresProduction ? ligne.emplacementApresProduction.nom : '-' }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="center">{{ ligne.u|default('-') }}</td>
+                            <td>{{ ligne.reference|default('-') }}</td>
+                            <td>{{ ligne.travauxAnnexes|default('-') }}</td>
+                            
+                            <td class="right fw-bold">{{ ligne.poids ? ligne.poids|number_format(2, ',', ' ') : '-' }}</td>
+                            
+                            <td class="center fw-bold text-green">
+                                {{ ligne.prixTonne ? ligne.prixTonne|number_format(2, ',', ' ') ~ ' €' : '-' }}
+                            </td>
+                            
+                            <td><span style="font-size: 11px; color: #64748b;">{{ ligne.observations|default('-') }}</span></td>
+                        </tr>
+                    {% endif %}
                     {% set totalPoids = totalPoids + (ligne.poids|default(0)) %}
                 {% else %}
                     <tr><td colspan="8" class="center muted py-3">Aucune marchandise trouvée.</td></tr>

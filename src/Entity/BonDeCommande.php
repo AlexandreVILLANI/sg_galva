@@ -66,7 +66,7 @@ class BonDeCommande
 
     public function __construct()
     {
-        $this->date = new \DateTime('now', new \DateTimeZone('Europe/Paris'));
+        $this->date = new \DateTime();
         $this->photos = new ArrayCollection();
         $this->isValidatedOrdo = false;
     }
@@ -78,7 +78,6 @@ class BonDeCommande
 
     public function getDate(): ?\DateTimeInterface { return $this->date; }
     public function setDate(\DateTimeInterface $date): static {
-        if ($date instanceof \DateTime) { $date->setTimezone(new \DateTimeZone('Europe/Paris')); }
         $this->date = $date;
         return $this;
     }

@@ -121,6 +121,12 @@ class BonTravailController extends AbstractController
     #[IsGranted('ROLE_PESEE')]
     public function peseeBtEdit(BonTravail $bt, Request $request, EntityManagerInterface $em): Response
     {
+        // VÉRIFICATION : Travail validé par le chef d'équipe
+        if (!$bt->isValideParChefEquipe()) {
+            $this->addFlash('error', 'Impossible de peser ce Bon de Travail : le travail n\'a pas encore été validé par un chef d\'équipe dans le planning.');
+            return $this->redirectToRoute('app_home');
+        }
+
         if ($request->isMethod('POST')) {
             $poidsData = $request->request->all('poids'); 
             $obsData = $request->request->all('observations');
@@ -133,22 +139,67 @@ class BonTravailController extends AbstractController
 
             foreach ($bt->getLignes() as $ligne) {
                 $id = $ligne->getId();
+                $nbPaquets = $ligne->getNbPaquets() ?: 1;
                 
-                if (isset($poidsData[$id]) && trim($poidsData[$id]) !== '') {
-                    $poidsNettoye = str_replace(',', '.', $poidsData[$id]);
-                    $valeurPoids = (float) $poidsNettoye;
+                $isDetailed = $request->request->get('is_detailed_' . $id) === '1';
+                $existants = $ligne->getPeseePaquets();
+                
+                if ($isDetailed) {
+                    $poidsDetails = $request->request->all("poids_detail_{$id}");
+                    $obsDetails = $request->request->all("obs_detail_{$id}");
                     
-                    $ligne->setPoids($valeurPoids);
-                    
-                    if ($valeurPoids <= 0) {
-                        $estComplet = false;
+                    foreach ($existants as $existant) {
+                        $em->remove($existant);
                     }
+                    $ligne->getPeseePaquets()->clear();
+                    
+                    $sommePoids = 0;
+                    $uneErreur = false;
+                    for ($i = 1; $i <= $nbPaquets; $i++) {
+                        $pVal = $poidsDetails[$i] ?? '';
+                        $oVal = $obsDetails[$i] ?? '';
+                        
+                        $val = 0;
+                        if (trim($pVal) !== '') {
+                            $val = (float) str_replace(',', '.', $pVal);
+                        }
+                        
+                        if ($val <= 0) {
+                            $uneErreur = true;
+                            $estComplet = false;
+                        } else {
+                            $sommePoids += $val;
+                            $peseePaquet = new \App\Entity\PeseePaquet();
+                            $peseePaquet->setPoids($val);
+                            $peseePaquet->setObservations((string) $oVal);
+                            $ligne->addPeseePaquet($peseePaquet);
+                            $em->persist($peseePaquet);
+                        }
+                    }
+                    
+                    $ligne->setPoids($sommePoids > 0 ? $sommePoids : null);
+                    
                 } else {
-                    $estComplet = false;
-                }
-                
-                if (isset($obsData[$id])) {
-                    $ligne->setObservations((string) $obsData[$id]);
+                    $poidsGlobal = $request->request->get("poids_global_{$id}");
+                    $obsGlobal = $request->request->get("obs_global_{$id}");
+                    
+                    foreach ($existants as $existant) {
+                        $em->remove($existant);
+                    }
+                    $ligne->getPeseePaquets()->clear();
+                    
+                    $val = 0;
+                    if (trim((string)$poidsGlobal) !== '') {
+                        $val = (float) str_replace(',', '.', (string)$poidsGlobal);
+                    }
+                    
+                    if ($val <= 0) {
+                        $estComplet = false;
+                        $ligne->setPoids(null);
+                    } else {
+                        $ligne->setPoids($val);
+                    }
+                    $ligne->setObservations((string) $obsGlobal);
                 }
             }
 

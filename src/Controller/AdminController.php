@@ -144,6 +144,39 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('app_admin_home', ['section' => 'admin-settings']);
     }
 
+    #[Route('/settings/reset-data', name: 'app_admin_reset_data', methods: ['POST'])]
+    public function resetData(Request $request, EntityManagerInterface $em): Response
+    {
+        if ($this->isCsrfTokenValid('reset_data', $request->request->get('_token'))) {
+            $conn = $em->getConnection();
+            try {
+                // PostgreSQL TRUNCATE avec CASCADE pour vider toutes les tables liées proprement
+                // RESTART IDENTITY permet de remettre tous les compteurs (ID) à 1
+                $sql = 'TRUNCATE TABLE fiche_dechargement, bon_de_commande, bon_travail, planning, bon_livraison, dechargement_urgence RESTART IDENTITY CASCADE';
+                $conn->executeStatement($sql);
+
+                // Suppression des fichiers physiques (photos, pdf)
+                $uploadDirs = ['fiches', 'bl', 'urgences'];
+                foreach ($uploadDirs as $dir) {
+                    $path = $this->getParameter('kernel.project_dir') . '/public/uploads/' . $dir . '/*';
+                    foreach (glob($path) as $file) {
+                        if (is_file($file)) {
+                            unlink($file);
+                        }
+                    }
+                }
+
+                $this->addFlash('success', 'Toutes les données opérationnelles (Bons, Fiches, Plannings, Photos) ont été supprimées avec succès. Vous pouvez démarrer un nouvel essai.');
+            } catch (\Exception $e) {
+                $this->addFlash('error', 'Erreur lors de la réinitialisation : ' . $e->getMessage());
+            }
+        } else {
+            $this->addFlash('error', 'Jeton de sécurité invalide.');
+        }
+
+        return $this->redirectToRoute('app_admin_home', ['section' => 'admin-settings']);
+    }
+
     #[Route('/bon-commande/{id}/edit', name: 'app_admin_bc_edit', methods: ['GET', 'POST'])]
     public function editBonCommande(
         Request $request, 
